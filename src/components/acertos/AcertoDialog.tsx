@@ -204,33 +204,83 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
             </div>
           </div>
 
-          {!acerto && viagensDisponiveis.length > 0 && (
+          {!acerto && motoristaId && periodoInicio && periodoFim && (
             <div className="space-y-2">
               <Label>Viagens Disponíveis ({selectedViagens.length} selecionadas)</Label>
-              <div className="max-h-48 overflow-y-auto space-y-2 border rounded-md p-3">
-                {viagensDisponiveis.map((viagem) => (
-                  <Card key={viagem.id} className={selectedViagens.includes(viagem.id) ? 'border-primary' : ''}>
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={selectedViagens.includes(viagem.id)}
-                          onCheckedChange={() => toggleViagem(viagem.id)}
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{viagem.codigo}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {viagem.origem} → {viagem.destino}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDateBR(viagem.data_saida)} • 
-                            {viagem.frete?.valor_frete ? ` R$ ${viagem.frete.valor_frete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ' Sem frete'}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {viagensDisponiveis.length > 0 ? (
+                <div className="max-h-64 overflow-y-auto space-y-2 border rounded-md p-3">
+                  {viagensDisponiveis.map((viagem: any) => {
+                    const isSelected = selectedViagens.includes(viagem.id);
+                    const valorFrete = viagem.frete?.valor_frete || 0;
+                    const despesasReemb = viagem.despesas?.filter((d: any) => d.reembolsavel).reduce((sum: number, d: any) => sum + Number(d.valor), 0) || 0;
+                    const despesasNaoReemb = viagem.despesas?.filter((d: any) => !d.reembolsavel).reduce((sum: number, d: any) => sum + Number(d.valor), 0) || 0;
+                    const totalDespesas = despesasReemb + despesasNaoReemb;
+                    const qtdDespesas = viagem.despesas?.length || 0;
+
+                    return (
+                      <Card 
+                        key={viagem.id} 
+                        className={isSelected ? 'border-primary bg-primary/5' : 'cursor-pointer hover:border-primary/50'}
+                        onClick={() => toggleViagem(viagem.id)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleViagem(viagem.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <p className="font-medium text-sm">{viagem.codigo}</p>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDateBR(viagem.data_saida)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {viagem.origem} → {viagem.destino}
+                              </p>
+                              <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium">Frete:</span>
+                                  <span className="text-green-600">
+                                    R$ {valorFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-medium">Despesas:</span>
+                                  <span className={totalDespesas > 0 ? "text-orange-600" : "text-muted-foreground"}>
+                                    {qtdDespesas > 0 ? `${qtdDespesas} (R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})` : 'Nenhuma'}
+                                  </span>
+                                </div>
+                                {despesasReemb > 0 && (
+                                  <div className="flex items-center gap-1 col-span-2">
+                                    <span className="font-medium">Reembolsáveis:</span>
+                                    <span className="text-blue-600">
+                                      R$ {despesasReemb.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  </div>
+                                )}
+                                {viagem.km_percorrido && (
+                                  <div className="flex items-center gap-1 col-span-2">
+                                    <span className="font-medium">KM percorrido:</span>
+                                    <span className="text-muted-foreground">{viagem.km_percorrido} km</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
+                  Nenhuma viagem concluída disponível para o período selecionado. 
+                  Certifique-se de que as viagens estão com status 'concluída'.
+                </p>
+              )}
             </div>
           )}
 

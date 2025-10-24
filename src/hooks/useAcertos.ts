@@ -121,8 +121,8 @@ export function useViagensDisponiveis(motoristaId?: string, periodoInicio?: stri
         .from('viagens')
         .select(`
           *,
-          frete:fretes(valor_frete),
-          despesas(valor, reembolsavel)
+          frete:fretes(valor_frete, codigo, cliente_nome),
+          despesas(id, tipo, valor, reembolsavel, descricao, data)
         `)
         .eq('status', 'concluida')
         .is('acerto_id', null);
@@ -175,6 +175,7 @@ export function useVincularViagens() {
 
   return useMutation({
     mutationFn: async ({ viagemIds, acertoId }: { viagemIds: string[]; acertoId: string }) => {
+      // Vincular viagens ao acerto
       const { error } = await supabase
         .from('viagens')
         .update({ acerto_id: acertoId })
@@ -182,13 +183,14 @@ export function useVincularViagens() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['viagens'] });
       queryClient.invalidateQueries({ queryKey: ['viagens-disponiveis'] });
       queryClient.invalidateQueries({ queryKey: ['viagens-acerto'] });
+      queryClient.invalidateQueries({ queryKey: ['acertos'] });
       toast({
         title: 'Sucesso',
-        description: 'Viagens vinculadas ao acerto',
+        description: `${variables.viagemIds.length} viagem(ns) vinculada(s) ao acerto com todas as despesas`,
       });
     },
     onError: (error: any) => {
