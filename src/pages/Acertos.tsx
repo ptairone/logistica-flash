@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, FileSpreadsheet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAcertos, useVincularViagens } from '@/hooks/useAcertos';
 import { AcertoDialog } from '@/components/acertos/AcertoDialog';
 import { AcertoCard } from '@/components/acertos/AcertoCard';
@@ -11,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function Acertos() {
+  const navigate = useNavigate();
   const { acertos, isLoading, createAcerto, updateAcerto, deleteAcerto } = useAcertos();
   const vincularViagens = useVincularViagens();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -93,10 +95,16 @@ export default function Acertos() {
               Fechamento financeiro dos motoristas
             </p>
           </div>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Acerto
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/acertos/completo')}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Acerto Completo (Planilha)
+            </Button>
+            <Button onClick={handleCreate}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Acerto
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">

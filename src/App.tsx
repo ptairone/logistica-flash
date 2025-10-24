@@ -11,6 +11,7 @@ import Motoristas from "./pages/Motoristas";
 import Viagens from "./pages/Viagens";
 import Fretes from "./pages/Fretes";
 import Acertos from "./pages/Acertos";
+import AcertoCompleto from "./pages/AcertoCompleto";
 import Estoque from "./pages/Estoque";
 import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
@@ -72,6 +73,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={['admin', 'motorista', 'financeiro']}>
                   <Acertos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/acertos/completo"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'financeiro']}>
+                  <AcertoCompleto />
                 </ProtectedRoute>
               }
             />
