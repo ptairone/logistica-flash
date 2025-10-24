@@ -21,11 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Download, AlertTriangle, Package } from 'lucide-react';
+import { Plus, Search, Download, AlertTriangle, Package, FileUp } from 'lucide-react';
 import { useEstoque } from '@/hooks/useEstoque';
 import { ItemEstoqueDialog } from '@/components/estoque/ItemEstoqueDialog';
 import { ItemEstoqueCard } from '@/components/estoque/ItemEstoqueCard';
 import { ItemEstoqueDetailsDialog } from '@/components/estoque/ItemEstoqueDetailsDialog';
+import { ImportacaoDialog } from '@/components/estoque/ImportacaoDialog';
 import { categoriaLabels, exportarItensCSV, isItemCritico } from '@/lib/validations-estoque';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,6 +37,7 @@ export default function Estoque() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [importacaoDialogOpen, setImportacaoDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState<string>('todos');
@@ -134,6 +136,10 @@ export default function Estoque() {
             <Button variant="outline" onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
               Exportar CSV
+            </Button>
+            <Button variant="outline" onClick={() => setImportacaoDialogOpen(true)}>
+              <FileUp className="h-4 w-4 mr-2" />
+              Importar NF-e/PDF
             </Button>
             <Button onClick={handleNewItem}>
               <Plus className="h-4 w-4 mr-2" />
@@ -295,6 +301,11 @@ export default function Estoque() {
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
         item={selectedItem}
+      />
+
+      <ImportacaoDialog
+        open={importacaoDialogOpen}
+        onOpenChange={setImportacaoDialogOpen}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
