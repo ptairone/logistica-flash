@@ -87,7 +87,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
       setValue('total_reembolsos', 0, { shouldValidate: false });
       setValue('total_pagar', 0, { shouldValidate: false });
     }
-  }, [selectedViagens.length, percentualComissao, totalAdiantamentos, totalDescontos]);
+  }, [selectedViagens, viagensDisponiveis, percentualComissao, totalAdiantamentos, totalDescontos, setValue]);
 
   useEffect(() => {
     if (acerto) {
