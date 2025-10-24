@@ -49,9 +49,12 @@ export function DriverFormLinkCard({ viagemId }: DriverFormLinkCardProps) {
       ativo: { label: 'Ativo', variant: 'default' as const },
       expirado: { label: 'Expirado', variant: 'secondary' as const },
       revogado: { label: 'Revogado', variant: 'destructive' as const },
+      inativo: { label: 'Inativo', variant: 'secondary' as const },
     };
 
     const status = statusMap[linkStatus.link_status as keyof typeof statusMap];
+    if (!status) return null;
+    
     return <Badge variant={status.variant}>{status.label}</Badge>;
   };
 
