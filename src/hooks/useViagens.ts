@@ -216,7 +216,7 @@ export function useMotoristasAtivos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('motoristas')
-        .select('id, nome, cpf')
+        .select('id, nome, cpf, comissao_padrao')
         .eq('status', 'ativo')
         .order('nome');
 
