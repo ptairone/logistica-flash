@@ -2,15 +2,19 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Search, Download } from 'lucide-react';
 import { useViagens } from '@/hooks/useViagens';
 import { ViagemDialog } from '@/components/viagens/ViagemDialog';
 import { ViagemCard } from '@/components/viagens/ViagemCard';
 import { ViagemDetailsDialog } from '@/components/viagens/ViagemDetailsDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { exportarViagensCSV } from '@/lib/validations-viagem';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Viagens() {
+  const { toast } = useToast();
   const { viagens, isLoading, createViagem, updateViagem, deleteViagem } = useViagens();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -77,6 +81,25 @@ export default function Viagens() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleExportCSV = () => {
+    const csv = exportarViagensCSV(filteredViagens);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `viagens_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+
+    toast({
+      title: 'CSV exportado',
+      description: 'Arquivo CSV exportado com sucesso.',
+    });
+  };
+
+  // Calcular KPIs
+  const totalViagens = viagens.length;
+  const viagensEmAndamento = viagens.filter(v => v.status === 'em_andamento').length;
+  const viagensConcluidas = viagens.filter(v => v.status === 'concluida').length;
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -87,10 +110,52 @@ export default function Viagens() {
               Gerencie o ciclo completo das viagens
             </p>
           </div>
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Viagem
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportCSV}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
+            <Button onClick={handleCreate}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Viagem
+            </Button>
+          </div>
+        </div>
+
+        {/* KPIs */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total de Viagens
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{totalViagens}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Em Andamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-blue-600">{viagensEmAndamento}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Concluídas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold text-green-600">{viagensConcluidas}</p>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">

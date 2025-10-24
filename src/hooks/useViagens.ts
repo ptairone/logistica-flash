@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ViagemFormData, DespesaFormData } from '@/lib/validations-viagem';
+import { ViagemFormData, DespesaFormData, gerarCodigoViagem } from '@/lib/validations-viagem';
 import { useToast } from '@/hooks/use-toast';
 
 export function useViagens() {
@@ -27,9 +27,18 @@ export function useViagens() {
 
   const createViagem = useMutation({
     mutationFn: async (data: ViagemFormData) => {
+      // Gerar código automático se não foi fornecido
+      let codigo = data.codigo;
+      if (!codigo || codigo.trim() === '') {
+        const { count } = await supabase
+          .from('viagens')
+          .select('*', { count: 'exact', head: true });
+        codigo = gerarCodigoViagem((count || 0) + 1);
+      }
+
       const { data: result, error } = await supabase
         .from('viagens')
-        .insert([data as any])
+        .insert([{ ...data, codigo } as any])
         .select()
         .single();
 
@@ -105,6 +114,115 @@ export function useViagens() {
     },
   });
 
+  // Ação de registrar partida
+  const registrarPartida = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: result, error } = await supabase
+        .from('viagens')
+        .update({
+          data_saida: new Date().toISOString(),
+          status: 'em_andamento'
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['viagens'] });
+      toast({
+        title: 'Partida registrada',
+        description: 'A viagem está agora em andamento',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao registrar partida',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Ação de registrar chegada
+  const registrarChegada = useMutation({
+    mutationFn: async ({ id, kmPercorrido }: { id: string; kmPercorrido?: number }) => {
+      const updateData: any = {
+        data_chegada: new Date().toISOString(),
+        status: 'concluida'
+      };
+
+      if (kmPercorrido !== undefined) {
+        updateData.km_percorrido = kmPercorrido;
+      }
+
+      const { data: result, error } = await supabase
+        .from('viagens')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Atualizar km do veículo se km foi fornecido
+      if (kmPercorrido && result.veiculo_id) {
+        await supabase
+          .from('veiculos')
+          .update({ km_atual: kmPercorrido })
+          .eq('id', result.veiculo_id);
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['viagens'] });
+      queryClient.invalidateQueries({ queryKey: ['veiculos'] });
+      toast({
+        title: 'Chegada registrada',
+        description: 'Viagem concluída com sucesso',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao registrar chegada',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Cancelar viagem
+  const cancelarViagem = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: result, error } = await supabase
+        .from('viagens')
+        .update({ status: 'cancelada' })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['viagens'] });
+      toast({
+        title: 'Viagem cancelada',
+        description: 'Motorista e veículo foram liberados',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao cancelar viagem',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     viagens: viagensQuery.data ?? [],
     isLoading: viagensQuery.isLoading,
@@ -112,6 +230,9 @@ export function useViagens() {
     createViagem,
     updateViagem,
     deleteViagem,
+    registrarPartida,
+    registrarChegada,
+    cancelarViagem,
   };
 }
 
