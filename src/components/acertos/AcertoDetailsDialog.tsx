@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, DollarSign, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, DollarSign, FileText, Download } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import { useViagensAcerto, useAcertos } from '@/hooks/useAcertos';
+import { AcertoExportDialog } from './AcertoExportDialog';
 
 interface AcertoDetailsDialogProps {
   open: boolean;
@@ -21,6 +23,7 @@ export function AcertoDetailsDialog({ open, onOpenChange, acerto }: AcertoDetail
   const { updateAcerto } = useAcertos();
   const [dataPagamento, setDataPagamento] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('');
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   if (!acerto) return null;
 
@@ -68,8 +71,39 @@ export function AcertoDetailsDialog({ open, onOpenChange, acerto }: AcertoDetail
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Detalhes do Acerto - {acerto.codigo}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Detalhes do Acerto - {acerto.codigo}</DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExportDialogOpen(true)}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          </div>
         </DialogHeader>
+
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <p className="text-sm text-muted-foreground">Status</p>
+              <Badge className={
+                acerto.status === 'pago' ? 'bg-green-500' : 
+                acerto.status === 'fechado' ? 'bg-blue-500' : 
+                'border-yellow-500 text-yellow-700'
+              }>
+                {acerto.status === 'pago' ? 'Pago' : acerto.status === 'fechado' ? 'Fechado' : 'Aberto'}
+              </Badge>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Total a Pagar</p>
+              <p className="text-2xl font-bold text-primary">
+                R$ {acerto.total_pagar?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+              </p>
+            </div>
+          </div>
+        </div>
 
         <Tabs defaultValue="info" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
@@ -287,6 +321,12 @@ export function AcertoDetailsDialog({ open, onOpenChange, acerto }: AcertoDetail
             )}
           </TabsContent>
         </Tabs>
+
+        <AcertoExportDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          acerto={acerto}
+        />
       </DialogContent>
     </Dialog>
   );

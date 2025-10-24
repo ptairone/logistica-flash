@@ -13,19 +13,15 @@ interface AcertoCardProps {
 
 export function AcertoCard({ acerto, onEdit, onDelete, onViewDetails }: AcertoCardProps) {
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
-      aberto: 'secondary',
-      fechado: 'default',
-      pago: 'default',
+    const config: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string; class?: string }> = {
+      aberto: { variant: 'outline', label: 'Aberto', class: 'border-yellow-500 text-yellow-700' },
+      fechado: { variant: 'default', label: 'Fechado', class: 'bg-blue-500' },
+      pago: { variant: 'default', label: 'Pago', class: 'bg-green-500' },
     };
     
-    const labels: Record<string, string> = {
-      aberto: 'Aberto',
-      fechado: 'Fechado',
-      pago: 'Pago',
-    };
+    const { variant, label, class: className } = config[status] || { variant: 'default', label: status };
 
-    return <Badge variant={variants[status] || 'default'}>{labels[status] || status}</Badge>;
+    return <Badge variant={variant} className={className}>{label}</Badge>;
   };
 
   return (
