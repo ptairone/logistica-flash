@@ -62,16 +62,6 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
     }
   }, [motoristaId, motoristas, setValue, acerto]);
 
-  // Gerar código automático
-  useEffect(() => {
-    if (motoristaId && periodoFim && !acerto) {
-      const motorista = motoristas.find(m => m.id === motoristaId);
-      if (motorista) {
-        const codigo = gerarCodigoAcerto(motorista.nome, new Date(periodoFim));
-        setValue('codigo', codigo);
-      }
-    }
-  }, [motoristaId, periodoFim, motoristas, setValue, acerto]);
 
   // Calcular totais automaticamente
   useEffect(() => {
@@ -124,6 +114,17 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
   };
 
   const handleFormSubmit = (data: AcertoFormData) => {
+    // Gerar código automático se for novo acerto
+    let finalData = { ...data };
+    
+    if (!acerto && motoristaId) {
+      const motorista = motoristas.find(m => m.id === motoristaId);
+      if (motorista) {
+        const codigo = gerarCodigoAcerto(motorista.nome, new Date(data.periodo_fim));
+        finalData.codigo = codigo;
+      }
+    }
+    
     // Recalcular totais antes de submeter
     if (selectedViagens.length > 0 && viagensDisponiveis.length > 0) {
       const viagensSelecionadas = viagensDisponiveis.filter(v => 
@@ -132,13 +133,13 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
 
       const calculos = calcularAcerto(
         viagensSelecionadas,
-        data.percentual_comissao || 0,
-        data.total_adiantamentos || 0,
-        data.total_descontos || 0
+        finalData.percentual_comissao || 0,
+        finalData.total_adiantamentos || 0,
+        finalData.total_descontos || 0
       );
 
-      const finalData = {
-        ...data,
+      finalData = {
+        ...finalData,
         base_comissao: calculos.baseComissao,
         valor_comissao: calculos.valorComissao,
         total_reembolsos: calculos.totalReembolsos,
@@ -147,7 +148,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
       
       onSubmit(finalData, selectedViagens);
     } else {
-      onSubmit(data, selectedViagens);
+      onSubmit(finalData, selectedViagens);
     }
   };
 
