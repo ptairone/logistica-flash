@@ -9,6 +9,7 @@ import {
   FileText,
   Settings,
   LogOut,
+  BarChart3,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -75,6 +76,12 @@ export function AppSidebar() {
       url: '/estoque', 
       icon: Package,
       roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Relatórios', 
+      url: '/relatorios', 
+      icon: BarChart3,
+      roles: ['admin', 'operacional', 'financeiro']
     },
   ];
 

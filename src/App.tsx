@@ -12,6 +12,7 @@ import Viagens from "./pages/Viagens";
 import Fretes from "./pages/Fretes";
 import Acertos from "./pages/Acertos";
 import Estoque from "./pages/Estoque";
+import Relatorios from "./pages/Relatorios";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={['admin', 'operacional']}>
                   <Estoque />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/relatorios"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'operacional', 'financeiro']}>
+                  <Relatorios />
                 </ProtectedRoute>
               }
             />
