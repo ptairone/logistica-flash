@@ -154,14 +154,14 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
           <div className="space-y-2">
             <Label htmlFor="frete_id">Frete Vinculado (Opcional)</Label>
             <Select
-              value={freteId || ''}
-              onValueChange={(value) => setValue('frete_id', value || undefined)}
+              value={freteId || 'none'}
+              onValueChange={(value) => setValue('frete_id', value === 'none' ? undefined : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Nenhum frete vinculado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {fretes.map((f) => (
                   <SelectItem key={f.id} value={f.id}>
                     {f.codigo} - {f.cliente_nome} (R$ {f.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
