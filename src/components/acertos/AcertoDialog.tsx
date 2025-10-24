@@ -79,7 +79,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
 
   // Calcular totais automaticamente
   useEffect(() => {
-    if (selectedViagens.length > 0) {
+    if (selectedViagens.length > 0 && viagensDisponiveis.length > 0) {
       const viagensSelecionadas = viagensDisponiveis.filter(v => 
         selectedViagens.includes(v.id)
       ) as ViagemAcerto[];
@@ -91,12 +91,17 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
         totalDescontos
       );
 
-      setValue('base_comissao', calculos.baseComissao);
-      setValue('valor_comissao', calculos.valorComissao);
-      setValue('total_reembolsos', calculos.totalReembolsos);
-      setValue('total_pagar', calculos.totalPagar);
+      setValue('base_comissao', calculos.baseComissao, { shouldValidate: false });
+      setValue('valor_comissao', calculos.valorComissao, { shouldValidate: false });
+      setValue('total_reembolsos', calculos.totalReembolsos, { shouldValidate: false });
+      setValue('total_pagar', calculos.totalPagar, { shouldValidate: false });
+    } else if (selectedViagens.length === 0) {
+      setValue('base_comissao', 0, { shouldValidate: false });
+      setValue('valor_comissao', 0, { shouldValidate: false });
+      setValue('total_reembolsos', 0, { shouldValidate: false });
+      setValue('total_pagar', 0, { shouldValidate: false });
     }
-  }, [selectedViagens, viagensDisponiveis, percentualComissao, totalAdiantamentos, totalDescontos, setValue]);
+  }, [selectedViagens.length, percentualComissao, totalAdiantamentos, totalDescontos]);
 
   useEffect(() => {
     if (acerto) {
@@ -123,7 +128,31 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
   };
 
   const handleFormSubmit = (data: AcertoFormData) => {
-    onSubmit(data, selectedViagens);
+    // Recalcular totais antes de submeter
+    if (selectedViagens.length > 0 && viagensDisponiveis.length > 0) {
+      const viagensSelecionadas = viagensDisponiveis.filter(v => 
+        selectedViagens.includes(v.id)
+      ) as ViagemAcerto[];
+
+      const calculos = calcularAcerto(
+        viagensSelecionadas,
+        data.percentual_comissao || 0,
+        data.total_adiantamentos || 0,
+        data.total_descontos || 0
+      );
+
+      const finalData = {
+        ...data,
+        base_comissao: calculos.baseComissao,
+        valor_comissao: calculos.valorComissao,
+        total_reembolsos: calculos.totalReembolsos,
+        total_pagar: calculos.totalPagar,
+      };
+      
+      onSubmit(finalData, selectedViagens);
+    } else {
+      onSubmit(data, selectedViagens);
+    }
   };
 
   const baseComissao = watch('base_comissao') || 0;
@@ -143,7 +172,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
             <div className="space-y-2">
               <Label htmlFor="motorista_id">Motorista *</Label>
               <Select
-                value={motoristaId}
+                value={motoristaId || ""}
                 onValueChange={(value) => setValue('motorista_id', value)}
                 disabled={!!acerto}
               >
