@@ -50,11 +50,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
   const totalAdiantamentos = watch('total_adiantamentos') || 0;
   const totalDescontos = watch('total_descontos') || 0;
 
-  const { data: viagensDisponiveis = [] } = useViagensDisponiveis(
-    motoristaId,
-    periodoInicio,
-    periodoFim
-  );
+  const { data: viagensDisponiveis = [] } = useViagensDisponiveis(motoristaId);
 
   // Atualizar comissão padrão quando selecionar motorista
   useEffect(() => {
@@ -233,7 +229,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
             </div>
           </div>
 
-          {!acerto && motoristaId && periodoInicio && periodoFim && (
+          {!acerto && motoristaId && (
             <div className="space-y-2">
               <Label>Viagens Disponíveis ({selectedViagens.length} selecionadas)</Label>
               {viagensDisponiveis.length > 0 ? (
@@ -306,8 +302,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">
-                  Nenhuma viagem concluída disponível para o período selecionado. 
-                  Certifique-se de que as viagens estão com status 'concluída'.
+                  Nenhuma viagem concluída disponível para este motorista.
                 </p>
               )}
             </div>

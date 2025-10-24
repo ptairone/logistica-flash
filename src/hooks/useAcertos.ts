@@ -113,9 +113,9 @@ export function useAcertos() {
   };
 }
 
-export function useViagensDisponiveis(motoristaId?: string, periodoInicio?: string, periodoFim?: string) {
+export function useViagensDisponiveis(motoristaId?: string) {
   return useQuery({
-    queryKey: ['viagens-disponiveis', motoristaId, periodoInicio, periodoFim],
+    queryKey: ['viagens-disponiveis', motoristaId],
     queryFn: async () => {
       let query = supabase
         .from('viagens')
@@ -131,20 +131,12 @@ export function useViagensDisponiveis(motoristaId?: string, periodoInicio?: stri
         query = query.eq('motorista_id', motoristaId);
       }
 
-      if (periodoInicio) {
-        query = query.gte('data_chegada', periodoInicio);
-      }
-
-      if (periodoFim) {
-        query = query.lte('data_chegada', periodoFim);
-      }
-
       const { data, error } = await query.order('data_chegada', { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!motoristaId && !!periodoInicio && !!periodoFim,
+    enabled: !!motoristaId,
   });
 }
 

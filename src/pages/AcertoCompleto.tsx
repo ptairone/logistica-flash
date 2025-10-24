@@ -50,11 +50,7 @@ export default function AcertoCompleto() {
   const [quantidadeDias, setQuantidadeDias] = useState(0);
 
   // Viagens disponíveis
-  const { data: viagensDisponiveis = [] } = useViagensDisponiveis(
-    motoristaId,
-    dataSalarioInicio,
-    dataSalarioFim
-  );
+  const { data: viagensDisponiveis = [] } = useViagensDisponiveis(motoristaId);
 
   const [viagensSelecionadas, setViagensSelecionadas] = useState<string[]>([]);
 
