@@ -164,41 +164,27 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
         </DialogHeader>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="motorista_id">Motorista *</Label>
-              <Select
-                value={motoristaId || ""}
-                onValueChange={(value) => setValue('motorista_id', value)}
-                disabled={!!acerto}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um motorista" />
-                </SelectTrigger>
-                <SelectContent>
-                  {motoristas.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.motorista_id && (
-                <p className="text-sm text-destructive">{errors.motorista_id.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="codigo">Código *</Label>
-              <Input
-                id="codigo"
-                {...register('codigo')}
-                placeholder="AC202401"
-              />
-              {errors.codigo && (
-                <p className="text-sm text-destructive">{errors.codigo.message}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="motorista_id">Motorista *</Label>
+            <Select
+              value={motoristaId || ""}
+              onValueChange={(value) => setValue('motorista_id', value)}
+              disabled={!!acerto}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um motorista" />
+              </SelectTrigger>
+              <SelectContent>
+                {motoristas.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.motorista_id && (
+              <p className="text-sm text-destructive">{errors.motorista_id.message}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
