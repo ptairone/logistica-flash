@@ -9,6 +9,7 @@ import { formatDateBR } from '@/lib/validations';
 import { useDespesas, useComprovantesViagem } from '@/hooks/useViagens';
 import { DespesaDialog } from './DespesaDialog';
 import { calcularTotaisViagem } from '@/lib/validations-viagem';
+import { DriverFormLinkCard } from './DriverFormLinkCard';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface ViagemDetailsDialogProps {
@@ -78,11 +79,15 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalhes da Viagem - {viagem.codigo}</DialogTitle>
-          </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Detalhes da Viagem - {viagem.codigo}</DialogTitle>
+        </DialogHeader>
 
-          <Tabs defaultValue="info" className="w-full">
+        <div className="mb-4">
+          <DriverFormLinkCard viagemId={viagem.id} />
+        </div>
+
+        <Tabs defaultValue="info" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="info">Informações</TabsTrigger>
               <TabsTrigger value="despesas">Despesas</TabsTrigger>

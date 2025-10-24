@@ -95,6 +95,7 @@ export type Database = {
           data: string
           descricao: string | null
           id: string
+          origem: string | null
           reembolsavel: boolean | null
           tipo: Database["public"]["Enums"]["tipo_despesa"]
           valor: number
@@ -106,6 +107,7 @@ export type Database = {
           data?: string
           descricao?: string | null
           id?: string
+          origem?: string | null
           reembolsavel?: boolean | null
           tipo: Database["public"]["Enums"]["tipo_despesa"]
           valor: number
@@ -117,6 +119,7 @@ export type Database = {
           data?: string
           descricao?: string | null
           id?: string
+          origem?: string | null
           reembolsavel?: boolean | null
           tipo?: Database["public"]["Enums"]["tipo_despesa"]
           valor?: number
@@ -534,6 +537,7 @@ export type Database = {
           capacidade_m3: number | null
           codigo_interno: string
           created_at: string
+          em_viagem: boolean | null
           id: string
           km_atual: number | null
           marca: string
@@ -556,6 +560,7 @@ export type Database = {
           capacidade_m3?: number | null
           codigo_interno: string
           created_at?: string
+          em_viagem?: boolean | null
           id?: string
           km_atual?: number | null
           marca: string
@@ -578,6 +583,7 @@ export type Database = {
           capacidade_m3?: number | null
           codigo_interno?: string
           created_at?: string
+          em_viagem?: boolean | null
           id?: string
           km_atual?: number | null
           marca?: string
@@ -599,61 +605,88 @@ export type Database = {
       viagens: {
         Row: {
           acerto_id: string | null
+          chegada_foto_url: string | null
           codigo: string
           created_at: string
           data_chegada: string | null
           data_saida: string | null
           destino: string
           destino_cep: string | null
+          driver_form_token: string | null
+          driver_form_url: string | null
           frete_id: string | null
           id: string
           km_estimado: number | null
+          km_final: number | null
+          km_inicial: number | null
           km_percorrido: number | null
+          link_expires_at: string | null
+          link_status: string | null
           motorista_id: string
           notas: string | null
           origem: string
           origem_cep: string | null
+          partida_foto_url: string | null
           status: Database["public"]["Enums"]["status_viagem"] | null
+          ultimo_acesso_em: string | null
           updated_at: string
           veiculo_id: string
         }
         Insert: {
           acerto_id?: string | null
+          chegada_foto_url?: string | null
           codigo: string
           created_at?: string
           data_chegada?: string | null
           data_saida?: string | null
           destino: string
           destino_cep?: string | null
+          driver_form_token?: string | null
+          driver_form_url?: string | null
           frete_id?: string | null
           id?: string
           km_estimado?: number | null
+          km_final?: number | null
+          km_inicial?: number | null
           km_percorrido?: number | null
+          link_expires_at?: string | null
+          link_status?: string | null
           motorista_id: string
           notas?: string | null
           origem: string
           origem_cep?: string | null
+          partida_foto_url?: string | null
           status?: Database["public"]["Enums"]["status_viagem"] | null
+          ultimo_acesso_em?: string | null
           updated_at?: string
           veiculo_id: string
         }
         Update: {
           acerto_id?: string | null
+          chegada_foto_url?: string | null
           codigo?: string
           created_at?: string
           data_chegada?: string | null
           data_saida?: string | null
           destino?: string
           destino_cep?: string | null
+          driver_form_token?: string | null
+          driver_form_url?: string | null
           frete_id?: string | null
           id?: string
           km_estimado?: number | null
+          km_final?: number | null
+          km_inicial?: number | null
           km_percorrido?: number | null
+          link_expires_at?: string | null
+          link_status?: string | null
           motorista_id?: string
           notas?: string | null
           origem?: string
           origem_cep?: string | null
+          partida_foto_url?: string | null
           status?: Database["public"]["Enums"]["status_viagem"] | null
+          ultimo_acesso_em?: string | null
           updated_at?: string
           veiculo_id?: string
         }

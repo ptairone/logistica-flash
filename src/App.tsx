@@ -14,6 +14,7 @@ import Acertos from "./pages/Acertos";
 import AcertoCompleto from "./pages/AcertoCompleto";
 import Estoque from "./pages/Estoque";
 import Relatorios from "./pages/Relatorios";
+import DriverForm from "./pages/DriverForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -100,6 +101,10 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            
+            {/* Rota pública para formulário do motorista */}
+            <Route path="/p/viagem/:viagemId" element={<DriverForm />} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
