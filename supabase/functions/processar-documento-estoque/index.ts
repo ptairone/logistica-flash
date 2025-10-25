@@ -65,10 +65,6 @@ const documentoSchema = {
       },
       minItems: 1
     },
-    confidences: {
-      type: "object",
-      additionalProperties: { type: "number" }
-    },
     moeda: { type: "string", const: "BRL" },
     origemArquivo: {
       type: "object",
@@ -80,7 +76,7 @@ const documentoSchema = {
       additionalProperties: false
     }
   },
-  required: ["fornecedor", "documento", "totais", "itens", "confidences", "moeda", "origemArquivo"],
+  required: ["fornecedor", "documento", "totais", "itens", "moeda", "origemArquivo"],
   additionalProperties: false
 };
 
