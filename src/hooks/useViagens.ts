@@ -408,7 +408,6 @@ export function useComprovantesViagem(viagemId?: string) {
           url: urlData.publicUrl,
           mime_type: file.type,
           tamanho: file.size,
-          descricao,
         }])
         .select()
         .single();
