@@ -22,6 +22,10 @@ import { Upload, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-re
 import { useImportacaoEstoque } from '@/hooks/useImportacaoEstoque';
 import { validarTotais, validarCNPJ } from '@/lib/validations-importacao';
 import { useToast } from '@/hooks/use-toast';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configurar worker do PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface ImportacaoDialogProps {
   open: boolean;
@@ -47,11 +51,11 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ['application/xml', 'text/xml', 'image/png', 'image/jpeg', 'image/jpg'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(xml|png|jpe?g)$/i)) {
+    const validTypes = ['application/xml', 'text/xml', 'image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xml|png|jpe?g|pdf)$/i)) {
       toast({
         title: 'Tipo de arquivo inválido',
-        description: 'Por favor, envie apenas arquivos XML (NF-e) ou imagens PNG/JPEG (DANFE/Nota Fiscal).',
+        description: 'Por favor, envie apenas arquivos XML (NF-e), PDF ou imagens PNG/JPEG (DANFE/Nota Fiscal).',
         variant: 'destructive',
       });
       return;
@@ -63,22 +67,66 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
   const handleProcessar = async () => {
     if (!arquivo) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      
+    try {
+      let base64ToSend = '';
+      let typeToSend = arquivo.type;
+      let nameToSend = arquivo.name;
+
+      // Se for PDF, converter primeira página para PNG
+      if (arquivo.type === 'application/pdf' || arquivo.name.toLowerCase().endsWith('.pdf')) {
+        const arrayBuffer = await arquivo.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2.0 });
+        
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas não suportado');
+        
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        const renderContext: any = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+        await page.render(renderContext).promise;
+        
+        base64ToSend = canvas.toDataURL('image/png');
+        typeToSend = 'image/png';
+        nameToSend = arquivo.name.replace(/\.pdf$/i, '_page1.png');
+        
+        toast({
+          title: 'PDF convertido',
+          description: 'Primeira página do PDF convertida para PNG com sucesso!',
+        });
+      } else {
+        // Ler arquivo (XML ou imagem)
+        base64ToSend = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(arquivo);
+        });
+      }
+
       processarArquivo.mutate(
         {
-          file: base64,
-          fileName: arquivo.name,
-          fileType: arquivo.type,
+          file: base64ToSend,
+          fileName: nameToSend,
+          fileType: typeToSend,
         },
         {
           onSuccess: () => setPasso(2),
         }
       );
-    };
-    reader.readAsDataURL(arquivo);
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao processar arquivo',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleToggleItem = (id: string) => {
@@ -133,7 +181,7 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
               </p>
               <input
                 type="file"
-                accept=".xml,.png,.jpg,.jpeg,image/png,image/jpeg"
+                accept=".xml,.png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="file-upload"
@@ -144,7 +192,7 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
                 </Button>
               </label>
               <p className="text-xs text-muted-foreground mt-2">
-                Tipos aceitos: XML (NF-e) ou imagens PNG/JPEG (DANFE, faturas)
+                Tipos aceitos: XML (NF-e), PDF ou imagens PNG/JPEG (DANFE, faturas)
               </p>
             </div>
 
