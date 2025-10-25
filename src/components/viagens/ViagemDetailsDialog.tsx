@@ -14,6 +14,8 @@ import { calcularTotaisViagem } from '@/lib/validations-viagem';
 import { DriverFormLinkCard } from './DriverFormLinkCard';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ViagemDetailsDialogProps {
   open: boolean;
@@ -32,6 +34,8 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
   const [despesaToDelete, setDespesaToDelete] = useState<string | null>(null);
   const [transacaoToDelete, setTransacaoToDelete] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [tipoComprovante, setTipoComprovante] = useState<'adiantamento' | 'recebimento_frete' | 'despesa' | 'outros'>('outros');
+  const [comprovanteData, setComprovanteData] = useState<any>(null);
 
   if (!viagem) return null;
 
@@ -44,56 +48,53 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !viagem) return;
-
-    // Verificar se é imagem
-    const isImage = file.type.startsWith('image/');
     
     setUploading(true);
     try {
-      // Fazer upload do comprovante
-      await uploadComprovante.mutateAsync({
-        file,
-        viagemId: viagem.id,
-      });
+      // Upload do arquivo para o storage
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${viagem.id}/comprovante_${Date.now()}.${fileExt}`;
 
-      // Se for imagem, processar com OpenAI
-      if (isImage) {
-        toast.info('Processando comprovante com IA...');
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('viagemId', viagem.id);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('comprovantes')
+        .upload(filePath, file);
 
-        const response = await fetch(
-          'https://plfpczvnqmvqpmsbjrra.supabase.co/functions/v1/processar-comprovante',
-          {
-            method: 'POST',
-            body: formData,
-          }
-        );
+      if (uploadError) throw uploadError;
 
-        if (response.ok) {
-          const despesaData = await response.json();
-          console.log('Dados extraídos:', despesaData);
-          
-          // Criar despesa automaticamente
-          await createDespesa.mutateAsync({
-            ...despesaData,
-            viagem_id: viagem.id,
-          });
-          
-          toast.success('Comprovante processado e despesa criada automaticamente!');
-        } else {
-          const error = await response.json();
-          console.error('Erro ao processar:', error);
-          toast.warning('Comprovante salvo, mas não foi possível extrair informações automaticamente');
-        }
+      const { data: { publicUrl } } = supabase.storage
+        .from('comprovantes')
+        .getPublicUrl(filePath);
+
+      // Salvar documento
+      const { error: docError } = await supabase
+        .from('documentos')
+        .insert({
+          tipo_entidade: 'viagem',
+          entidade_id: viagem.id,
+          nome: file.name,
+          tipo_documento: 'comprovante',
+          url: publicUrl,
+          tamanho: file.size,
+          mime_type: file.type,
+        });
+
+      if (docError) throw docError;
+
+      // Redirecionar baseado no tipo selecionado
+      if (tipoComprovante === 'adiantamento' || tipoComprovante === 'recebimento_frete') {
+        setComprovanteData({ tipo: tipoComprovante, anexo_url: publicUrl });
+        setTransacaoDialogOpen(true);
+      } else if (tipoComprovante === 'despesa') {
+        setComprovanteData({ anexo_url: publicUrl });
+        setDespesaDialogOpen(true);
+      } else {
+        toast.success('Comprovante salvo com sucesso');
       }
-      
+
+      setTipoComprovante('outros'); // Reset
       e.target.value = '';
-    } catch (error) {
-      console.error('Erro:', error);
-      toast.error('Erro ao processar comprovante');
+    } catch (error: any) {
+      toast.error('Erro ao fazer upload: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -371,24 +372,41 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
             </TabsContent>
 
             <TabsContent value="comprovantes" className="space-y-4 pt-4">
-              <div className="flex justify-end">
-                <label htmlFor="file-upload-viagem">
-                  <Button
-                    type="button"
-                    disabled={uploading}
-                    onClick={() => document.getElementById('file-upload-viagem')?.click()}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploading ? 'Enviando...' : 'Upload Comprovante'}
-                  </Button>
-                </label>
-                <input
-                  id="file-upload-viagem"
-                  type="file"
-                  className="hidden"
-                  accept="image/*,.pdf"
-                  onChange={handleFileUpload}
-                />
+              <div className="space-y-4">
+                <div className="grid gap-3">
+                  <Label htmlFor="tipo-comprovante">Tipo de Comprovante</Label>
+                  <Select value={tipoComprovante} onValueChange={(value: any) => setTipoComprovante(value)}>
+                    <SelectTrigger id="tipo-comprovante">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="adiantamento">Adiantamento</SelectItem>
+                      <SelectItem value="recebimento_frete">Recebimento de Frete</SelectItem>
+                      <SelectItem value="despesa">Despesa</SelectItem>
+                      <SelectItem value="outros">Outros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end">
+                  <label htmlFor="file-upload-viagem">
+                    <Button
+                      type="button"
+                      disabled={uploading}
+                      onClick={() => document.getElementById('file-upload-viagem')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploading ? 'Enviando...' : 'Upload Comprovante'}
+                    </Button>
+                  </label>
+                  <input
+                    id="file-upload-viagem"
+                    type="file"
+                    className="hidden"
+                    accept="image/*,.pdf"
+                    onChange={handleFileUpload}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -470,15 +488,22 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
 
       <DespesaDialog
         open={despesaDialogOpen}
-        onOpenChange={setDespesaDialogOpen}
+        onOpenChange={(open) => {
+          setDespesaDialogOpen(open);
+          if (!open) setComprovanteData(null);
+        }}
         onSubmit={(data) => createDespesa.mutate(data)}
         viagemId={viagem.id}
         isLoading={createDespesa.isPending}
+        initialData={comprovanteData}
       />
 
       <TransacaoDialog
         open={transacaoDialogOpen}
-        onOpenChange={setTransacaoDialogOpen}
+        onOpenChange={(open) => {
+          setTransacaoDialogOpen(open);
+          if (!open) setComprovanteData(null);
+        }}
         onSubmit={(data) => createTransacao.mutate({ 
           tipo: data.tipo,
           valor: data.valor,
@@ -488,6 +513,7 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
         })}
         viagemId={viagem.id}
         isLoading={createTransacao.isPending}
+        initialData={comprovanteData}
       />
 
       <AlertDialog open={deleteDespesaDialogOpen} onOpenChange={setDeleteDespesaDialogOpen}>

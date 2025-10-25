@@ -1,3 +1,4 @@
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -35,6 +36,7 @@ interface TransacaoDialogProps {
   onSubmit: (data: TransacaoFormData) => void;
   viagemId: string;
   isLoading?: boolean;
+  initialData?: Partial<TransacaoFormData>;
 }
 
 export function TransacaoDialog({
@@ -42,6 +44,7 @@ export function TransacaoDialog({
   onOpenChange,
   onSubmit,
   isLoading,
+  initialData,
 }: TransacaoDialogProps) {
   const form = useForm<TransacaoFormData>({
     resolver: zodResolver(transacaoSchema),
@@ -50,8 +53,18 @@ export function TransacaoDialog({
       valor: 0,
       data: new Date().toISOString().split('T')[0],
       descricao: '',
+      ...initialData,
     },
   });
+
+  // Atualizar form quando initialData mudar
+  React.useEffect(() => {
+    if (initialData && open) {
+      Object.entries(initialData).forEach(([key, value]) => {
+        form.setValue(key as any, value);
+      });
+    }
+  }, [initialData, open, form]);
 
   const handleSubmit = (data: TransacaoFormData) => {
     onSubmit(data);

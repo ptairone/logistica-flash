@@ -1,3 +1,4 @@
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,9 +16,10 @@ interface DespesaDialogProps {
   onSubmit: (data: DespesaFormData) => void;
   viagemId: string;
   isLoading?: boolean;
+  initialData?: Partial<DespesaFormData>;
 }
 
-export function DespesaDialog({ open, onOpenChange, onSubmit, viagemId, isLoading }: DespesaDialogProps) {
+export function DespesaDialog({ open, onOpenChange, onSubmit, viagemId, isLoading, initialData }: DespesaDialogProps) {
   const {
     register,
     handleSubmit,
@@ -31,11 +33,21 @@ export function DespesaDialog({ open, onOpenChange, onSubmit, viagemId, isLoadin
       viagem_id: viagemId,
       reembolsavel: true,
       data: new Date().toISOString().split('T')[0],
+      ...initialData,
     },
   });
 
   const tipo = watch('tipo');
   const reembolsavel = watch('reembolsavel');
+
+  // Atualizar form quando initialData mudar
+  React.useEffect(() => {
+    if (initialData && open) {
+      Object.entries(initialData).forEach(([key, value]) => {
+        setValue(key as any, value);
+      });
+    }
+  }, [initialData, open, setValue]);
 
   const handleClose = () => {
     reset({
