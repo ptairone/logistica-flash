@@ -23,9 +23,10 @@ import { useImportacaoEstoque } from '@/hooks/useImportacaoEstoque';
 import { validarTotais, validarCNPJ } from '@/lib/validations-importacao';
 import { useToast } from '@/hooks/use-toast';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-// Configurar worker do PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configurar worker do PDF.js (usar worker local para evitar CORS e dynamic import)
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 interface ImportacaoDialogProps {
   open: boolean;
