@@ -80,18 +80,68 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
 
       if (docError) throw docError;
 
-      // Redirecionar baseado no tipo selecionado
-      if (tipoComprovante === 'adiantamento' || tipoComprovante === 'recebimento_frete') {
-        setComprovanteData({ tipo: tipoComprovante, anexo_url: publicUrl });
-        setTransacaoDialogOpen(true);
-      } else if (tipoComprovante === 'despesa') {
-        setComprovanteData({ anexo_url: publicUrl });
-        setDespesaDialogOpen(true);
-      } else {
-        toast.success('Comprovante salvo com sucesso');
+      // Processar com OpenAI e criar automaticamente
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('viagemId', viagem.id);
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/processar-comprovante`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: formData,
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Dados extraídos:', data);
+
+          // Criar transação ou despesa automaticamente
+          if (tipoComprovante === 'adiantamento' || tipoComprovante === 'recebimento_frete') {
+            const { error: transacaoError } = await supabase
+              .from('transacoes_viagem')
+              .insert({
+                viagem_id: viagem.id,
+                tipo: tipoComprovante === 'adiantamento' ? 'adiantamento' : 'recebimento_frete',
+                valor: data.valor || 0,
+                data: data.data || new Date().toISOString().split('T')[0],
+                descricao: data.descricao || `${tipoComprovante} via comprovante`,
+              });
+
+            if (transacaoError) throw transacaoError;
+            toast.success(`${tipoComprovante === 'adiantamento' ? 'Adiantamento' : 'Recebimento de frete'} adicionado automaticamente`);
+          } else if (tipoComprovante === 'despesa') {
+            const { error: despesaError } = await supabase
+              .from('despesas')
+              .insert({
+                viagem_id: viagem.id,
+                tipo: data.tipo || 'outros',
+                valor: data.valor || 0,
+                data: data.data || new Date().toISOString().split('T')[0],
+                descricao: data.descricao || 'Despesa via comprovante',
+                reembolsavel: data.reembolsavel ?? true,
+              });
+
+            if (despesaError) throw despesaError;
+            toast.success('Despesa adicionada automaticamente');
+          } else {
+            toast.success('Comprovante salvo com sucesso');
+          }
+        } else {
+          console.log('Processamento automático não disponível');
+          toast.success('Comprovante salvo (processamento automático indisponível)');
+        }
+      } catch (aiError) {
+        console.error('Erro ao processar com IA:', aiError);
+        toast.success('Comprovante salvo, mas não foi possível processar automaticamente');
       }
 
-      setTipoComprovante('outros'); // Reset
+      setTipoComprovante('outros');
       e.target.value = '';
     } catch (error: any) {
       toast.error('Erro ao fazer upload: ' + error.message);
