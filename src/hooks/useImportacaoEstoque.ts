@@ -60,7 +60,7 @@ export function useImportacaoEstoque() {
       let melhorMatch: any = null;
       let melhorScore = 0;
 
-      // Tentar match por código
+      // Tentar match por código primeiro (prioridade máxima)
       if (item.codigoFornecedor) {
         const matchCodigo = itensCatalogo?.find(
           (cat) => cat.codigo === item.codigoFornecedor
@@ -96,8 +96,8 @@ export function useImportacaoEstoque() {
         item_catalogo_id: melhorMatch?.id,
         item_catalogo_nome: melhorMatch?.descricao,
         score_matching: melhorScore,
-        aceito: melhorScore >= 0.85,
-        criar_novo: melhorScore < 0.85,
+        aceito: melhorScore >= 0.85 || !!melhorMatch, // Aceitar se score alto OU se encontrou match por código
+        criar_novo: !melhorMatch, // Só criar novo se NÃO encontrou nenhum match
       };
     });
 
@@ -118,10 +118,27 @@ export function useImportacaoEstoque() {
       const novosIds: Record<string, string> = {};
 
       for (const item of itensNovos) {
+        // Gerar código único se não houver ou se já existir
+        let codigoFinal = item.codigoFornecedor || `AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Verificar se código já existe
+        if (item.codigoFornecedor) {
+          const { data: existente } = await supabase
+            .from('itens_estoque')
+            .select('id')
+            .eq('codigo', item.codigoFornecedor)
+            .single();
+          
+          // Se já existe, gerar código único
+          if (existente) {
+            codigoFinal = `${item.codigoFornecedor}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+          }
+        }
+
         const { data: novoItem, error } = await supabase
           .from('itens_estoque')
           .insert([{
-            codigo: item.codigoFornecedor || `AUTO_${Date.now()}`,
+            codigo: codigoFinal,
             descricao: item.descricao,
             categoria: 'outros',
             unidade: item.unidade,
