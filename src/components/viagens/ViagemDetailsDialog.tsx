@@ -11,6 +11,7 @@ import { DespesaDialog } from './DespesaDialog';
 import { calcularTotaisViagem } from '@/lib/validations-viagem';
 import { DriverFormLinkCard } from './DriverFormLinkCard';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface ViagemDetailsDialogProps {
   open: boolean;
@@ -38,13 +39,55 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
     const file = e.target.files?.[0];
     if (!file || !viagem) return;
 
+    // Verificar se é imagem
+    const isImage = file.type.startsWith('image/');
+    
     setUploading(true);
     try {
+      // Fazer upload do comprovante
       await uploadComprovante.mutateAsync({
         file,
         viagemId: viagem.id,
       });
+
+      // Se for imagem, processar com OpenAI
+      if (isImage) {
+        toast.info('Processando comprovante com IA...');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('viagemId', viagem.id);
+
+        const response = await fetch(
+          'https://plfpczvnqmvqpmsbjrra.supabase.co/functions/v1/processar-comprovante',
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+
+        if (response.ok) {
+          const despesaData = await response.json();
+          console.log('Dados extraídos:', despesaData);
+          
+          // Criar despesa automaticamente
+          await createDespesa.mutateAsync({
+            ...despesaData,
+            viagem_id: viagem.id,
+          });
+          
+          toast.success('Comprovante processado e despesa criada automaticamente!');
+        } else {
+          const error = await response.json();
+          console.error('Erro ao processar:', error);
+          toast.warning('Comprovante salvo, mas não foi possível extrair informações automaticamente');
+        }
+      }
+      
       e.target.value = '';
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao processar comprovante');
     } finally {
       setUploading(false);
     }

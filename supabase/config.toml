@@ -1,1 +1,7 @@
 project_id = "plfpczvnqmvqpmsbjrra"
+
+[functions.processar-documento-estoque]
+verify_jwt = false
+
+[functions.processar-comprovante]
+verify_jwt = false
