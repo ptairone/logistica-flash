@@ -20,7 +20,7 @@ const documentoSchema = {
         telefone: { type: "string" },
         email: { type: "string" }
       },
-      required: ["razao", "cnpj"],
+      required: ["razao", "cnpj", "inscricaoEstadual", "telefone", "email"],
       additionalProperties: false
     },
     documento: {
@@ -32,7 +32,7 @@ const documentoSchema = {
         serie: { type: "string" },
         emissao: { type: "string" }
       },
-      required: ["tipo", "numero"],
+      required: ["tipo", "chaveAcesso", "numero", "serie", "emissao"],
       additionalProperties: false
     },
     totais: {
@@ -44,7 +44,7 @@ const documentoSchema = {
         impostos: { type: "number" },
         valorTotal: { type: "number" }
       },
-      required: ["valorTotal"],
+      required: ["valorProdutos", "frete", "descontos", "impostos", "valorTotal"],
       additionalProperties: false
     },
     itens: {
@@ -60,7 +60,7 @@ const documentoSchema = {
           valorUnitario: { type: "number" },
           valorTotal: { type: "number" }
         },
-        required: ["descricao", "unidade", "quantidade"],
+        required: ["codigoFornecedor", "descricao", "ncm", "unidade", "quantidade", "valorUnitario", "valorTotal"],
         additionalProperties: false
       },
       minItems: 1
@@ -76,11 +76,11 @@ const documentoSchema = {
         nome: { type: "string" },
         tipo: { type: "string", enum: ["xml", "pdf", "image"] }
       },
-      required: ["tipo"],
+      required: ["nome", "tipo"],
       additionalProperties: false
     }
   },
-  required: ["fornecedor", "documento", "itens", "moeda"],
+  required: ["fornecedor", "documento", "totais", "itens", "confidences", "moeda", "origemArquivo"],
   additionalProperties: false
 };
 
