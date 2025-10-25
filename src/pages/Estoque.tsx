@@ -10,6 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -21,18 +29,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Download, AlertTriangle, Package, FileUp } from 'lucide-react';
+import { Plus, Search, Download, AlertTriangle, Package, FileUp, Settings } from 'lucide-react';
 import { useEstoque } from '@/hooks/useEstoque';
+import { useCategorias } from '@/hooks/useCategorias';
 import { ItemEstoqueDialog } from '@/components/estoque/ItemEstoqueDialog';
 import { ItemEstoqueCard } from '@/components/estoque/ItemEstoqueCard';
 import { ItemEstoqueDetailsDialog } from '@/components/estoque/ItemEstoqueDetailsDialog';
 import { ImportacaoDialog } from '@/components/estoque/ImportacaoDialog';
-import { categoriaLabels, exportarItensCSV, isItemCritico } from '@/lib/validations-estoque';
+import { CategoriasManager } from '@/components/estoque/CategoriasManager';
+import { exportarItensCSV, isItemCritico } from '@/lib/validations-estoque';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Estoque() {
   const { toast } = useToast();
   const { itens, isLoading, createItem, updateItem, deleteItem } = useEstoque();
+  const { categorias } = useCategorias();
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -133,6 +144,25 @@ export default function Estoque() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Categorias
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Gerenciar Categorias</SheetTitle>
+                  <SheetDescription>
+                    Crie e organize categorias para seus itens de estoque
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <CategoriasManager />
+                </div>
+              </SheetContent>
+            </Sheet>
             <Button variant="outline" onClick={handleExportCSV}>
               <Download className="h-4 w-4 mr-2" />
               Exportar CSV
@@ -234,9 +264,15 @@ export default function Estoque() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todas categorias</SelectItem>
-                  {Object.entries(categoriaLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
+                  {categorias.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.nome}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: cat.cor || '#6366f1' }}
+                        />
+                        {cat.nome}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -24,7 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { itemEstoqueSchema, ItemEstoqueFormData, categoriaLabels } from '@/lib/validations-estoque';
+import { itemEstoqueSchema, ItemEstoqueFormData } from '@/lib/validations-estoque';
+import { useCategorias } from '@/hooks/useCategorias';
 
 interface ItemEstoqueDialogProps {
   open: boolean;
@@ -41,12 +42,14 @@ export function ItemEstoqueDialog({
   defaultValues,
   isEdit = false,
 }: ItemEstoqueDialogProps) {
+  const { categorias } = useCategorias();
+  
   const form = useForm<ItemEstoqueFormData>({
     resolver: zodResolver(itemEstoqueSchema),
     defaultValues: defaultValues || {
       codigo: '',
       descricao: '',
-      categoria: 'outros',
+      categoria: categorias[0]?.nome || '',
       unidade: 'un',
       estoque_atual: 0,
       estoque_minimo: 0,
@@ -102,9 +105,15 @@ export function ItemEstoqueDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.entries(categoriaLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
+                        {categorias.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.nome}>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: cat.cor || '#6366f1' }}
+                              />
+                              {cat.nome}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>

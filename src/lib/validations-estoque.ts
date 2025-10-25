@@ -8,9 +8,8 @@ export const itemEstoqueSchema = z.object({
   descricao: z.string()
     .min(1, 'Descrição é obrigatória')
     .max(200, 'Descrição muito longa'),
-  categoria: z.enum(['pneu', 'fluido', 'epi', 'peca', 'outros'], {
-    errorMap: () => ({ message: 'Categoria inválida' })
-  }),
+  categoria: z.string()
+    .min(1, 'Categoria é obrigatória'),
   unidade: z.string()
     .min(1, 'Unidade é obrigatória')
     .max(10, 'Unidade muito longa'),

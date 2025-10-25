@@ -88,6 +88,33 @@ export type Database = {
           },
         ]
       }
+      categorias_estoque: {
+        Row: {
+          cor: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       despesas: {
         Row: {
           anexo_url: string | null
