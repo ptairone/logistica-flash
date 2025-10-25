@@ -4,7 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, FileText, Trash2, Plus, DollarSign } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Upload, FileText, Trash2, Plus, DollarSign, Save } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import { useDespesas, useComprovantesViagem } from '@/hooks/useViagens';
 import { DespesaDialog } from './DespesaDialog';
@@ -12,6 +13,7 @@ import { calcularTotaisViagem } from '@/lib/validations-viagem';
 import { DriverFormLinkCard } from './DriverFormLinkCard';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ViagemDetailsDialogProps {
   open: boolean;
@@ -26,6 +28,9 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
   const [deleteDespesaDialogOpen, setDeleteDespesaDialogOpen] = useState(false);
   const [despesaToDelete, setDespesaToDelete] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [adiantamento, setAdiantamento] = useState(viagem?.adiantamento || 0);
+  const [recebimentoFrete, setRecebimentoFrete] = useState(viagem?.recebimento_frete || 0);
+  const [saving, setSaving] = useState(false);
 
   if (!viagem) return null;
 
@@ -118,6 +123,29 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
     return labels[tipo] || tipo;
   };
 
+  const handleSaveFinanceiro = async () => {
+    if (!viagem) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('viagens')
+        .update({
+          adiantamento,
+          recebimento_frete: recebimentoFrete
+        })
+        .eq('id', viagem.id);
+
+      if (error) throw error;
+
+      toast.success('Informações financeiras salvas com sucesso');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar informações');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -131,8 +159,9 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
         </div>
 
         <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="info">Informações</TabsTrigger>
+              <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
               <TabsTrigger value="despesas">Despesas</TabsTrigger>
               <TabsTrigger value="comprovantes">Comprovantes</TabsTrigger>
               <TabsTrigger value="calculos">Cálculos</TabsTrigger>
@@ -204,6 +233,75 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                   <p className="text-sm mt-1">{viagem.notas}</p>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="financeiro" className="space-y-4 pt-4">
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="p-6 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="adiantamento">Adiantamento Recebido (R$)</Label>
+                      <Input
+                        id="adiantamento"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={adiantamento}
+                        onChange={(e) => setAdiantamento(Number(e.target.value))}
+                        placeholder="0,00"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Valor de adiantamento que o motorista recebeu para esta viagem
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="recebimento_frete">Recebimento de Frete (R$)</Label>
+                      <Input
+                        id="recebimento_frete"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={recebimentoFrete}
+                        onChange={(e) => setRecebimentoFrete(Number(e.target.value))}
+                        placeholder="0,00"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Valor de frete que o motorista recebeu diretamente do cliente
+                      </p>
+                    </div>
+
+                    <Button 
+                      onClick={handleSaveFinanceiro} 
+                      disabled={saving}
+                      className="w-full"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {saving ? 'Salvando...' : 'Salvar Informações'}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-muted-foreground">Adiantamento</Label>
+                      <p className="text-xl font-bold text-amber-600 mt-1">
+                        R$ {adiantamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-muted-foreground">Recebimento de Frete</Label>
+                      <p className="text-xl font-bold text-primary mt-1">
+                        R$ {recebimentoFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="despesas" className="space-y-4 pt-4">
