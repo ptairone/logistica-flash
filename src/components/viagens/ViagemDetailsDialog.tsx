@@ -4,16 +4,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Upload, FileText, Trash2, Plus, DollarSign, Save } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, DollarSign, Banknote, TrendingUp } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import { useDespesas, useComprovantesViagem } from '@/hooks/useViagens';
+import { useTransacoesViagem } from '@/hooks/useTransacoesViagem';
 import { DespesaDialog } from './DespesaDialog';
+import { TransacaoDialog } from './TransacaoDialog';
 import { calcularTotaisViagem } from '@/lib/validations-viagem';
 import { DriverFormLinkCard } from './DriverFormLinkCard';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ViagemDetailsDialogProps {
   open: boolean;
@@ -24,17 +24,18 @@ interface ViagemDetailsDialogProps {
 export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetailsDialogProps) {
   const { despesas, createDespesa, deleteDespesa } = useDespesas(viagem?.id);
   const { comprovantes, uploadComprovante } = useComprovantesViagem(viagem?.id);
+  const { transacoes, createTransacao, deleteTransacao, totais: totaisTransacoes } = useTransacoesViagem(viagem?.id);
   const [despesaDialogOpen, setDespesaDialogOpen] = useState(false);
+  const [transacaoDialogOpen, setTransacaoDialogOpen] = useState(false);
   const [deleteDespesaDialogOpen, setDeleteDespesaDialogOpen] = useState(false);
+  const [deleteTransacaoDialogOpen, setDeleteTransacaoDialogOpen] = useState(false);
   const [despesaToDelete, setDespesaToDelete] = useState<string | null>(null);
+  const [transacaoToDelete, setTransacaoToDelete] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [adiantamento, setAdiantamento] = useState(viagem?.adiantamento || 0);
-  const [recebimentoFrete, setRecebimentoFrete] = useState(viagem?.recebimento_frete || 0);
-  const [saving, setSaving] = useState(false);
 
   if (!viagem) return null;
 
-  const totais = calcularTotaisViagem(
+  const totaisViagem = calcularTotaisViagem(
     despesas,
     viagem.km_percorrido,
     viagem.frete?.valor_frete
@@ -123,26 +124,20 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
     return labels[tipo] || tipo;
   };
 
-  const handleSaveFinanceiro = async () => {
-    if (!viagem) return;
-    
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('viagens')
-        .update({
-          adiantamento,
-          recebimento_frete: recebimentoFrete
-        })
-        .eq('id', viagem.id);
+  const getTipoTransacaoLabel = (tipo: string) => {
+    return tipo === 'adiantamento' ? 'Adiantamento' : 'Recebimento de Frete';
+  };
 
-      if (error) throw error;
+  const handleDeleteTransacao = (id: string) => {
+    setTransacaoToDelete(id);
+    setDeleteTransacaoDialogOpen(true);
+  };
 
-      toast.success('Informações financeiras salvas com sucesso');
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao salvar informações');
-    } finally {
-      setSaving(false);
+  const confirmDeleteTransacao = () => {
+    if (transacaoToDelete) {
+      deleteTransacao.mutate(transacaoToDelete);
+      setDeleteTransacaoDialogOpen(false);
+      setTransacaoToDelete(null);
     }
   };
 
@@ -236,77 +231,90 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
             </TabsContent>
 
             <TabsContent value="financeiro" className="space-y-4 pt-4">
-              <div className="space-y-4">
-                <Card>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="adiantamento">Adiantamento Recebido (R$)</Label>
-                      <Input
-                        id="adiantamento"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={adiantamento}
-                        onChange={(e) => setAdiantamento(Number(e.target.value))}
-                        placeholder="0,00"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Valor de adiantamento que o motorista recebeu para esta viagem
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="recebimento_frete">Recebimento de Frete (R$)</Label>
-                      <Input
-                        id="recebimento_frete"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={recebimentoFrete}
-                        onChange={(e) => setRecebimentoFrete(Number(e.target.value))}
-                        placeholder="0,00"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        Valor de frete que o motorista recebeu diretamente do cliente
-                      </p>
-                    </div>
-
-                    <Button 
-                      onClick={handleSaveFinanceiro} 
-                      disabled={saving}
-                      className="w-full"
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {saving ? 'Salvando...' : 'Salvar Informações'}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <div className="grid grid-cols-2 gap-4">
+              <div className="flex justify-between items-center">
+                <div className="grid grid-cols-2 gap-4 flex-1 mr-4">
                   <Card>
                     <CardContent className="p-4">
-                      <Label className="text-muted-foreground">Adiantamento</Label>
-                      <p className="text-xl font-bold text-amber-600 mt-1">
-                        R$ {adiantamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      <div className="flex items-center gap-2">
+                        <Banknote className="h-5 w-5 text-amber-600" />
+                        <Label className="text-muted-foreground">Total Adiantamentos</Label>
+                      </div>
+                      <p className="text-2xl font-bold text-amber-600 mt-1">
+                        R$ {totaisTransacoes.adiantamentos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </CardContent>
                   </Card>
 
                   <Card>
                     <CardContent className="p-4">
-                      <Label className="text-muted-foreground">Recebimento de Frete</Label>
-                      <p className="text-xl font-bold text-primary mt-1">
-                        R$ {recebimentoFrete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                        <Label className="text-muted-foreground">Total Recebimentos</Label>
+                      </div>
+                      <p className="text-2xl font-bold text-primary mt-1">
+                        R$ {totaisTransacoes.recebimentos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </CardContent>
                   </Card>
                 </div>
+                
+                <Button onClick={() => setTransacaoDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                {transacoes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Nenhuma transação registrada
+                  </p>
+                ) : (
+                  transacoes.map((transacao) => (
+                    <Card key={transacao.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            {transacao.tipo === 'adiantamento' ? (
+                              <Banknote className="h-5 w-5 text-amber-600 mt-0.5" />
+                            ) : (
+                              <TrendingUp className="h-5 w-5 text-primary mt-0.5" />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="font-medium">{getTipoTransacaoLabel(transacao.tipo)}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {formatDateBR(transacao.data)}
+                                  </p>
+                                </div>
+                                <p className={`font-medium ${transacao.tipo === 'adiantamento' ? 'text-amber-600' : 'text-primary'}`}>
+                                  R$ {Number(transacao.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              </div>
+                              {transacao.descricao && (
+                                <p className="text-sm mt-2 text-muted-foreground">{transacao.descricao}</p>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteTransacao(transacao.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="despesas" className="space-y-4 pt-4">
               <div className="flex justify-between items-center">
-                <h3 className="font-semibold">Total: R$ {totais.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+                <h3 className="font-semibold">Total: R$ {totaisViagem.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                 <Button onClick={() => setDespesaDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Despesa
@@ -423,7 +431,7 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                   <CardContent className="p-4">
                     <Label className="text-muted-foreground">Total de Despesas</Label>
                     <p className="text-2xl font-bold text-destructive mt-1">
-                      R$ {totais.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {totaisViagem.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </CardContent>
                 </Card>
@@ -432,7 +440,7 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                   <CardContent className="p-4">
                     <Label className="text-muted-foreground">Receita do Frete</Label>
                     <p className="text-2xl font-bold text-primary mt-1">
-                      R$ {totais.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {totaisViagem.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </CardContent>
                 </Card>
@@ -440,8 +448,8 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                 <Card>
                   <CardContent className="p-4">
                     <Label className="text-muted-foreground">Margem</Label>
-                    <p className={`text-2xl font-bold mt-1 ${totais.margem >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                      R$ {totais.margem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    <p className={`text-2xl font-bold mt-1 ${totaisViagem.margem >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                      R$ {totaisViagem.margem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </CardContent>
                 </Card>
@@ -450,7 +458,7 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                   <CardContent className="p-4">
                     <Label className="text-muted-foreground">Custo por KM</Label>
                     <p className="text-2xl font-bold mt-1">
-                      R$ {totais.custoKm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {totaisViagem.custoKm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                   </CardContent>
                 </Card>
@@ -468,6 +476,20 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
         isLoading={createDespesa.isPending}
       />
 
+      <TransacaoDialog
+        open={transacaoDialogOpen}
+        onOpenChange={setTransacaoDialogOpen}
+        onSubmit={(data) => createTransacao.mutate({ 
+          tipo: data.tipo,
+          valor: data.valor,
+          data: data.data,
+          descricao: data.descricao,
+          viagem_id: viagem.id 
+        })}
+        viagemId={viagem.id}
+        isLoading={createTransacao.isPending}
+      />
+
       <AlertDialog open={deleteDespesaDialogOpen} onOpenChange={setDeleteDespesaDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -479,6 +501,21 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteDespesa}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteTransacaoDialogOpen} onOpenChange={setDeleteTransacaoDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTransacao}>Excluir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

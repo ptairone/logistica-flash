@@ -536,6 +536,44 @@ export type Database = {
         }
         Relationships: []
       }
+      transacoes_viagem: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string | null
+          id: string
+          tipo: string
+          valor: number
+          viagem_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          tipo: string
+          valor: number
+          viagem_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+          tipo?: string
+          valor?: number
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacoes_viagem_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -632,7 +670,6 @@ export type Database = {
       viagens: {
         Row: {
           acerto_id: string | null
-          adiantamento: number | null
           chegada_foto_url: string | null
           codigo: string
           created_at: string
@@ -655,7 +692,6 @@ export type Database = {
           origem: string
           origem_cep: string | null
           partida_foto_url: string | null
-          recebimento_frete: number | null
           status: Database["public"]["Enums"]["status_viagem"] | null
           ultimo_acesso_em: string | null
           updated_at: string
@@ -663,7 +699,6 @@ export type Database = {
         }
         Insert: {
           acerto_id?: string | null
-          adiantamento?: number | null
           chegada_foto_url?: string | null
           codigo: string
           created_at?: string
@@ -686,7 +721,6 @@ export type Database = {
           origem: string
           origem_cep?: string | null
           partida_foto_url?: string | null
-          recebimento_frete?: number | null
           status?: Database["public"]["Enums"]["status_viagem"] | null
           ultimo_acesso_em?: string | null
           updated_at?: string
@@ -694,7 +728,6 @@ export type Database = {
         }
         Update: {
           acerto_id?: string | null
-          adiantamento?: number | null
           chegada_foto_url?: string | null
           codigo?: string
           created_at?: string
@@ -717,7 +750,6 @@ export type Database = {
           origem?: string
           origem_cep?: string | null
           partida_foto_url?: string | null
-          recebimento_frete?: number | null
           status?: Database["public"]["Enums"]["status_viagem"] | null
           ultimo_acesso_em?: string | null
           updated_at?: string
