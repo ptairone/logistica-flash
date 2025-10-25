@@ -22,6 +22,10 @@ import { Upload, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-re
 import { useImportacaoEstoque } from '@/hooks/useImportacaoEstoque';
 import { validarTotais, validarCNPJ } from '@/lib/validations-importacao';
 import { useToast } from '@/hooks/use-toast';
+import * as pdfjsLib from 'pdfjs-dist';
+// @ts-ignore - Vite resolves ?url to string
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface ImportacaoDialogProps {
   open: boolean;
@@ -63,22 +67,51 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
   const handleProcessar = async () => {
     if (!arquivo) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      
+    try {
+      let fileToSend = arquivo;
+      let base64ToSend = '';
+      let typeToSend = arquivo.type;
+      let nameToSend = arquivo.name;
+
+      if ((arquivo.type === 'application/pdf') || /\.pdf$/i.test(arquivo.name)) {
+        // Converter primeira página do PDF para imagem PNG
+        const arrayBuffer = await arquivo.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas não suportado');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport }).promise;
+        const dataUrl = canvas.toDataURL('image/png');
+        base64ToSend = dataUrl;
+        typeToSend = 'image/png';
+        nameToSend = arquivo.name.replace(/\.pdf$/i, '.png');
+      } else {
+        // Ler arquivo (XML ou imagem)
+        base64ToSend = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(arquivo);
+        });
+      }
+
       processarArquivo.mutate(
         {
-          file: base64,
-          fileName: arquivo.name,
-          fileType: arquivo.type,
+          file: base64ToSend,
+          fileName: nameToSend,
+          fileType: typeToSend,
         },
         {
           onSuccess: () => setPasso(2),
         }
       );
-    };
-    reader.readAsDataURL(arquivo);
+    } catch (err: any) {
+      toast({ title: 'Erro ao processar documento', description: err.message, variant: 'destructive' });
+    }
   };
 
   const handleToggleItem = (id: string) => {

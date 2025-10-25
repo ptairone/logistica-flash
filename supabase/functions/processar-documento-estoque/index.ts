@@ -20,7 +20,8 @@ const documentoSchema = {
         telefone: { type: "string" },
         email: { type: "string" }
       },
-      required: ["razao", "cnpj"]
+      required: ["razao", "cnpj"],
+      additionalProperties: false
     },
     documento: {
       type: "object",
@@ -31,7 +32,8 @@ const documentoSchema = {
         serie: { type: "string" },
         emissao: { type: "string" }
       },
-      required: ["tipo", "numero"]
+      required: ["tipo", "numero"],
+      additionalProperties: false
     },
     totais: {
       type: "object",
@@ -42,7 +44,8 @@ const documentoSchema = {
         impostos: { type: "number" },
         valorTotal: { type: "number" }
       },
-      required: ["valorTotal"]
+      required: ["valorTotal"],
+      additionalProperties: false
     },
     itens: {
       type: "array",
@@ -57,7 +60,8 @@ const documentoSchema = {
           valorUnitario: { type: "number" },
           valorTotal: { type: "number" }
         },
-        required: ["descricao", "unidade", "quantidade"]
+        required: ["descricao", "unidade", "quantidade"],
+        additionalProperties: false
       },
       minItems: 1
     },
@@ -70,9 +74,10 @@ const documentoSchema = {
       type: "object",
       properties: {
         nome: { type: "string" },
-        tipo: { type: "string", enum: ["xml", "pdf"] }
+        tipo: { type: "string", enum: ["xml", "pdf", "image"] }
       },
-      required: ["tipo"]
+      required: ["tipo"],
+      additionalProperties: false
     }
   },
   required: ["fornecedor", "documento", "itens", "moeda"],
@@ -157,108 +162,19 @@ async function processarXML(xmlContent: string, fileName: string) {
   }
 }
 
-async function processarPDF(base64Content: string, fileName: string) {
+async function processarPDF(_base64Content: string, fileName: string) {
   console.log("Processando PDF com IA:", fileName);
+  throw new Error("PDF não é suportado diretamente pela IA de visão. Converta a primeira página em imagem (PNG/JPEG) e envie-a para processamento.");
+}
+
+async function processarImagem(imageBase64: string, mime: string, fileName: string) {
+  console.log("Processando IMAGEM com IA:", fileName);
 
   if (!OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY não configurada");
   }
 
   try {
-    // Converter PDF para PNG usando pdf-to-png API
-    const pdfBytes = Uint8Array.from(atob(base64Content), c => c.charCodeAt(0));
-    
-    // Renderizar primeira página do PDF como PNG usando canvas
-    const pdfToImageResponse = await fetch("https://api.cloudconvert.com/v2/convert", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        input: {
-          base64: base64Content,
-          filename: fileName
-        },
-        output_format: "png",
-        pages: "1" // Processar apenas primeira página
-      })
-    });
-
-    if (!pdfToImageResponse.ok) {
-      // Se falhar conversão, tentar abordagem alternativa: extrair texto do PDF
-      console.log("Não foi possível converter PDF em imagem, tentando extração de texto...");
-      
-      // Para PDFs, vamos usar uma abordagem de extração de texto direto
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "system",
-              content: `Você é um assistente especializado em extrair dados de documentos fiscais (NF-e, DANFE, faturas).
-Extraia todas as informações seguindo EXATAMENTE o schema fornecido.
-Para campos que não conseguir identificar, use valores vazios ou zero conforme o tipo.
-Sempre forneça um objeto "confidences" com scores de 0 a 1 para cada seção extraída, indicando sua confiança na extração.
-
-IMPORTANTE: Este é um PDF de nota fiscal. Extraia todas as informações visíveis no documento, incluindo:
-- Dados do fornecedor (razão social, CNPJ, IE, contatos)
-- Dados do documento (tipo, número, série, chave de acesso, data de emissão)
-- Todos os itens/produtos listados
-- Valores totais (produtos, frete, descontos, impostos, total geral)`
-            },
-            {
-              role: "user",
-              content: `Analise este PDF de nota fiscal e extraia os dados conforme o schema. 
-              
-O PDF está em base64. Faça uma análise detalhada do conteúdo e extraia:
-1. Informações do fornecedor
-2. Dados do documento fiscal
-3. Lista completa de itens/produtos
-4. Valores e totais
-
-Retorne os dados no formato JSON especificado.`
-            }
-          ],
-          response_format: {
-            type: "json_schema",
-            json_schema: {
-              name: "documento_fiscal",
-              strict: true,
-              schema: documentoSchema
-            }
-          }
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Erro da API OpenAI:", response.status, errorText);
-        throw new Error(`Erro da API OpenAI: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("Resposta da OpenAI:", JSON.stringify(data, null, 2));
-
-      const extractedData = JSON.parse(data.choices[0].message.content);
-      
-      return {
-        ...extractedData,
-        origemArquivo: {
-          nome: fileName,
-          tipo: "pdf"
-        }
-      };
-    }
-
-    const imageData = await pdfToImageResponse.json();
-    const imageBase64 = imageData.output.base64;
-
-    // Processar a imagem com OpenAI Vision
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -278,16 +194,8 @@ Sempre forneça um objeto "confidences" com scores de 0 a 1 para cada seção ex
           {
             role: "user",
             content: [
-              {
-                type: "text",
-                text: "Extraia os dados deste documento fiscal seguindo o schema fornecido. Inclua todos os itens encontrados."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/png;base64,${imageBase64}`
-                }
-              }
+              { type: "text", text: "Extraia os dados deste documento fiscal seguindo o schema fornecido. Inclua todos os itens encontrados." },
+              { type: "image_url", image_url: { url: `data:${mime};base64,${imageBase64}` } }
             ]
           }
         ],
@@ -317,12 +225,12 @@ Sempre forneça um objeto "confidences" com scores de 0 a 1 para cada seção ex
       ...extractedData,
       origemArquivo: {
         nome: fileName,
-        tipo: "pdf"
+        tipo: "image"
       }
     };
   } catch (error: any) {
-    console.error("Erro ao processar PDF:", error);
-    throw new Error(`Erro ao processar PDF: ${error?.message || 'Erro desconhecido'}`);
+    console.error("Erro ao processar imagem:", error);
+    throw new Error(`Erro ao processar imagem: ${error?.message || 'Erro desconhecido'}`);
   }
 }
 
@@ -343,9 +251,13 @@ serve(async (req) => {
       const xmlContent = atob(file.split(',')[1] || file);
       resultado = await processarXML(xmlContent, fileName);
     } else if (fileType === "application/pdf" || fileName.toLowerCase().endsWith('.pdf')) {
-      // Processar PDF com IA
-      const base64Content = file.split(',')[1] || file;
-      resultado = await processarPDF(base64Content, fileName);
+      // PDF não suportado diretamente: retorne erro claro
+      throw new Error("PDF não é suportado diretamente. Converta a primeira página em imagem (PNG/JPEG) e reenvie.");
+    } else if ((fileType && fileType.startsWith('image/')) || (typeof file === 'string' && file.startsWith('data:image/'))) {
+      // Processar imagem com IA
+      const base64Image = (typeof file === 'string' ? file.split(',')[1] : null) || file;
+      const mime = fileType || (typeof file === 'string' ? file.slice(5, file.indexOf(';')) : 'image/png');
+      resultado = await processarImagem(base64Image, mime, fileName);
     } else {
       throw new Error(`Tipo de arquivo não suportado: ${fileType}`);
     }
