@@ -165,6 +165,100 @@ async function processarPDF(base64Content: string, fileName: string) {
   }
 
   try {
+    // Converter PDF para PNG usando pdf-to-png API
+    const pdfBytes = Uint8Array.from(atob(base64Content), c => c.charCodeAt(0));
+    
+    // Renderizar primeira página do PDF como PNG usando canvas
+    const pdfToImageResponse = await fetch("https://api.cloudconvert.com/v2/convert", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        input: {
+          base64: base64Content,
+          filename: fileName
+        },
+        output_format: "png",
+        pages: "1" // Processar apenas primeira página
+      })
+    });
+
+    if (!pdfToImageResponse.ok) {
+      // Se falhar conversão, tentar abordagem alternativa: extrair texto do PDF
+      console.log("Não foi possível converter PDF em imagem, tentando extração de texto...");
+      
+      // Para PDFs, vamos usar uma abordagem de extração de texto direto
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: `Você é um assistente especializado em extrair dados de documentos fiscais (NF-e, DANFE, faturas).
+Extraia todas as informações seguindo EXATAMENTE o schema fornecido.
+Para campos que não conseguir identificar, use valores vazios ou zero conforme o tipo.
+Sempre forneça um objeto "confidences" com scores de 0 a 1 para cada seção extraída, indicando sua confiança na extração.
+
+IMPORTANTE: Este é um PDF de nota fiscal. Extraia todas as informações visíveis no documento, incluindo:
+- Dados do fornecedor (razão social, CNPJ, IE, contatos)
+- Dados do documento (tipo, número, série, chave de acesso, data de emissão)
+- Todos os itens/produtos listados
+- Valores totais (produtos, frete, descontos, impostos, total geral)`
+            },
+            {
+              role: "user",
+              content: `Analise este PDF de nota fiscal e extraia os dados conforme o schema. 
+              
+O PDF está em base64. Faça uma análise detalhada do conteúdo e extraia:
+1. Informações do fornecedor
+2. Dados do documento fiscal
+3. Lista completa de itens/produtos
+4. Valores e totais
+
+Retorne os dados no formato JSON especificado.`
+            }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "documento_fiscal",
+              strict: true,
+              schema: documentoSchema
+            }
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Erro da API OpenAI:", response.status, errorText);
+        throw new Error(`Erro da API OpenAI: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("Resposta da OpenAI:", JSON.stringify(data, null, 2));
+
+      const extractedData = JSON.parse(data.choices[0].message.content);
+      
+      return {
+        ...extractedData,
+        origemArquivo: {
+          nome: fileName,
+          tipo: "pdf"
+        }
+      };
+    }
+
+    const imageData = await pdfToImageResponse.json();
+    const imageBase64 = imageData.output.base64;
+
+    // Processar a imagem com OpenAI Vision
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -191,7 +285,7 @@ Sempre forneça um objeto "confidences" com scores de 0 a 1 para cada seção ex
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:application/pdf;base64,${base64Content}`
+                  url: `data:image/png;base64,${imageBase64}`
                 }
               }
             ]
