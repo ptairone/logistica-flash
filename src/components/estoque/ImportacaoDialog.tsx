@@ -22,10 +22,6 @@ import { Upload, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-re
 import { useImportacaoEstoque } from '@/hooks/useImportacaoEstoque';
 import { validarTotais, validarCNPJ } from '@/lib/validations-importacao';
 import { useToast } from '@/hooks/use-toast';
-import * as pdfjsLib from 'pdfjs-dist';
-// @ts-ignore - Vite resolves ?url to string
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface ImportacaoDialogProps {
   open: boolean;
@@ -51,11 +47,11 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ['application/xml', 'text/xml', 'application/pdf'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(xml|pdf)$/i)) {
+    const validTypes = ['application/xml', 'text/xml', 'image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xml|png|jpe?g)$/i)) {
       toast({
         title: 'Tipo de arquivo inválido',
-        description: 'Por favor, envie apenas arquivos XML ou PDF.',
+        description: 'Por favor, envie apenas arquivos XML (NF-e) ou imagens PNG/JPEG (DANFE/Nota Fiscal).',
         variant: 'destructive',
       });
       return;
@@ -67,51 +63,22 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
   const handleProcessar = async () => {
     if (!arquivo) return;
 
-    try {
-      let fileToSend = arquivo;
-      let base64ToSend = '';
-      let typeToSend = arquivo.type;
-      let nameToSend = arquivo.name;
-
-      if ((arquivo.type === 'application/pdf') || /\.pdf$/i.test(arquivo.name)) {
-        // Converter primeira página do PDF para imagem PNG
-        const arrayBuffer = await arquivo.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 2 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Canvas não suportado');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: context, viewport }).promise;
-        const dataUrl = canvas.toDataURL('image/png');
-        base64ToSend = dataUrl;
-        typeToSend = 'image/png';
-        nameToSend = arquivo.name.replace(/\.pdf$/i, '.png');
-      } else {
-        // Ler arquivo (XML ou imagem)
-        base64ToSend = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(arquivo);
-        });
-      }
-
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      
       processarArquivo.mutate(
         {
-          file: base64ToSend,
-          fileName: nameToSend,
-          fileType: typeToSend,
+          file: base64,
+          fileName: arquivo.name,
+          fileType: arquivo.type,
         },
         {
           onSuccess: () => setPasso(2),
         }
       );
-    } catch (err: any) {
-      toast({ title: 'Erro ao processar documento', description: err.message, variant: 'destructive' });
-    }
+    };
+    reader.readAsDataURL(arquivo);
   };
 
   const handleToggleItem = (id: string) => {
@@ -166,7 +133,7 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
               </p>
               <input
                 type="file"
-                accept=".xml,.pdf"
+                accept=".xml,.png,.jpg,.jpeg,image/png,image/jpeg"
                 onChange={handleFileUpload}
                 className="hidden"
                 id="file-upload"
@@ -177,7 +144,7 @@ export function ImportacaoDialog({ open, onOpenChange }: ImportacaoDialogProps) 
                 </Button>
               </label>
               <p className="text-xs text-muted-foreground mt-2">
-                Tipos aceitos: XML (NF-e) ou PDF (DANFE, faturas)
+                Tipos aceitos: XML (NF-e) ou imagens PNG/JPEG (DANFE, faturas)
               </p>
             </div>
 

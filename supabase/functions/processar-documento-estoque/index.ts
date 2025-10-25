@@ -162,10 +162,6 @@ async function processarXML(xmlContent: string, fileName: string) {
   }
 }
 
-async function processarPDF(_base64Content: string, fileName: string) {
-  console.log("Processando PDF com IA:", fileName);
-  throw new Error("PDF não é suportado diretamente pela IA de visão. Converta a primeira página em imagem (PNG/JPEG) e envie-a para processamento.");
-}
 
 async function processarImagem(imageBase64: string, mime: string, fileName: string) {
   console.log("Processando IMAGEM com IA:", fileName);
@@ -250,16 +246,13 @@ serve(async (req) => {
       // Processar XML
       const xmlContent = atob(file.split(',')[1] || file);
       resultado = await processarXML(xmlContent, fileName);
-    } else if (fileType === "application/pdf" || fileName.toLowerCase().endsWith('.pdf')) {
-      // PDF não suportado diretamente: retorne erro claro
-      throw new Error("PDF não é suportado diretamente. Converta a primeira página em imagem (PNG/JPEG) e reenvie.");
     } else if ((fileType && fileType.startsWith('image/')) || (typeof file === 'string' && file.startsWith('data:image/'))) {
       // Processar imagem com IA
       const base64Image = (typeof file === 'string' ? file.split(',')[1] : null) || file;
       const mime = fileType || (typeof file === 'string' ? file.slice(5, file.indexOf(';')) : 'image/png');
       resultado = await processarImagem(base64Image, mime, fileName);
     } else {
-      throw new Error(`Tipo de arquivo não suportado: ${fileType}`);
+      throw new Error(`Tipo de arquivo não suportado: ${fileType}. Envie XML (NF-e) ou imagem PNG/JPEG (DANFE/Nota Fiscal).`);
     }
 
     console.log("Processamento concluído com sucesso");
