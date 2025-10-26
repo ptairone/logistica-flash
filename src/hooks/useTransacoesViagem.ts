@@ -7,6 +7,7 @@ export interface TransacaoFormData {
   valor: number;
   data: string;
   descricao?: string;
+  forma_pagamento?: string;
 }
 
 export interface TransacaoCreateData extends TransacaoFormData {
@@ -94,8 +95,14 @@ export function useTransacoesViagem(viagemId?: string) {
       .reduce((acc, t) => acc + Number(t.valor), 0) || 0,
   };
 
+  // Separar transações por tipo
+  const adiantamentos = transacoesQuery.data?.filter(t => t.tipo === 'adiantamento') || [];
+  const recebimentos = transacoesQuery.data?.filter(t => t.tipo === 'recebimento_frete') || [];
+
   return {
     transacoes: transacoesQuery.data ?? [],
+    adiantamentos,
+    recebimentos,
     isLoading: transacoesQuery.isLoading,
     createTransacao,
     deleteTransacao,

@@ -571,6 +571,7 @@ export type Database = {
           created_at: string
           data: string
           descricao: string | null
+          forma_pagamento: string | null
           id: string
           tipo: string
           valor: number
@@ -580,6 +581,7 @@ export type Database = {
           created_at?: string
           data?: string
           descricao?: string | null
+          forma_pagamento?: string | null
           id?: string
           tipo: string
           valor: number
@@ -589,6 +591,7 @@ export type Database = {
           created_at?: string
           data?: string
           descricao?: string | null
+          forma_pagamento?: string | null
           id?: string
           tipo?: string
           valor?: number

@@ -74,10 +74,11 @@ export default function AdicionarDespesa() {
             valor: dadosExtraidos?.valor || 0,
             data: dadosExtraidos?.data || new Date().toISOString(),
             descricao: dadosExtraidos?.descricao || `${tipo} via comprovante`,
+            forma_pagamento: dadosExtraidos?.forma_pagamento || (tipo === 'recebimento_frete' ? 'dinheiro' : null),
           });
 
         if (error) throw error;
-        toast.success(`${tipo === 'adiantamento' ? 'Adiantamento' : 'Recebimento'} adicionado com sucesso!`);
+        toast.success(`${tipo === 'adiantamento' ? 'Adiantamento' : 'Recebimento de Frete'} adicionado com sucesso!`);
       } else {
         const { error } = await supabase
           .from('despesas')
