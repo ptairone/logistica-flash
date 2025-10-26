@@ -17,6 +17,7 @@ import {
 import { calcularKPIsMotorista } from '@/lib/validations-motorista';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CriarLoginDialog } from './CriarLoginDialog';
+import { AlterarSenhaDialog } from './AlterarSenhaDialog';
 
 interface MotoristaDetailsDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
   const [tipoDocumento, setTipoDocumento] = useState('');
   const [uploading, setUploading] = useState(false);
   const [showCriarLogin, setShowCriarLogin] = useState(false);
+  const [showAlterarSenha, setShowAlterarSenha] = useState(false);
 
   const { data: viagens = [], isLoading: loadingViagens } = useViagensMotorista(
     motorista?.id,
@@ -124,13 +126,20 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
             <div className="border rounded-lg p-4 mt-4">
               <h3 className="font-semibold mb-3">Acesso ao Sistema</h3>
               {motorista.user_id ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Badge variant="default">✓ Login Ativo</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Email de acesso: <strong>{motorista.email}</strong>
                   </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowAlterarSenha(true)}
+                  >
+                    Alterar Senha
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -437,6 +446,12 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
         <CriarLoginDialog
           open={showCriarLogin}
           onOpenChange={setShowCriarLogin}
+          motorista={motorista}
+        />
+
+        <AlterarSenhaDialog
+          open={showAlterarSenha}
+          onOpenChange={setShowAlterarSenha}
           motorista={motorista}
         />
       </DialogContent>
