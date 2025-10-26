@@ -15,6 +15,9 @@ import AcertoCompleto from "./pages/AcertoCompleto";
 import Estoque from "./pages/Estoque";
 import Relatorios from "./pages/Relatorios";
 import DriverForm from "./pages/DriverForm";
+import MotoristaDashboard from "./pages/motorista/Dashboard";
+import ViagemMotorista from "./pages/motorista/ViagemMotorista";
+import AdicionarDespesa from "./pages/motorista/AdicionarDespesa";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +32,33 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />
+            
+            {/* Rotas do Motorista */}
+            <Route
+              path="/motorista/dashboard"
+              element={
+                <ProtectedRoute requiredRoles={['motorista']}>
+                  <MotoristaDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/motorista/viagem/:id"
+              element={
+                <ProtectedRoute requiredRoles={['motorista']}>
+                  <ViagemMotorista />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/motorista/viagem/:id/adicionar-despesa"
+              element={
+                <ProtectedRoute requiredRoles={['motorista']}>
+                  <AdicionarDespesa />
+                </ProtectedRoute>
+              }
+            />
+            
             <Route
               path="/dashboard"
               element={
