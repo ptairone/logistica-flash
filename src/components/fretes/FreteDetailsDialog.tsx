@@ -76,14 +76,41 @@ export function FreteDetailsDialog({ open, onOpenChange, frete }: FreteDetailsDi
 
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div>
-                <Label className="text-muted-foreground">Origem</Label>
-                <p className="font-medium">{frete.origem}</p>
-                {frete.origem_cep && <p className="text-sm text-muted-foreground">{frete.origem_cep}</p>}
+                <Label className="text-muted-foreground">Endereço de Origem</Label>
+                {frete.origem_logradouro && (
+                  <p className="text-sm">{frete.origem_logradouro}, {frete.origem_numero || 'S/N'}</p>
+                )}
+                <p className="font-medium">
+                  {frete.origem_cidade || frete.origem}
+                  {frete.origem_uf && ` - ${frete.origem_uf}`}
+                </p>
+                {frete.origem_cep && (
+                  <p className="text-sm text-muted-foreground">CEP: {frete.origem_cep}</p>
+                )}
+                {frete.origem_ponto_referencia && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ref: {frete.origem_ponto_referencia}
+                  </p>
+                )}
               </div>
+              
               <div>
-                <Label className="text-muted-foreground">Destino</Label>
-                <p className="font-medium">{frete.destino}</p>
-                {frete.destino_cep && <p className="text-sm text-muted-foreground">{frete.destino_cep}</p>}
+                <Label className="text-muted-foreground">Endereço de Destino</Label>
+                {frete.destino_logradouro && (
+                  <p className="text-sm">{frete.destino_logradouro}, {frete.destino_numero || 'S/N'}</p>
+                )}
+                <p className="font-medium">
+                  {frete.destino_cidade || frete.destino}
+                  {frete.destino_uf && ` - ${frete.destino_uf}`}
+                </p>
+                {frete.destino_cep && (
+                  <p className="text-sm text-muted-foreground">CEP: {frete.destino_cep}</p>
+                )}
+                {frete.destino_ponto_referencia && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ref: {frete.destino_ponto_referencia}
+                  </p>
+                )}
               </div>
             </div>
 

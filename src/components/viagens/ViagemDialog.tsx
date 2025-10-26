@@ -64,9 +64,16 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
     if (freteId && freteId !== 'none') {
       const freteSelecionado = fretes.find(f => f.id === freteId);
       if (freteSelecionado) {
-        setValue('origem', freteSelecionado.origem);
+        // Preencher com os dados detalhados se disponíveis
+        setValue('origem', freteSelecionado.origem_cidade 
+          ? `${freteSelecionado.origem_cidade}/${freteSelecionado.origem_uf}` 
+          : freteSelecionado.origem
+        );
         setValue('origem_cep', freteSelecionado.origem_cep || '');
-        setValue('destino', freteSelecionado.destino);
+        setValue('destino', freteSelecionado.destino_cidade 
+          ? `${freteSelecionado.destino_cidade}/${freteSelecionado.destino_uf}` 
+          : freteSelecionado.destino
+        );
         setValue('destino_cep', freteSelecionado.destino_cep || '');
       }
     }
@@ -193,7 +200,13 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                     <div className="flex flex-col">
                       <span className="font-medium">{f.codigo} - {f.cliente_nome}</span>
                       <span className="text-xs text-muted-foreground">
-                        {f.origem} → {f.destino} • R$ {f.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {f.origem_cidade || f.origem}
+                        {f.origem_uf && ` - ${f.origem_uf}`}
+                        {' → '}
+                        {f.destino_cidade || f.destino}
+                        {f.destino_uf && ` - ${f.destino_uf}`}
+                        {' • R$ '}
+                        {f.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   </SelectItem>

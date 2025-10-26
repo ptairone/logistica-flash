@@ -83,8 +83,14 @@ export function FreteCard({ frete, onEdit, onDelete, onViewDetails }: FreteCardP
         <div className="flex items-center gap-2 text-sm">
           <MapPin className="h-4 w-4 text-muted-foreground" />
           <div className="flex-1">
-            <p className="font-medium">{frete.origem}</p>
-            <p className="text-muted-foreground">→ {frete.destino}</p>
+            <p className="font-medium">
+              {frete.origem_cidade || frete.origem}
+              {frete.origem_uf && ` - ${frete.origem_uf}`}
+            </p>
+            <p className="text-muted-foreground">
+              → {frete.destino_cidade || frete.destino}
+              {frete.destino_uf && ` - ${frete.destino_uf}`}
+            </p>
           </div>
         </div>
 

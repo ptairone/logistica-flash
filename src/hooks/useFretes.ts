@@ -3,6 +3,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { FreteFormData } from '@/lib/validations-frete';
 import { useToast } from '@/hooks/use-toast';
 
+// Helper para auto-preencher origem e destino com cidade/UF
+const prepararDadosFrete = (data: FreteFormData | Partial<FreteFormData>) => {
+  const origem = data.origem || 
+    (data.origem_cidade && data.origem_uf 
+      ? `${data.origem_cidade}/${data.origem_uf}` 
+      : '');
+  
+  const destino = data.destino || 
+    (data.destino_cidade && data.destino_uf 
+      ? `${data.destino_cidade}/${data.destino_uf}` 
+      : '');
+
+  return {
+    ...data,
+    origem,
+    destino,
+  };
+};
+
 export function useFretes() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -22,9 +41,11 @@ export function useFretes() {
 
   const createFrete = useMutation({
     mutationFn: async (data: FreteFormData) => {
+      const dadosPreparados = prepararDadosFrete(data);
+      
       const { data: result, error } = await supabase
         .from('fretes')
-        .insert([data as any])
+        .insert([dadosPreparados as any])
         .select()
         .single();
 
@@ -49,9 +70,11 @@ export function useFretes() {
 
   const updateFrete = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<FreteFormData> }) => {
+      const dadosPreparados = prepararDadosFrete(data);
+      
       const { data: result, error } = await supabase
         .from('fretes')
-        .update(data as any)
+        .update(dadosPreparados as any)
         .eq('id', id)
         .select()
         .single();
