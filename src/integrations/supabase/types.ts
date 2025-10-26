@@ -213,11 +213,21 @@ export type Database = {
           data_entrega: string | null
           destino: string
           destino_cep: string | null
+          destino_cidade: string | null
+          destino_logradouro: string | null
+          destino_numero: string | null
+          destino_ponto_referencia: string | null
+          destino_uf: string | null
           id: string
           numero_fatura: string | null
           observacoes: string | null
           origem: string
           origem_cep: string | null
+          origem_cidade: string | null
+          origem_logradouro: string | null
+          origem_numero: string | null
+          origem_ponto_referencia: string | null
+          origem_uf: string | null
           peso: number | null
           produto: string | null
           status: Database["public"]["Enums"]["status_frete"] | null
@@ -237,11 +247,21 @@ export type Database = {
           data_entrega?: string | null
           destino: string
           destino_cep?: string | null
+          destino_cidade?: string | null
+          destino_logradouro?: string | null
+          destino_numero?: string | null
+          destino_ponto_referencia?: string | null
+          destino_uf?: string | null
           id?: string
           numero_fatura?: string | null
           observacoes?: string | null
           origem: string
           origem_cep?: string | null
+          origem_cidade?: string | null
+          origem_logradouro?: string | null
+          origem_numero?: string | null
+          origem_ponto_referencia?: string | null
+          origem_uf?: string | null
           peso?: number | null
           produto?: string | null
           status?: Database["public"]["Enums"]["status_frete"] | null
@@ -261,11 +281,21 @@ export type Database = {
           data_entrega?: string | null
           destino?: string
           destino_cep?: string | null
+          destino_cidade?: string | null
+          destino_logradouro?: string | null
+          destino_numero?: string | null
+          destino_ponto_referencia?: string | null
+          destino_uf?: string | null
           id?: string
           numero_fatura?: string | null
           observacoes?: string | null
           origem?: string
           origem_cep?: string | null
+          origem_cidade?: string | null
+          origem_logradouro?: string | null
+          origem_numero?: string | null
+          origem_ponto_referencia?: string | null
+          origem_uf?: string | null
           peso?: number | null
           produto?: string | null
           status?: Database["public"]["Enums"]["status_frete"] | null

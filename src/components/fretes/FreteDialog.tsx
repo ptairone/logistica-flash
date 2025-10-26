@@ -103,8 +103,10 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
         if (error) throw error;
 
         if (data) {
-          const enderecoField = field === 'origem_cep' ? 'origem' : 'destino';
-          setValue(enderecoField, data.cidade);
+          const prefix = field === 'origem_cep' ? 'origem' : 'destino';
+          setValue(`${prefix}_logradouro` as any, data.logradouro || '');
+          setValue(`${prefix}_cidade` as any, data.localidade || '');
+          setValue(`${prefix}_uf` as any, data.uf || '');
           toast.success('Endereço carregado com sucesso!');
         }
       } catch (error: any) {
@@ -198,65 +200,151 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="origem">Origem *</Label>
-              <Input
-                id="origem"
-                {...register('origem')}
-                placeholder="São Paulo, SP"
-              />
-              {errors.origem && (
-                <p className="text-sm text-destructive">{errors.origem.message}</p>
-              )}
+          <div className="space-y-4 border rounded-lg p-4 bg-accent/30">
+            <h3 className="font-semibold">Endereço de Origem</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="origem_cep">CEP *</Label>
+                <div className="relative">
+                  <Input
+                    id="origem_cep"
+                    {...register('origem_cep')}
+                    onChange={handleCEPChange('origem_cep')}
+                    placeholder="01310-100"
+                    maxLength={9}
+                    disabled={buscandoCEPOrigem}
+                  />
+                  {buscandoCEPOrigem && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="origem_logradouro">Logradouro</Label>
+                <Input
+                  id="origem_logradouro"
+                  {...register('origem_logradouro')}
+                  placeholder="Av. Paulista"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="origem_numero">Número</Label>
+                <Input
+                  id="origem_numero"
+                  {...register('origem_numero')}
+                  placeholder="1000"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="origem_cidade">Cidade *</Label>
+                <Input
+                  id="origem_cidade"
+                  {...register('origem_cidade')}
+                  placeholder="São Paulo"
+                />
+                {errors.origem_cidade && (
+                  <p className="text-sm text-destructive">{errors.origem_cidade.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="origem_uf">UF</Label>
+                <Input
+                  id="origem_uf"
+                  {...register('origem_uf')}
+                  placeholder="SP"
+                  maxLength={2}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="origem_cep">CEP Origem</Label>
-              <div className="relative">
-                <Input
-                  id="origem_cep"
-                  {...register('origem_cep')}
-                  onChange={handleCEPChange('origem_cep')}
-                  placeholder="01310-100"
-                  maxLength={9}
-                  disabled={buscandoCEPOrigem}
-                />
-                {buscandoCEPOrigem && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
-              </div>
+              <Label htmlFor="origem_ponto_referencia">Ponto de Referência</Label>
+              <Input
+                id="origem_ponto_referencia"
+                {...register('origem_ponto_referencia')}
+                placeholder="Próximo ao Shopping..."
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="destino">Destino *</Label>
-              <Input
-                id="destino"
-                {...register('destino')}
-                placeholder="Rio de Janeiro, RJ"
-              />
-              {errors.destino && (
-                <p className="text-sm text-destructive">{errors.destino.message}</p>
-              )}
+          <div className="space-y-4 border rounded-lg p-4 bg-accent/30">
+            <h3 className="font-semibold">Endereço de Destino</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="destino_cep">CEP *</Label>
+                <div className="relative">
+                  <Input
+                    id="destino_cep"
+                    {...register('destino_cep')}
+                    onChange={handleCEPChange('destino_cep')}
+                    placeholder="20040-020"
+                    maxLength={9}
+                    disabled={buscandoCEPDestino}
+                  />
+                  {buscandoCEPDestino && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="destino_logradouro">Logradouro</Label>
+                <Input
+                  id="destino_logradouro"
+                  {...register('destino_logradouro')}
+                  placeholder="Rua das Flores"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="destino_numero">Número</Label>
+                <Input
+                  id="destino_numero"
+                  {...register('destino_numero')}
+                  placeholder="500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="destino_cidade">Cidade *</Label>
+                <Input
+                  id="destino_cidade"
+                  {...register('destino_cidade')}
+                  placeholder="Rio de Janeiro"
+                />
+                {errors.destino_cidade && (
+                  <p className="text-sm text-destructive">{errors.destino_cidade.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="destino_uf">UF</Label>
+                <Input
+                  id="destino_uf"
+                  {...register('destino_uf')}
+                  placeholder="RJ"
+                  maxLength={2}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="destino_cep">CEP Destino</Label>
-              <div className="relative">
-                <Input
-                  id="destino_cep"
-                  {...register('destino_cep')}
-                  onChange={handleCEPChange('destino_cep')}
-                  placeholder="20040-020"
-                  maxLength={9}
-                  disabled={buscandoCEPDestino}
-                />
-                {buscandoCEPDestino && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
-              </div>
+              <Label htmlFor="destino_ponto_referencia">Ponto de Referência</Label>
+              <Input
+                id="destino_ponto_referencia"
+                {...register('destino_ponto_referencia')}
+                placeholder="Em frente ao mercado..."
+              />
             </div>
           </div>
 

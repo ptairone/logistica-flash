@@ -72,10 +72,10 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao consultar CNPJ:', error);
     return new Response(
-      JSON.stringify({ error: 'Erro ao consultar CNPJ', details: error.message }),
+      JSON.stringify({ error: 'Erro ao consultar CNPJ', details: error?.message || 'Erro desconhecido' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
