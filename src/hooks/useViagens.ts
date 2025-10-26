@@ -353,7 +353,7 @@ export function useFretesDisponiveis() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fretes')
-        .select('id, codigo, cliente_nome, origem, destino, valor_frete')
+        .select('id, codigo, cliente_nome, origem, origem_cep, destino, destino_cep, valor_frete')
         .eq('status', 'aberto')
         .order('created_at', { ascending: false });
 

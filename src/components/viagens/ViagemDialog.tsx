@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Info } from 'lucide-react';
 import { viagemSchema, ViagemFormData, formatCEP } from '@/lib/validations-viagem';
 import { useVeiculosAtivos, useMotoristasAtivos, useFretesDisponiveis } from '@/hooks/useViagens';
 
@@ -57,9 +59,33 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
   const motoristaId = watch('motorista_id');
   const freteId = watch('frete_id');
 
+  // Auto-preencher endereços do frete quando selecionado
+  useEffect(() => {
+    if (freteId && freteId !== 'none') {
+      const freteSelecionado = fretes.find(f => f.id === freteId);
+      if (freteSelecionado) {
+        setValue('origem', freteSelecionado.origem);
+        setValue('origem_cep', freteSelecionado.origem_cep || '');
+        setValue('destino', freteSelecionado.destino);
+        setValue('destino_cep', freteSelecionado.destino_cep || '');
+      }
+    }
+  }, [freteId, fretes, setValue]);
+
+  const camposDesabilitados = !!freteId && freteId !== 'none';
+
   const handleCEPChange = (field: 'origem_cep' | 'destino_cep') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCEP(e.target.value);
     setValue(field, formatted);
+  };
+
+  const handleFreteChange = (value: string) => {
+    if (freteId && freteId !== 'none' && value === 'none') {
+      if (!confirm('Remover vínculo com frete? Os endereços precisarão ser preenchidos manualmente.')) {
+        return;
+      }
+    }
+    setValue('frete_id', value === 'none' ? undefined : value);
   };
 
   return (
@@ -155,7 +181,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
             <Label htmlFor="frete_id">Frete Vinculado (Opcional)</Label>
             <Select
               value={freteId || 'none'}
-              onValueChange={(value) => setValue('frete_id', value === 'none' ? undefined : value)}
+              onValueChange={handleFreteChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Nenhum frete vinculado" />
@@ -164,11 +190,22 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                 <SelectItem value="none">Nenhum</SelectItem>
                 {fretes.map((f) => (
                   <SelectItem key={f.id} value={f.id}>
-                    {f.codigo} - {f.cliente_nome} (R$ {f.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                    <div className="flex flex-col">
+                      <span className="font-medium">{f.codigo} - {f.cliente_nome}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {f.origem} → {f.destino} • R$ {f.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {camposDesabilitados && (
+              <Badge variant="secondary" className="mt-2">
+                <Info className="h-3 w-3 mr-1" />
+                Endereços herdados do frete
+              </Badge>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -178,6 +215,8 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                 id="origem"
                 {...register('origem')}
                 placeholder="São Paulo, SP"
+                disabled={camposDesabilitados}
+                className={camposDesabilitados ? 'bg-muted cursor-not-allowed' : ''}
               />
               {errors.origem && (
                 <p className="text-sm text-destructive">{errors.origem.message}</p>
@@ -192,6 +231,8 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                 onChange={handleCEPChange('origem_cep')}
                 placeholder="01310-100"
                 maxLength={9}
+                disabled={camposDesabilitados}
+                className={camposDesabilitados ? 'bg-muted cursor-not-allowed' : ''}
               />
             </div>
           </div>
@@ -203,6 +244,8 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                 id="destino"
                 {...register('destino')}
                 placeholder="Rio de Janeiro, RJ"
+                disabled={camposDesabilitados}
+                className={camposDesabilitados ? 'bg-muted cursor-not-allowed' : ''}
               />
               {errors.destino && (
                 <p className="text-sm text-destructive">{errors.destino.message}</p>
@@ -217,6 +260,8 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                 onChange={handleCEPChange('destino_cep')}
                 placeholder="20040-020"
                 maxLength={9}
+                disabled={camposDesabilitados}
+                className={camposDesabilitados ? 'bg-muted cursor-not-allowed' : ''}
               />
             </div>
           </div>

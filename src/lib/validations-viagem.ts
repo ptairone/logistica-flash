@@ -5,9 +5,9 @@ export const viagemSchema = z.object({
   veiculo_id: z.string().uuid('Selecione um veículo'),
   motorista_id: z.string().uuid('Selecione um motorista'),
   frete_id: z.string().uuid().optional(),
-  origem: z.string().min(1, 'Origem é obrigatória').max(255),
+  origem: z.string().optional(),
   origem_cep: z.string().optional(),
-  destino: z.string().min(1, 'Destino é obrigatório').max(255),
+  destino: z.string().optional(),
   destino_cep: z.string().optional(),
   data_saida: z.string().optional(),
   data_chegada: z.string().optional(),
@@ -15,6 +15,20 @@ export const viagemSchema = z.object({
   km_percorrido: z.number().min(0).optional(),
   status: z.enum(['planejada', 'em_andamento', 'concluida', 'cancelada']),
   notas: z.string().optional(),
+}).refine((data) => {
+  // Se não tem frete, origem e destino são obrigatórios
+  if (!data.frete_id) {
+    if (!data.origem || data.origem.trim() === '') {
+      return false;
+    }
+    if (!data.destino || data.destino.trim() === '') {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'Origem e destino são obrigatórios quando não há frete vinculado',
+  path: ['origem'],
 }).refine((data) => {
   // Se status é concluída, deve ter data de chegada
   if (data.status === 'concluida' && !data.data_chegada) {
