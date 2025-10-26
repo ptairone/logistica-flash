@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { freteSchema, FreteFormData, formatCPFCNPJ } from '@/lib/validations-frete';
 import { formatCEP } from '@/lib/validations-viagem';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 interface FreteDialogProps {
   open: boolean;
@@ -19,6 +22,10 @@ interface FreteDialogProps {
 }
 
 export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: FreteDialogProps) {
+  const [buscandoCNPJ, setBuscandoCNPJ] = useState(false);
+  const [buscandoCEPOrigem, setBuscandoCEPOrigem] = useState(false);
+  const [buscandoCEPDestino, setBuscandoCEPDestino] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -49,14 +56,64 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
 
   const status = watch('status');
 
-  const handleCPFCNPJChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCPFCNPJChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPFCNPJ(e.target.value);
     setValue('cliente_cnpj_cpf', formatted);
+
+    // Se for CNPJ completo (18 caracteres com formatação)
+    if (formatted.length === 18) {
+      setBuscandoCNPJ(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('consultar-cnpj', {
+          body: { cnpj: formatted }
+        });
+
+        if (error) throw error;
+
+        if (data) {
+          setValue('cliente_nome', data.razao_social || data.nome_fantasia);
+          if (data.telefone) {
+            setValue('cliente_contato', data.telefone);
+          }
+          toast.success('Dados do CNPJ carregados com sucesso!');
+        }
+      } catch (error: any) {
+        console.error('Erro ao buscar CNPJ:', error);
+        toast.error('Não foi possível buscar os dados do CNPJ');
+      } finally {
+        setBuscandoCNPJ(false);
+      }
+    }
   };
 
-  const handleCEPChange = (field: 'origem_cep' | 'destino_cep') => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCEPChange = (field: 'origem_cep' | 'destino_cep') => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCEP(e.target.value);
     setValue(field, formatted);
+
+    // Se CEP completo (9 caracteres com formatação)
+    if (formatted.length === 9) {
+      const setBuscando = field === 'origem_cep' ? setBuscandoCEPOrigem : setBuscandoCEPDestino;
+      setBuscando(true);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('consultar-cep', {
+          body: { cep: formatted }
+        });
+
+        if (error) throw error;
+
+        if (data) {
+          const enderecoField = field === 'origem_cep' ? 'origem' : 'destino';
+          setValue(enderecoField, data.cidade);
+          toast.success('Endereço carregado com sucesso!');
+        }
+      } catch (error: any) {
+        console.error('Erro ao buscar CEP:', error);
+        toast.error('Não foi possível buscar o endereço');
+      } finally {
+        setBuscando(false);
+      }
+    }
   };
 
   return (
@@ -113,13 +170,19 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
 
             <div className="space-y-2">
               <Label htmlFor="cliente_cnpj_cpf">CPF/CNPJ *</Label>
-              <Input
-                id="cliente_cnpj_cpf"
-                {...register('cliente_cnpj_cpf')}
-                onChange={handleCPFCNPJChange}
-                placeholder="00.000.000/0000-00"
-                maxLength={18}
-              />
+              <div className="relative">
+                <Input
+                  id="cliente_cnpj_cpf"
+                  {...register('cliente_cnpj_cpf')}
+                  onChange={handleCPFCNPJChange}
+                  placeholder="00.000.000/0000-00"
+                  maxLength={18}
+                  disabled={buscandoCNPJ}
+                />
+                {buscandoCNPJ && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
               {errors.cliente_cnpj_cpf && (
                 <p className="text-sm text-destructive">{errors.cliente_cnpj_cpf.message}</p>
               )}
@@ -150,13 +213,19 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
 
             <div className="space-y-2">
               <Label htmlFor="origem_cep">CEP Origem</Label>
-              <Input
-                id="origem_cep"
-                {...register('origem_cep')}
-                onChange={handleCEPChange('origem_cep')}
-                placeholder="01310-100"
-                maxLength={9}
-              />
+              <div className="relative">
+                <Input
+                  id="origem_cep"
+                  {...register('origem_cep')}
+                  onChange={handleCEPChange('origem_cep')}
+                  placeholder="01310-100"
+                  maxLength={9}
+                  disabled={buscandoCEPOrigem}
+                />
+                {buscandoCEPOrigem && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
             </div>
           </div>
 
@@ -175,13 +244,19 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
 
             <div className="space-y-2">
               <Label htmlFor="destino_cep">CEP Destino</Label>
-              <Input
-                id="destino_cep"
-                {...register('destino_cep')}
-                onChange={handleCEPChange('destino_cep')}
-                placeholder="20040-020"
-                maxLength={9}
-              />
+              <div className="relative">
+                <Input
+                  id="destino_cep"
+                  {...register('destino_cep')}
+                  onChange={handleCEPChange('destino_cep')}
+                  placeholder="20040-020"
+                  maxLength={9}
+                  disabled={buscandoCEPDestino}
+                />
+                {buscandoCEPDestino && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
             </div>
           </div>
 
