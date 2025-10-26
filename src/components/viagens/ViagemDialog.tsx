@@ -44,7 +44,8 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
       reset({
         ...viagem,
         km_estimado: viagem.km_estimado || undefined,
-        km_percorrido: viagem.km_percorrido || undefined,
+        km_inicial: viagem.km_inicial || undefined,
+        km_final: viagem.km_final || undefined,
         frete_id: viagem.frete_id || undefined,
       });
     } else {
@@ -302,9 +303,10 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* KM - Visibilidade conforme status */}
+          {status === 'planejada' && (
             <div className="space-y-2">
-              <Label htmlFor="km_estimado">KM Estimado</Label>
+              <Label htmlFor="km_estimado">KM Estimado (Planejamento)</Label>
               <Input
                 id="km_estimado"
                 type="number"
@@ -312,19 +314,77 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                 {...register('km_estimado', { valueAsNumber: true })}
                 placeholder="450"
               />
+              <p className="text-xs text-muted-foreground">
+                Estimativa de distância para planejamento da viagem
+              </p>
             </div>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="km_percorrido">KM Percorrido</Label>
-              <Input
-                id="km_percorrido"
-                type="number"
-                step="0.01"
-                {...register('km_percorrido', { valueAsNumber: true })}
-                placeholder="465"
-              />
+          {(status === 'em_andamento' || status === 'concluida') && (
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium">Controle de Quilometragem</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="km_inicial">KM Inicial do Veículo</Label>
+                  <Input
+                    id="km_inicial"
+                    type="number"
+                    step="0.01"
+                    {...register('km_inicial', { valueAsNumber: true })}
+                    placeholder="10000"
+                    disabled={status === 'em_andamento'}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Registrado na partida
+                  </p>
+                </div>
+
+                {status === 'concluida' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="km_final">KM Final do Veículo</Label>
+                      <Input
+                        id="km_final"
+                        type="number"
+                        step="0.01"
+                        {...register('km_final', { valueAsNumber: true })}
+                        placeholder="10450"
+                      />
+                      {errors.km_final && (
+                        <p className="text-sm text-destructive">{errors.km_final.message}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Registrado na chegada
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>KM Percorrido (Calculado)</Label>
+                      <div className="h-10 px-3 py-2 rounded-md border bg-muted flex items-center">
+                        <span className="font-medium">
+                          {(() => {
+                            const inicial = watch('km_inicial');
+                            const final = watch('km_final');
+                            if (inicial && final) {
+                              return `${(final - inicial).toLocaleString('pt-BR')} km`;
+                            }
+                            return '-';
+                          })()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Calculado automaticamente
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="notas">Notas</Label>

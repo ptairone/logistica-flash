@@ -36,9 +36,15 @@ export function useViagens() {
         codigo = gerarCodigoViagem((count || 0) + 1);
       }
 
+      // Calcular km_percorrido se tiver km_inicial e km_final
+      const dadosParaSalvar = { ...data, codigo };
+      if (dadosParaSalvar.km_inicial && dadosParaSalvar.km_final) {
+        (dadosParaSalvar as any).km_percorrido = dadosParaSalvar.km_final - dadosParaSalvar.km_inicial;
+      }
+
       const { data: result, error } = await supabase
         .from('viagens')
-        .insert([{ ...data, codigo } as any])
+        .insert([dadosParaSalvar as any])
         .select()
         .single();
 
@@ -63,9 +69,15 @@ export function useViagens() {
 
   const updateViagem = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ViagemFormData> }) => {
+      // Calcular km_percorrido se tiver km_inicial e km_final
+      const dadosParaSalvar = { ...data };
+      if (dadosParaSalvar.km_inicial && dadosParaSalvar.km_final) {
+        (dadosParaSalvar as any).km_percorrido = dadosParaSalvar.km_final - dadosParaSalvar.km_inicial;
+      }
+
       const { data: result, error } = await supabase
         .from('viagens')
-        .update(data as any)
+        .update(dadosParaSalvar as any)
         .eq('id', id)
         .select()
         .single();

@@ -12,7 +12,8 @@ export const viagemSchema = z.object({
   data_saida: z.string().optional(),
   data_chegada: z.string().optional(),
   km_estimado: z.number().min(0).optional(),
-  km_percorrido: z.number().min(0).optional(),
+  km_inicial: z.number().min(0).optional(),
+  km_final: z.number().min(0).optional(),
   status: z.enum(['planejada', 'em_andamento', 'concluida', 'cancelada']),
   notas: z.string().optional(),
 }).refine((data) => {
@@ -38,6 +39,18 @@ export const viagemSchema = z.object({
 }, {
   message: 'Viagem concluída deve ter data/hora de chegada',
   path: ['data_chegada'],
+}).refine((data) => {
+  // km_final deve ser maior que km_inicial quando ambos existirem
+  if (data.km_inicial !== undefined && data.km_final !== undefined && 
+      data.km_inicial !== null && data.km_final !== null) {
+    if (data.km_final <= data.km_inicial) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'KM final deve ser maior que KM inicial',
+  path: ['km_final'],
 });
 
 export const despesaSchema = z.object({

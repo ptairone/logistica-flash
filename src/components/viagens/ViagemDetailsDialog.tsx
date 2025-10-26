@@ -241,14 +241,30 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                   <Label className="text-muted-foreground">Data Chegada</Label>
                   <p className="font-medium">{formatDateBR(viagem.data_chegada)}</p>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">KM Estimado</Label>
-                  <p className="font-medium">{viagem.km_estimado?.toLocaleString('pt-BR') || '-'} km</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">KM Percorrido</Label>
-                  <p className="font-medium">{viagem.km_percorrido?.toLocaleString('pt-BR') || '-'} km</p>
-                </div>
+                {viagem.km_estimado && (
+                  <div>
+                    <Label className="text-muted-foreground">KM Estimado (Planejado)</Label>
+                    <p className="font-medium">{viagem.km_estimado?.toLocaleString('pt-BR')} km</p>
+                  </div>
+                )}
+                {viagem.km_inicial && (
+                  <div>
+                    <Label className="text-muted-foreground">KM Inicial</Label>
+                    <p className="font-medium">{viagem.km_inicial?.toLocaleString('pt-BR')} km</p>
+                  </div>
+                )}
+                {viagem.km_final && (
+                  <div>
+                    <Label className="text-muted-foreground">KM Final</Label>
+                    <p className="font-medium">{viagem.km_final?.toLocaleString('pt-BR')} km</p>
+                  </div>
+                )}
+                {viagem.km_percorrido && (
+                  <div>
+                    <Label className="text-muted-foreground">KM Percorrido (Calculado)</Label>
+                    <p className="font-medium text-primary">{viagem.km_percorrido?.toLocaleString('pt-BR')} km</p>
+                  </div>
+                )}
               </div>
 
               {viagem.frete && (
