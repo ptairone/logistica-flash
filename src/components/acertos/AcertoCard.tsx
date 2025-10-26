@@ -44,22 +44,22 @@ export function AcertoCard({ acerto, onEdit, onDelete, onViewDetails }: AcertoCa
               <Eye className="h-4 w-4" />
             </Button>
             {acerto.status === 'aberto' && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onEdit(acerto)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(acerto.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(acerto)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {(acerto.status === 'aberto' || acerto.status === 'fechado') && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDelete(acerto.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>
