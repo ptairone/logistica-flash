@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Info } from 'lucide-react';
 import { viagemSchema, ViagemFormData, formatCEP } from '@/lib/validations-viagem';
 import { useVeiculosAtivos, useMotoristasAtivos, useFretesDisponiveis } from '@/hooks/useViagens';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ViagemDialogProps {
   open: boolean;
@@ -24,6 +26,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
   const { data: veiculos = [] } = useVeiculosAtivos();
   const { data: motoristas = [] } = useMotoristasAtivos();
   const { data: fretes = [] } = useFretesDisponiveis();
+  const [calculandoDistancia, setCalculandoDistancia] = useState(false);
 
   const {
     register,
@@ -82,9 +85,54 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
 
   const camposDesabilitados = !!freteId && freteId !== 'none';
 
+  const calcularDistanciaAutomatica = async () => {
+    const origemCep = watch('origem_cep');
+    const destinoCep = watch('destino_cep');
+    const origem = watch('origem');
+    const destino = watch('destino');
+
+    if (!origemCep || !destinoCep || origemCep.replace(/\D/g, '').length !== 8 || destinoCep.replace(/\D/g, '').length !== 8) {
+      return;
+    }
+
+    setCalculandoDistancia(true);
+    try {
+      // Extrair cidade e UF do campo origem/destino (formato: "Cidade, UF")
+      const origemParts = origem?.split(',').map(p => p.trim()) || [];
+      const destinoParts = destino?.split(',').map(p => p.trim()) || [];
+
+      const { data, error } = await supabase.functions.invoke('calcular-distancia', {
+        body: { 
+          origem_cep: origemCep,
+          destino_cep: destinoCep,
+          origem_cidade: origemParts[0],
+          origem_uf: origemParts[1],
+          destino_cidade: destinoParts[0],
+          destino_uf: destinoParts[1],
+        }
+      });
+
+      if (error) throw error;
+
+      if (data && data.distancia_km) {
+        setValue('km_estimado', data.distancia_km);
+        toast.success(`Distância estimada: ${data.distancia_km} km`);
+      }
+    } catch (error) {
+      console.error('Erro ao calcular distância:', error);
+    } finally {
+      setCalculandoDistancia(false);
+    }
+  };
+
   const handleCEPChange = (field: 'origem_cep' | 'destino_cep') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCEP(e.target.value);
     setValue(field, formatted);
+    
+    // Calcular distância quando ambos os CEPs estiverem preenchidos
+    if (formatted.length === 9) {
+      setTimeout(() => calcularDistanciaAutomatica(), 500);
+    }
   };
 
   const handleFreteChange = (value: string) => {
@@ -306,16 +354,21 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
           {/* KM - Visibilidade conforme status */}
           {status === 'planejada' && (
             <div className="space-y-2">
-              <Label htmlFor="km_estimado">KM Estimado (Planejamento)</Label>
+              <Label htmlFor="km_estimado">
+                KM Estimado (Planejamento) {calculandoDistancia && '(calculando...)'}
+              </Label>
               <Input
                 id="km_estimado"
                 type="number"
                 step="0.01"
                 {...register('km_estimado', { valueAsNumber: true })}
                 placeholder="450"
+                disabled={calculandoDistancia}
               />
               <p className="text-xs text-muted-foreground">
-                Estimativa de distância para planejamento da viagem
+                {calculandoDistancia 
+                  ? 'Calculando distância automaticamente...' 
+                  : 'Preencha os CEPs para cálculo automático ou insira manualmente'}
               </p>
             </div>
           )}

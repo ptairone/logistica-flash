@@ -25,6 +25,7 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
   const [buscandoCNPJ, setBuscandoCNPJ] = useState(false);
   const [buscandoCEPOrigem, setBuscandoCEPOrigem] = useState(false);
   const [buscandoCEPDestino, setBuscandoCEPDestino] = useState(false);
+  const [calculandoDistancia, setCalculandoDistancia] = useState(false);
 
   const {
     register,
@@ -86,6 +87,43 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
     }
   };
 
+  const calcularDistanciaAutomatica = async () => {
+    const origemCep = watch('origem_cep');
+    const destinoCep = watch('destino_cep');
+    const origemCidade = watch('origem_cidade');
+    const origemUf = watch('origem_uf');
+    const destinoCidade = watch('destino_cidade');
+    const destinoUf = watch('destino_uf');
+
+    if (!origemCep || !destinoCep || origemCep.replace(/\D/g, '').length !== 8 || destinoCep.replace(/\D/g, '').length !== 8) {
+      return;
+    }
+
+    setCalculandoDistancia(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('calcular-distancia', {
+        body: { 
+          origem_cep: origemCep,
+          destino_cep: destinoCep,
+          origem_cidade: origemCidade,
+          origem_uf: origemUf,
+          destino_cidade: destinoCidade,
+          destino_uf: destinoUf,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data && data.distancia_km) {
+        toast.success(`Distância estimada: ${data.distancia_km} km`);
+      }
+    } catch (error) {
+      console.error('Erro ao calcular distância:', error);
+    } finally {
+      setCalculandoDistancia(false);
+    }
+  };
+
   const handleCEPChange = (field: 'origem_cep' | 'destino_cep') => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCEP(e.target.value);
     setValue(field, formatted);
@@ -108,6 +146,9 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
           setValue(`${prefix}_cidade` as any, data.localidade || '');
           setValue(`${prefix}_uf` as any, data.uf || '');
           toast.success('Endereço carregado com sucesso!');
+          
+          // Calcular distância automaticamente após preencher ambos os CEPs
+          setTimeout(() => calcularDistanciaAutomatica(), 500);
         }
       } catch (error: any) {
         console.error('Erro ao buscar CEP:', error);
