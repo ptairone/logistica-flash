@@ -15,7 +15,7 @@ import AcertoCompleto from "./pages/AcertoCompleto";
 import Estoque from "./pages/Estoque";
 import Relatorios from "./pages/Relatorios";
 import DriverForm from "./pages/DriverForm";
-import MotoristaDashboard from "./pages/motorista/Dashboard";
+import MotoristaViagens from "./pages/motorista/Viagens";
 import ViagemMotorista from "./pages/motorista/ViagemMotorista";
 import AdicionarDespesa from "./pages/motorista/AdicionarDespesa";
 import NotFound from "./pages/NotFound";
@@ -35,10 +35,10 @@ const App = () => (
             
             {/* Rotas do Motorista */}
             <Route
-              path="/motorista/dashboard"
+              path="/motorista/viagens"
               element={
                 <ProtectedRoute requiredRoles={['motorista']}>
-                  <MotoristaDashboard />
+                  <MotoristaViagens />
                 </ProtectedRoute>
               }
             />
@@ -86,7 +86,7 @@ const App = () => (
             <Route
               path="/viagens"
               element={
-                <ProtectedRoute requiredRoles={['admin', 'operacional', 'motorista']}>
+                <ProtectedRoute requiredRoles={['admin', 'operacional']}>
                   <Viagens />
                 </ProtectedRoute>
               }
@@ -102,7 +102,7 @@ const App = () => (
             <Route
               path="/acertos"
               element={
-                <ProtectedRoute requiredRoles={['admin', 'motorista', 'financeiro']}>
+                <ProtectedRoute requiredRoles={['admin', 'financeiro']}>
                   <Acertos />
                 </ProtectedRoute>
               }

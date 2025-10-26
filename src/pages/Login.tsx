@@ -14,14 +14,19 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [nome, setNome] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, hasRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
+    if (user && !authLoading) {
+      // Redirecionar motorista para sua página simplificada
+      if (hasRole('motorista') && !hasRole('admin')) {
+        navigate('/motorista/viagens');
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [user, navigate]);
+  }, [user, authLoading, hasRole, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +47,7 @@ export default function Login() {
       }
     } else {
       toast.success('Login realizado com sucesso!');
-      navigate('/dashboard');
+      // O redirecionamento será feito pelo useEffect
     }
   };
 

@@ -54,7 +54,7 @@ export default function ViagemMotorista() {
   };
 
   const handleChegadaRegistrada = () => {
-    navigate('/motorista/dashboard');
+    navigate('/motorista/viagens');
   };
 
   return (
@@ -65,7 +65,7 @@ export default function ViagemMotorista() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/motorista/dashboard')}
+            onClick={() => navigate('/motorista/viagens')}
             className="text-primary-foreground hover:bg-primary-foreground/20"
           >
             <ArrowLeft className="h-6 w-6" />
