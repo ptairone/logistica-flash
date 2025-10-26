@@ -21,7 +21,43 @@ export const motoristaSchema = z.object({
   comissao_padrao: z.number().min(0).max(100).optional(),
   status: z.enum(['ativo', 'inativo']),
   observacoes: z.string().optional(),
-});
+  criarLogin: z.boolean().optional(),
+  senha: z.string().optional(),
+  confirmarSenha: z.string().optional(),
+}).refine(
+  (data) => {
+    if (data.criarLogin) {
+      return !!data.email && data.email.length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Email é obrigatório para criar login",
+    path: ["email"],
+  }
+).refine(
+  (data) => {
+    if (data.criarLogin) {
+      return !!data.senha && data.senha.length >= 8;
+    }
+    return true;
+  },
+  {
+    message: "Senha deve ter no mínimo 8 caracteres",
+    path: ["senha"],
+  }
+).refine(
+  (data) => {
+    if (data.criarLogin) {
+      return data.senha === data.confirmarSenha;
+    }
+    return true;
+  },
+  {
+    message: "As senhas não coincidem",
+    path: ["confirmarSenha"],
+  }
+);
 
 export type MotoristaFormData = z.infer<typeof motoristaSchema>;
 

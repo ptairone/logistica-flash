@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, MapPin, DollarSign, TrendingUp, Clock } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import {
@@ -15,6 +16,7 @@ import {
 } from '@/hooks/useMotoristas';
 import { calcularKPIsMotorista } from '@/lib/validations-motorista';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CriarLoginDialog } from './CriarLoginDialog';
 
 interface MotoristaDetailsDialogProps {
   open: boolean;
@@ -27,6 +29,7 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
   const [periodoFim, setPeriodoFim] = useState('');
   const [tipoDocumento, setTipoDocumento] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [showCriarLogin, setShowCriarLogin] = useState(false);
 
   const { data: viagens = [], isLoading: loadingViagens } = useViagensMotorista(
     motorista?.id,
@@ -116,6 +119,40 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                 <Label className="text-muted-foreground">E-mail</Label>
                 <p className="font-medium">{motorista.email || '-'}</p>
               </div>
+            </div>
+
+            <div className="border rounded-lg p-4 mt-4">
+              <h3 className="font-semibold mb-3">Acesso ao Sistema</h3>
+              {motorista.user_id ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default">✓ Login Ativo</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Email de acesso: <strong>{motorista.email}</strong>
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Badge variant="secondary">Sem Acesso</Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Este motorista não possui acesso ao sistema.
+                  </p>
+                  {motorista.email ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowCriarLogin(true)}
+                    >
+                      Criar Login
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-destructive">
+                      Edite o motorista e adicione um email para criar o login.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-4 pt-4 border-t">
@@ -396,6 +433,12 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
             )}
           </TabsContent>
         </Tabs>
+
+        <CriarLoginDialog
+          open={showCriarLogin}
+          onOpenChange={setShowCriarLogin}
+          motorista={motorista}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -46,13 +46,35 @@ export function useMotoristas() {
         throw new Error('Já existe um motorista cadastrado com esta CNH');
       }
 
+      // Remover campos de senha antes de inserir
+      const { criarLogin, senha, confirmarSenha, ...motoristaData } = data;
+
       const { data: result, error } = await supabase
         .from('motoristas')
-        .insert([data as any])
+        .insert([motoristaData as any])
         .select()
         .single();
 
       if (error) throw error;
+
+      // Se solicitado criar login, chamar edge function
+      if (criarLogin && senha && data.email) {
+        const { error: loginError } = await supabase.functions.invoke('criar-usuario-motorista', {
+          body: {
+            email: data.email,
+            password: senha,
+            nome: data.nome,
+            motoristaId: result.id,
+          },
+        });
+
+        if (loginError) {
+          // Se falhar ao criar login, ainda retornar sucesso do motorista
+          console.error('Erro ao criar login:', loginError);
+          throw new Error(`Motorista criado, mas erro ao criar login: ${loginError.message}`);
+        }
+      }
+
       return result;
     },
     onSuccess: () => {
