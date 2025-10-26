@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Camera, ArrowLeft, Loader2, DollarSign, Receipt, Banknote } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { RecebimentoFreteForm } from '@/components/motorista/RecebimentoFreteForm';
 
 export default function AdicionarDespesa() {
   const { id } = useParams<{ id: string }>();
@@ -12,6 +13,8 @@ export default function AdicionarDespesa() {
   const [foto, setFoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [processando, setProcessando] = useState(false);
+  const [showRecebimentoForm, setShowRecebimentoForm] = useState(false);
+  const [dadosExtraidosRecebimento, setDadosExtraidosRecebimento] = useState<any>(null);
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -27,6 +30,43 @@ export default function AdicionarDespesa() {
       return;
     }
 
+    // Se for recebimento de frete, processar e abrir formulário
+    if (tipo === 'recebimento_frete') {
+      setProcessando(true);
+      try {
+        // Processar com OpenAI para extrair dados
+        const formData = new FormData();
+        formData.append('file', foto);
+        formData.append('viagemId', id);
+
+        const response = await fetch(
+          `https://plfpczvnqmvqpmsbjrra.supabase.co/functions/v1/processar-comprovante`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsZnBjenZucW12cXBtc2JqcnJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyOTIwMjEsImV4cCI6MjA3Njg2ODAyMX0.k0JoQvzptgBNr4pBSOQjAE9q_Mge6gVdCFd471onPBI`,
+            },
+            body: formData,
+          }
+        );
+
+        let dadosExtraidos = null;
+        if (response.ok) {
+          dadosExtraidos = await response.json();
+        }
+
+        setDadosExtraidosRecebimento(dadosExtraidos);
+        setShowRecebimentoForm(true);
+      } catch (error: any) {
+        console.error('Erro ao processar:', error);
+        toast.error('Erro ao processar comprovante');
+      } finally {
+        setProcessando(false);
+      }
+      return;
+    }
+
+    // Para adiantamento e despesa, processar normalmente
     setProcessando(true);
     try {
       // Upload para storage
@@ -65,7 +105,7 @@ export default function AdicionarDespesa() {
       }
 
       // Criar registro automático
-      if (tipo === 'adiantamento' || tipo === 'recebimento_frete') {
+      if (tipo === 'adiantamento') {
         const { error } = await supabase
           .from('transacoes_viagem')
           .insert({
@@ -73,12 +113,12 @@ export default function AdicionarDespesa() {
             tipo: tipo,
             valor: dadosExtraidos?.valor || 0,
             data: dadosExtraidos?.data || new Date().toISOString(),
-            descricao: dadosExtraidos?.descricao || `${tipo} via comprovante`,
-            forma_pagamento: dadosExtraidos?.forma_pagamento || (tipo === 'recebimento_frete' ? 'dinheiro' : null),
+            descricao: dadosExtraidos?.descricao || 'Adiantamento via comprovante',
+            forma_pagamento: null,
           });
 
         if (error) throw error;
-        toast.success(`${tipo === 'adiantamento' ? 'Adiantamento' : 'Recebimento de Frete'} adicionado com sucesso!`);
+        toast.success('Adiantamento adicionado com sucesso!');
       } else {
         const { error } = await supabase
           .from('despesas')
@@ -100,6 +140,39 @@ export default function AdicionarDespesa() {
     } catch (error: any) {
       console.error('Erro ao processar:', error);
       toast.error('Erro ao processar comprovante: ' + error.message);
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const handleRecebimentoSubmit = async (data: {
+    valor: number;
+    forma_pagamento: string;
+    data: string;
+    descricao?: string;
+  }) => {
+    if (!id) return;
+
+    setProcessando(true);
+    try {
+      const { error } = await supabase
+        .from('transacoes_viagem')
+        .insert({
+          viagem_id: id,
+          tipo: 'recebimento_frete',
+          valor: data.valor,
+          data: data.data,
+          descricao: data.descricao || 'Recebimento de frete',
+          forma_pagamento: data.forma_pagamento,
+        });
+
+      if (error) throw error;
+      
+      toast.success('Recebimento de frete registrado com sucesso!');
+      navigate(`/motorista/viagem/${id}`);
+    } catch (error: any) {
+      console.error('Erro ao salvar:', error);
+      toast.error('Erro ao salvar recebimento: ' + error.message);
     } finally {
       setProcessando(false);
     }
@@ -205,6 +278,14 @@ export default function AdicionarDespesa() {
           </Card>
         )}
       </div>
+
+      <RecebimentoFreteForm
+        open={showRecebimentoForm}
+        onOpenChange={setShowRecebimentoForm}
+        onSubmit={handleRecebimentoSubmit}
+        valorExtraido={dadosExtraidosRecebimento?.valor}
+        isLoading={processando}
+      />
     </div>
   );
 }
