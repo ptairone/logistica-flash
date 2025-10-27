@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, FileText, Trash2, Plus, DollarSign, Banknote, TrendingUp } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, DollarSign, Banknote, TrendingUp, Download, Package } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import { useDespesas, useComprovantesViagem } from '@/hooks/useViagens';
 import { useTransacoesViagem } from '@/hooks/useTransacoesViagem';
@@ -16,6 +16,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { gerarPDFViagem } from '@/lib/pdf-export-utils';
+import { exportarViagemComComprovantes } from '@/lib/zip-export-utils';
 
 interface ViagemDetailsDialogProps {
   open: boolean;
@@ -36,6 +38,7 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
   const [uploading, setUploading] = useState(false);
   const [tipoComprovante, setTipoComprovante] = useState<'adiantamento' | 'recebimento_frete' | 'despesa' | 'outros'>('outros');
   const [comprovanteData, setComprovanteData] = useState<any>(null);
+  const [exporting, setExporting] = useState(false);
 
   if (!viagem) return null;
 
@@ -192,6 +195,34 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
     }
   };
 
+  const handleExportPDF = async () => {
+    if (!viagem) return;
+    try {
+      setExporting(true);
+      await gerarPDFViagem(viagem, despesas, transacoes, comprovantes);
+      toast.success('PDF gerado com sucesso');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao gerar PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportZIP = async () => {
+    if (!viagem) return;
+    try {
+      setExporting(true);
+      await exportarViagemComComprovantes(viagem, despesas, transacoes, comprovantes);
+      toast.success('Arquivo ZIP gerado com sucesso');
+    } catch (error) {
+      console.error('Erro ao exportar ZIP:', error);
+      toast.error('Erro ao gerar arquivo ZIP');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -205,12 +236,13 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
         </div>
 
         <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="info">Informações</TabsTrigger>
               <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
               <TabsTrigger value="despesas">Despesas</TabsTrigger>
               <TabsTrigger value="comprovantes">Comprovantes</TabsTrigger>
               <TabsTrigger value="calculos">Cálculos</TabsTrigger>
+              <TabsTrigger value="exportar">Exportar</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info" className="space-y-4 pt-4">
@@ -547,6 +579,49 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            <TabsContent value="exportar" className="space-y-4 pt-4">
+              <Card>
+                <CardContent className="p-6 space-y-4">
+                  <div className="rounded-lg bg-muted p-3">
+                    <p className="text-sm font-medium">
+                      Esta viagem possui {comprovantes.length} comprovante(s)
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-3"
+                      onClick={handleExportPDF}
+                      disabled={exporting}
+                    >
+                      <FileText className="h-4 w-4" />
+                      {exporting ? 'Gerando PDF...' : 'Exportar PDF Completo'}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-3"
+                      onClick={handleExportZIP}
+                      disabled={exporting || comprovantes.length === 0}
+                    >
+                      <Package className="h-4 w-4" />
+                      {exporting ? 'Gerando ZIP...' : 'Exportar CSV + Comprovantes (ZIP)'}
+                    </Button>
+                  </div>
+
+                  <div className="pt-4 border-t space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>PDF Completo:</strong> Relatório visual com todas as informações e comprovantes
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      <strong>ZIP:</strong> Arquivo CSV com dados + pasta com todos os comprovantes
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </DialogContent>

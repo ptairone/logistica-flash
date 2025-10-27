@@ -194,3 +194,33 @@ export function useVincularViagens() {
     },
   });
 }
+
+// Hook para buscar comprovantes de todas as viagens de um acerto
+export function useComprovantesAcerto(acertoId?: string) {
+  return useQuery({
+    queryKey: ['comprovantes-acerto', acertoId],
+    queryFn: async () => {
+      // Buscar todas as viagens do acerto
+      const { data: viagens, error: viagensError } = await supabase
+        .from('viagens')
+        .select('id')
+        .eq('acerto_id', acertoId!);
+
+      if (viagensError) throw viagensError;
+      if (!viagens || viagens.length === 0) return [];
+
+      // Buscar comprovantes de todas as viagens
+      const viagemIds = viagens.map((v) => v.id);
+      const { data: comprovantes, error: comprovantesError } = await supabase
+        .from('documentos')
+        .select('*')
+        .eq('tipo_entidade', 'viagem')
+        .in('entidade_id', viagemIds)
+        .order('created_at', { ascending: false });
+
+      if (comprovantesError) throw comprovantesError;
+      return comprovantes || [];
+    },
+    enabled: !!acertoId,
+  });
+}
