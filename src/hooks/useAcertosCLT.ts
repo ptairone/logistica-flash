@@ -28,7 +28,7 @@ export function useAcertosCLT() {
       // Inserir acerto
       const { data: acertoData, error: acertoError } = await supabase
         .from("acertos_clt")
-        .insert([acerto])
+        .insert([acerto as any])
         .select()
         .single();
 
@@ -192,9 +192,9 @@ export function useConfigCLT(motoristaId: string | null) {
         .select("*")
         .eq("motorista_id", motoristaId)
         .eq("ativo", true)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       return data;
     },
     enabled: !!motoristaId,
@@ -209,7 +209,7 @@ export function useSaveConfigCLT() {
     mutationFn: async (config: ConfigCLT) => {
       const { data, error } = await supabase
         .from("motoristas_config_clt")
-        .upsert([config], {
+        .upsert([config as any], {
           onConflict: "motorista_id",
         })
         .select()
