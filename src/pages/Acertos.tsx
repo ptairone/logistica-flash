@@ -51,7 +51,7 @@ export default function Acertos() {
     setDetailsDialogOpen(true);
   };
 
-  const handleSubmit = async (data: any, viagemIds: string[]) => {
+  const handleSubmit = async (data: any, viagemIds: string[], ajustes: any[], debitos: any[], validacoes: any[]) => {
     if (selectedAcerto) {
       updateAcerto.mutate(
         { id: selectedAcerto.id, data },
@@ -155,7 +155,7 @@ export default function Acertos() {
         )}
       </div>
 
-      <AcertoDialog
+      <AcertoDialogWizard
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
