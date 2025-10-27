@@ -43,12 +43,15 @@ export function useAcertosCLT() {
           horas_totais: dia.horas_totais,
           horas_normais: dia.horas_normais,
           horas_extras: dia.horas_extras,
+          km_rodados: dia.km_rodados,
           horas_em_movimento: dia.horas_em_movimento,
           horas_parado_ligado: dia.horas_parado_ligado,
+          horas_tempo_noturno: dia.horas_tempo_noturno,
           valor_diaria: dia.valor_diaria,
           valor_horas_extras: dia.valor_horas_extras,
           valor_adicional_fds: dia.valor_adicional_fds,
           valor_adicional_feriado: dia.valor_adicional_feriado,
+          valor_adicional_noturno: dia.valor_adicional_noturno,
           valor_total_dia: dia.valor_total_dia,
           eh_feriado: dia.eh_feriado,
           nome_feriado: dia.nome_feriado,
@@ -101,12 +104,15 @@ export function useAcertosCLT() {
           horas_totais: dia.horas_totais,
           horas_normais: dia.horas_normais,
           horas_extras: dia.horas_extras,
+          km_rodados: dia.km_rodados,
           horas_em_movimento: dia.horas_em_movimento,
           horas_parado_ligado: dia.horas_parado_ligado,
+          horas_tempo_noturno: dia.horas_tempo_noturno,
           valor_diaria: dia.valor_diaria,
           valor_horas_extras: dia.valor_horas_extras,
           valor_adicional_fds: dia.valor_adicional_fds,
           valor_adicional_feriado: dia.valor_adicional_feriado,
+          valor_adicional_noturno: dia.valor_adicional_noturno,
           valor_total_dia: dia.valor_total_dia,
           eh_feriado: dia.eh_feriado,
           nome_feriado: dia.nome_feriado,
@@ -264,6 +270,9 @@ export function calcularAcertoCLT(
   valor_horas_fds: number;
   total_horas_feriados: number;
   valor_horas_feriados: number;
+  total_horas_noturnas: number;
+  valor_adicional_noturno: number;
+  total_km_rodados: number;
   total_bruto: number;
   total_liquido: number;
   dias_trabalhados: number;
@@ -275,6 +284,9 @@ export function calcularAcertoCLT(
   let totalValorFds = 0;
   let totalHorasFeriados = 0;
   let totalValorFeriados = 0;
+  let totalHorasNoturnas = 0;
+  let totalValorNoturno = 0;
+  let totalKmRodados = 0;
 
   dias.forEach(dia => {
     const isFimDeSemana = dia.dia_semana === 0 || dia.dia_semana === 6; // Domingo ou Sábado
@@ -302,10 +314,22 @@ export function calcularAcertoCLT(
       totalHorasFeriados += horasTrabalhadas;
       totalValorFeriados += horasTrabalhadas * config.valor_hora_feriado;
     }
+
+    // 5. Adicional noturno (20% sobre valor da hora normal)
+    if (dia.horas_tempo_noturno && dia.horas_tempo_noturno > 0) {
+      totalHorasNoturnas += dia.horas_tempo_noturno;
+      const valorHoraNormal = config.salario_base / 220; // 220 horas/mês
+      totalValorNoturno += dia.horas_tempo_noturno * valorHoraNormal * 0.2; // 20% adicional
+    }
+
+    // 6. Total de Km rodados
+    if (dia.km_rodados) {
+      totalKmRodados += dia.km_rodados;
+    }
   });
 
   const salarioBase = config.salario_base;
-  const totalBruto = salarioBase + totalDiarias + totalValorHE + totalValorFds + totalValorFeriados;
+  const totalBruto = salarioBase + totalDiarias + totalValorHE + totalValorFds + totalValorFeriados + totalValorNoturno;
   const totalLiquido = totalBruto; // Por enquanto sem descontos
 
   return {
@@ -316,6 +340,9 @@ export function calcularAcertoCLT(
     valor_horas_fds: totalValorFds,
     total_horas_feriados: totalHorasFeriados,
     valor_horas_feriados: totalValorFeriados,
+    total_horas_noturnas: totalHorasNoturnas,
+    valor_adicional_noturno: totalValorNoturno,
+    total_km_rodados: totalKmRodados,
     total_bruto: totalBruto,
     total_liquido: totalLiquido,
     dias_trabalhados: dias.length,

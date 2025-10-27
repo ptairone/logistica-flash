@@ -151,32 +151,37 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
 
       // Converter dados do rastreador para dias trabalhados
       const diasProcessados: DiaTrabalhadoCLT[] = resultado.dias.map((dia: any) => {
-        const horasTrabalhadas = dia.horas_trabalhadas;
-        const horasExtras = Math.max(0, horasTrabalhadas - 8);
-        const horasNormais = Math.min(horasTrabalhadas, 8);
+        const horasTotais = dia.horas_totais;
+        const horasNormais = dia.horas_normais;
+        const horasExtras = dia.horas_extras;
         const isFimDeSemana = dia.dia_semana === 0 || dia.dia_semana === 6;
         const isFeriado = feriados.includes(dia.data);
 
-        let valorDiaria = horasTrabalhadas > 0 ? config.valor_diaria : 0;
-        let valorHE = horasExtras * config.valor_hora_extra;
-        let valorFds = isFimDeSemana ? horasTrabalhadas * config.valor_hora_fds : 0;
-        let valorFeriado = isFeriado ? horasTrabalhadas * config.valor_hora_feriado : 0;
+        const valorHoraNormal = config.salario_base / 220;
+        const valorDiaria = horasTotais > 0 ? config.valor_diaria : 0;
+        const valorHE = horasExtras * config.valor_hora_extra;
+        const valorFds = isFimDeSemana ? horasTotais * config.valor_hora_fds : 0;
+        const valorFeriado = isFeriado ? horasTotais * config.valor_hora_feriado : 0;
+        const valorNoturno = (dia.horas_tempo_noturno || 0) * valorHoraNormal * 0.2;
 
         return {
           data: dia.data,
           dia_semana: dia.dia_semana,
-          horas_totais: horasTrabalhadas,
+          horas_totais: horasTotais,
           horas_normais: horasNormais,
           horas_extras: horasExtras,
+          km_rodados: dia.km_rodados || 0,
           horas_em_movimento: dia.horas_em_movimento || 0,
           horas_parado_ligado: dia.horas_parado_ligado || 0,
+          horas_tempo_noturno: dia.horas_tempo_noturno || 0,
           valor_diaria: valorDiaria,
           valor_horas_extras: valorHE,
           valor_adicional_fds: valorFds,
           valor_adicional_feriado: valorFeriado,
-          valor_total_dia: valorDiaria + valorHE + valorFds + valorFeriado,
+          valor_adicional_noturno: valorNoturno,
+          valor_total_dia: valorDiaria + valorHE + valorFds + valorFeriado + valorNoturno,
           eh_feriado: isFeriado,
-          origem: 'pdf' as const,
+          origem: 'rastreador' as const,
           dados_rastreador: dia,
         };
       });
@@ -432,8 +437,12 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
                       <tr>
                         <th className="p-2 text-left">Data</th>
                         <th className="p-2 text-left">Dia</th>
-                        <th className="p-2 text-right">Horas</th>
+                        <th className="p-2 text-right">Km</th>
+                        <th className="p-2 text-right">H. Mov</th>
+                        <th className="p-2 text-right">H. Parado</th>
+                        <th className="p-2 text-right">H. Tot</th>
                         <th className="p-2 text-right">HE</th>
+                        <th className="p-2 text-right">H. Not</th>
                         <th className="p-2 text-right">Total</th>
                         <th className="p-2"></th>
                       </tr>
@@ -450,16 +459,28 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
                               <Badge variant="secondary" className="ml-2">Feriado</Badge>
                             )}
                           </td>
+                          <td className="p-2 text-right text-xs">
+                            {dia.km_rodados ? `${dia.km_rodados}km` : '-'}
+                          </td>
+                          <td className="p-2 text-right text-xs">
+                            {dia.horas_em_movimento ? `${dia.horas_em_movimento.toFixed(1)}h` : '-'}
+                          </td>
+                          <td className="p-2 text-right text-xs">
+                            {dia.horas_parado_ligado ? `${dia.horas_parado_ligado.toFixed(1)}h` : '-'}
+                          </td>
                           <td className="p-2 text-right">
                             <Input
                               type="number"
                               step="0.1"
                               value={dia.horas_totais}
                               onChange={(e) => atualizarDia(index, 'horas_totais', e.target.value)}
-                              className="w-20 text-right"
+                              className="w-16 text-right"
                             />
                           </td>
                           <td className="p-2 text-right">{dia.horas_extras.toFixed(1)}h</td>
+                          <td className="p-2 text-right text-xs">
+                            {dia.horas_tempo_noturno ? `${dia.horas_tempo_noturno.toFixed(1)}h` : '-'}
+                          </td>
                           <td className="p-2 text-right font-medium">
                             R$ {dia.valor_total_dia.toFixed(2)}
                           </td>

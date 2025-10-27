@@ -39,30 +39,53 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: `Você é um assistente especializado em extrair dados de relatórios de rastreadores de caminhões.
+              content: `Você é um assistente especializado em extrair dados de relatórios de rastreadores veiculares do sistema "Trucks Control".
 
-IMPORTANTE: Extraia TODOS os dias que aparecem nesta página do relatório.
+O relatório contém uma tabela com as seguintes colunas:
+- Data (formato DD/MM/AAAA)
+- Km (quilometragem rodada)
+- Em Mov. (tempo em movimento no formato HH:MM:SS)
+- Parado Ligado (tempo parado com motor ligado no formato HH:MM:SS)
+- Veículo Desligado (tempo com veículo desligado)
+- Excesso de Jornada (tempo de excesso sobre 8h no formato HH:MM:SS) - JÁ CALCULADO!
+- Tempo Noturno (tempo trabalhado entre 22h e 06h no formato HH:MM:SS)
+
+IMPORTANTE:
+1. O relatório JÁ CALCULA o excesso de jornada (coluna "Excesso de Jornada")
+2. Você deve APENAS EXTRAIR os dados, NÃO CALCULAR nada
+3. Considere jornada normal de 8 horas/dia
+4. Retorne TODOS os dias visíveis na tabela
 
 Para cada dia, extraia:
-1. Data (formato DD/MM/YYYY)
-2. "Em Mov." ou "Em Movimento" (formato HH:MM:SS ou HH:MM)
-3. "Parado Ligado" (formato HH:MM:SS ou HH:MM)
-4. "Excesso de Jornada" (formato HH:MM:SS ou HH:MM) - se não houver, use 00:00:00
+- data: string no formato "YYYY-MM-DD" (converta de DD/MM/AAAA)
+- dia_semana: número de 0 (domingo) a 6 (sábado)
+- km_rodados: número (quilometragem do dia)
+- horas_em_movimento: número decimal de horas (converta HH:MM:SS para decimal)
+- horas_parado_ligado: número decimal de horas (converta HH:MM:SS para decimal)
+- horas_excesso_jornada: número decimal de horas (LEIA da coluna "Excesso de Jornada", converta para decimal)
+- horas_tempo_noturno: número decimal de horas (LEIA da coluna "Tempo Noturno", converta para decimal)
+- horas_totais: número decimal (soma de Em Mov. + Parado Ligado em decimal)
+- horas_normais: número (limitado a 8h, ou seja, min(horas_totais, 8))
+- horas_extras: número (use horas_excesso_jornada da tabela)
 
-REGRAS DE CONVERSÃO:
-- Converta HH:MM:SS para horas decimais (ex: 10:30:00 = 10.5)
-- horas_trabalhadas = "Em Mov." + "Parado Ligado" convertido para decimal
-- horas_excesso = "Excesso de Jornada" convertido para decimal
-- Identifique o dia da semana baseado na data
+CONVERSÃO DE TEMPO:
+- HH:MM:SS para decimal: dividir minutos por 60 e segundos por 3600, somar tudo
+- Exemplo: 10:30:00 = 10 + 30/60 + 0/3600 = 10.5
+- Exemplo: 02:45:30 = 2 + 45/60 + 30/3600 = 2.758
 
-Retorne JSON no seguinte formato:
+Retorne um JSON no formato:
 {
   "dias": [
     {
-      "data": "2024-01-15",
-      "dia_semana": 1,
-      "horas_trabalhadas": 10.5,
-      "horas_excesso": 2.5
+      "data": "2025-09-24",
+      "dia_semana": 3,
+      "km_rodados": 434,
+      "horas_em_movimento": 7.4,
+      "horas_parado_ligado": 0.17,
+      "horas_totais": 7.57,
+      "horas_normais": 7.57,
+      "horas_extras": 0,
+      "horas_tempo_noturno": 0
     }
   ]
 }
