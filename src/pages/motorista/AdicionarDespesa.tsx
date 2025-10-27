@@ -34,6 +34,31 @@ export default function AdicionarDespesa() {
     }
   };
 
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1024;
+          const scale = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scale;
+          
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          canvas.toBlob((blob) => {
+            resolve(new File([blob!], file.name, { type: 'image/jpeg' }));
+          }, 'image/jpeg', 0.85);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   const processarComprovante = async (tipo: 'adiantamento' | 'despesa' | 'recebimento_frete') => {
     if (!foto || !id) {
       toast.error('Tire uma foto primeiro');
@@ -44,32 +69,33 @@ export default function AdicionarDespesa() {
     if (tipo === 'recebimento_frete') {
       setProcessando(true);
       try {
-        // Processar com OpenAI para extrair dados
+        // Comprimir imagem antes de processar
+        const fotoComprimida = await compressImage(foto);
+        
         const formData = new FormData();
-        formData.append('file', foto);
+        formData.append('file', fotoComprimida);
         formData.append('viagemId', id);
 
-        const response = await fetch(
-          `https://plfpczvnqmvqpmsbjrra.supabase.co/functions/v1/processar-comprovante`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsZnBjenZucW12cXBtc2JqcnJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyOTIwMjEsImV4cCI6MjA3Njg2ODAyMX0.k0JoQvzptgBNr4pBSOQjAE9q_Mge6gVdCFd471onPBI`,
-            },
-            body: formData,
-          }
-        );
+        const { data, error } = await supabase.functions.invoke('processar-comprovante', {
+          body: formData
+        });
 
-        let dadosExtraidos = null;
-        if (response.ok) {
-          dadosExtraidos = await response.json();
+        if (error) {
+          console.error('Erro ao processar:', error);
+          throw new Error(error.message || 'Erro ao processar comprovante');
         }
 
-        setDadosExtraidosRecebimento(dadosExtraidos);
+        setDadosExtraidosRecebimento(data);
         setShowRecebimentoForm(true);
       } catch (error: any) {
         console.error('Erro ao processar:', error);
-        toast.error('Erro ao processar comprovante');
+        if (error.message?.includes('429')) {
+          toast.error('Muitas requisições. Aguarde um momento e tente novamente.');
+        } else if (error.message?.includes('402')) {
+          toast.error('Créditos insuficientes. Entre em contato com o suporte.');
+        } else {
+          toast.error('Erro ao processar: ' + error.message);
+        }
       } finally {
         setProcessando(false);
       }
@@ -79,13 +105,16 @@ export default function AdicionarDespesa() {
     // Para adiantamento e despesa, processar normalmente
     setProcessando(true);
     try {
+      // Comprimir imagem antes de processar
+      const fotoComprimida = await compressImage(foto);
+      
       // Upload para storage
-      const fileExt = foto.name.split('.').pop();
+      const fileExt = fotoComprimida.name.split('.').pop();
       const fileName = `${id}-${tipo}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('comprovantes')
-        .upload(fileName, foto);
+        .upload(fileName, fotoComprimida);
 
       if (uploadError) throw uploadError;
 
@@ -93,25 +122,18 @@ export default function AdicionarDespesa() {
         .from('comprovantes')
         .getPublicUrl(fileName);
 
-      // Processar com OpenAI
+      // Processar com Lovable AI
       const formData = new FormData();
-      formData.append('file', foto);
+      formData.append('file', fotoComprimida);
       formData.append('viagemId', id);
 
-      const response = await fetch(
-        `https://plfpczvnqmvqpmsbjrra.supabase.co/functions/v1/processar-comprovante`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsZnBjenZucW12cXBtc2JqcnJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEyOTIwMjEsImV4cCI6MjA3Njg2ODAyMX0.k0JoQvzptgBNr4pBSOQjAE9q_Mge6gVdCFd471onPBI`,
-          },
-          body: formData,
-        }
-      );
+      const { data: dadosExtraidos, error: processError } = await supabase.functions.invoke('processar-comprovante', {
+        body: formData
+      });
 
-      let dadosExtraidos = null;
-      if (response.ok) {
-        dadosExtraidos = await response.json();
+      if (processError) {
+        console.warn('Não foi possível processar automaticamente:', processError);
+        toast.warning('Não foi possível extrair informações. Preencha manualmente.');
       }
 
       // Criar registro automático
