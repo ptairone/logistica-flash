@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Upload } from 'lucide-react';
+import { Upload, MapPin } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface DriverFormPartidaProps {
   viagemId: string;
@@ -25,6 +26,7 @@ export function DriverFormPartida({ viagemId }: DriverFormPartidaProps) {
   const queryClient = useQueryClient();
   const [fotoPanel, setFotoPanel] = useState<File | null>(null);
   const [fotoAvaria, setFotoAvaria] = useState<File | null>(null);
+  const { getCurrentLocation } = useGeolocation();
 
   const { data: viagem } = useQuery({
     queryKey: ['viagem-driver', viagemId],
@@ -47,6 +49,9 @@ export function DriverFormPartida({ viagemId }: DriverFormPartidaProps) {
 
   const registrarPartida = useMutation({
     mutationFn: async (data: PartidaFormData) => {
+      // Capturar localização GPS
+      const locationData = await getCurrentLocation();
+
       let partidaFotoUrl = null;
 
       // Upload da foto do painel
@@ -65,7 +70,7 @@ export function DriverFormPartida({ viagemId }: DriverFormPartidaProps) {
         partidaFotoUrl = publicUrl;
       }
 
-      // Atualizar viagem
+      // Atualizar viagem com localização
       const { error } = await supabase
         .from('viagens')
         .update({
@@ -73,6 +78,9 @@ export function DriverFormPartida({ viagemId }: DriverFormPartidaProps) {
           data_saida: data.data_saida,
           km_inicial: data.km_inicial,
           partida_foto_url: partidaFotoUrl,
+          partida_latitude: locationData?.latitude,
+          partida_longitude: locationData?.longitude,
+          partida_localizacao_timestamp: locationData ? new Date(locationData.timestamp).toISOString() : null,
         })
         .eq('id', viagemId);
 

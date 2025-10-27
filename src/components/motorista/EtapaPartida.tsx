@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, Play } from 'lucide-react';
+import { Camera, Play, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface EtapaPartidaProps {
   viagem: any;
@@ -14,11 +15,15 @@ interface EtapaPartidaProps {
 export function EtapaPartida({ viagem, onPartidaRegistrada }: EtapaPartidaProps) {
   const [kmInicial, setKmInicial] = useState('');
   const [fotoPartida, setFotoPartida] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { getCurrentLocation, loading: gpsLoading } = useGeolocation();
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
-      setFotoPartida(e.target.files[0]);
+      const file = e.target.files[0];
+      setFotoPartida(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
@@ -30,6 +35,10 @@ export function EtapaPartida({ viagem, onPartidaRegistrada }: EtapaPartidaProps)
 
     setLoading(true);
     try {
+      // Capturar localização GPS
+      toast.info('📍 Capturando localização...');
+      const locationData = await getCurrentLocation();
+
       let fotoUrl = null;
 
       // Upload da foto se houver
@@ -50,7 +59,7 @@ export function EtapaPartida({ viagem, onPartidaRegistrada }: EtapaPartidaProps)
         fotoUrl = publicUrl;
       }
 
-      // Atualizar viagem
+      // Atualizar viagem com localização
       const { error } = await supabase
         .from('viagens')
         .update({
@@ -58,6 +67,9 @@ export function EtapaPartida({ viagem, onPartidaRegistrada }: EtapaPartidaProps)
           data_saida: new Date().toISOString(),
           km_inicial: parseFloat(kmInicial),
           partida_foto_url: fotoUrl,
+          partida_latitude: locationData?.latitude,
+          partida_longitude: locationData?.longitude,
+          partida_localizacao_timestamp: locationData ? new Date(locationData.timestamp).toISOString() : null,
         })
         .eq('id', viagem.id);
 
@@ -110,17 +122,46 @@ export function EtapaPartida({ viagem, onPartidaRegistrada }: EtapaPartidaProps)
           onChange={handleFotoChange}
           className="hidden"
         />
+        {previewUrl && (
+          <div className="space-y-2">
+            <img src={previewUrl} alt="Preview" className="w-full max-w-xs rounded-lg border" />
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setFotoPartida(null);
+                setPreviewUrl(null);
+              }}
+            >
+              Tirar Outra Foto
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Botão Iniciar */}
       <Button
         onClick={handleIniciarViagem}
-        disabled={loading || !kmInicial}
+        disabled={loading || gpsLoading || !kmInicial}
         className="w-full h-16 text-xl font-bold"
         size="lg"
       >
-        <Play className="mr-2 h-6 w-6" />
-        {loading ? 'Iniciando...' : 'Iniciar Viagem'}
+        {gpsLoading ? (
+          <>
+            <MapPin className="mr-2 h-6 w-6 animate-pulse" />
+            Capturando GPS...
+          </>
+        ) : loading ? (
+          <>
+            <Play className="mr-2 h-6 w-6" />
+            Iniciando...
+          </>
+        ) : (
+          <>
+            <Play className="mr-2 h-6 w-6" />
+            Iniciar Viagem
+          </>
+        )}
       </Button>
     </div>
   );

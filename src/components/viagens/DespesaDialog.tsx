@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { despesaSchema, DespesaFormData } from '@/lib/validations-viagem';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { toast } from 'sonner';
 
 interface DespesaDialogProps {
   open: boolean;
@@ -20,6 +22,7 @@ interface DespesaDialogProps {
 }
 
 export function DespesaDialog({ open, onOpenChange, onSubmit, viagemId, isLoading, initialData }: DespesaDialogProps) {
+  const { getCurrentLocation } = useGeolocation();
   const {
     register,
     handleSubmit,
@@ -58,8 +61,18 @@ export function DespesaDialog({ open, onOpenChange, onSubmit, viagemId, isLoadin
     onOpenChange(false);
   };
 
-  const handleFormSubmit = (data: DespesaFormData) => {
-    onSubmit(data);
+  const handleFormSubmit = async (data: DespesaFormData) => {
+    toast.info('📍 Capturando localização...');
+    const locationData = await getCurrentLocation();
+    
+    const dataWithLocation = {
+      ...data,
+      latitude: locationData?.latitude,
+      longitude: locationData?.longitude,
+      localizacao_timestamp: locationData ? new Date(locationData.timestamp).toISOString() : null,
+    };
+    
+    onSubmit(dataWithLocation as any);
     handleClose();
   };
 

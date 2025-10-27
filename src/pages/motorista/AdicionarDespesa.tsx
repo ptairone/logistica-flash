@@ -6,11 +6,13 @@ import { Camera, ArrowLeft, Loader2, DollarSign, Receipt, Banknote, FileImage } 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RecebimentoFreteMultiplo } from '@/components/motorista/RecebimentoFreteMultiplo';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 export default function AdicionarDespesa() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { getCurrentLocation } = useGeolocation();
   const [foto, setFoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [processando, setProcessando] = useState(false);
@@ -105,6 +107,10 @@ export default function AdicionarDespesa() {
     // Para adiantamento e despesa, processar normalmente
     setProcessando(true);
     try {
+      // Capturar localização GPS
+      toast.info('📍 Capturando localização...');
+      const locationData = await getCurrentLocation();
+
       // Comprimir imagem antes de processar
       const fotoComprimida = await compressImage(foto);
       
@@ -147,6 +153,9 @@ export default function AdicionarDespesa() {
             data: dadosExtraidos?.data || new Date().toISOString(),
             descricao: dadosExtraidos?.descricao || 'Adiantamento via comprovante',
             forma_pagamento: null,
+            latitude: locationData?.latitude,
+            longitude: locationData?.longitude,
+            localizacao_timestamp: locationData ? new Date(locationData.timestamp).toISOString() : null,
           });
 
         if (error) throw error;
@@ -162,6 +171,9 @@ export default function AdicionarDespesa() {
             descricao: dadosExtraidos?.descricao || 'Despesa via comprovante',
             reembolsavel: dadosExtraidos?.reembolsavel ?? true,
             anexo_url: publicUrl,
+            latitude: locationData?.latitude,
+            longitude: locationData?.longitude,
+            localizacao_timestamp: locationData ? new Date(locationData.timestamp).toISOString() : null,
           });
 
         if (error) throw error;
@@ -187,6 +199,9 @@ export default function AdicionarDespesa() {
 
     setProcessando(true);
     try {
+      // Capturar localização uma vez para todas as parcelas
+      const locationData = await getCurrentLocation();
+
       // Inserir todas as parcelas de uma vez
       const transacoes = parcelas.map(parcela => ({
         viagem_id: id,
@@ -195,6 +210,9 @@ export default function AdicionarDespesa() {
         data: parcela.data,
         descricao: parcela.descricao || `Recebimento via ${parcela.forma_pagamento}`,
         forma_pagamento: parcela.forma_pagamento,
+        latitude: locationData?.latitude,
+        longitude: locationData?.longitude,
+        localizacao_timestamp: locationData ? new Date(locationData.timestamp).toISOString() : null,
       }));
 
       const { error } = await supabase

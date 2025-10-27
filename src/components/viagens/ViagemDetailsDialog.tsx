@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { gerarPDFViagem } from '@/lib/pdf-export-utils';
 import { exportarViagemComComprovantes } from '@/lib/zip-export-utils';
+import { MapaLocalizacoes } from '@/components/admin/MapaLocalizacoes';
 
 interface ViagemDetailsDialogProps {
   open: boolean;
@@ -243,11 +244,12 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
         </div>
 
         <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="info">Informações</TabsTrigger>
               <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
               <TabsTrigger value="despesas">Despesas</TabsTrigger>
               <TabsTrigger value="comprovantes">Comprovantes</TabsTrigger>
+              <TabsTrigger value="localizacoes">Localizações</TabsTrigger>
               <TabsTrigger value="calculos">Cálculos</TabsTrigger>
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
             </TabsList>
@@ -546,6 +548,62 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                   ))
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="localizacoes" className="space-y-4 pt-4">
+              {(() => {
+                const localizacoes = [];
+
+                // Localização da partida
+                if (viagem.partida_latitude && viagem.partida_longitude && viagem.partida_localizacao_timestamp) {
+                  localizacoes.push({
+                    latitude: viagem.partida_latitude,
+                    longitude: viagem.partida_longitude,
+                    timestamp: viagem.partida_localizacao_timestamp,
+                    tipo: 'partida',
+                    descricao: `Partida - KM ${viagem.km_inicial || 0}`,
+                  });
+                }
+
+                // Localização da chegada
+                if (viagem.chegada_latitude && viagem.chegada_longitude && viagem.chegada_localizacao_timestamp) {
+                  localizacoes.push({
+                    latitude: viagem.chegada_latitude,
+                    longitude: viagem.chegada_longitude,
+                    timestamp: viagem.chegada_localizacao_timestamp,
+                    tipo: 'chegada',
+                    descricao: `Chegada - KM ${viagem.km_final || 0}`,
+                  });
+                }
+
+                // Localizações das despesas
+                despesas.forEach((d: any) => {
+                  if (d.latitude && d.longitude && d.localizacao_timestamp) {
+                    localizacoes.push({
+                      latitude: d.latitude,
+                      longitude: d.longitude,
+                      timestamp: d.localizacao_timestamp,
+                      tipo: 'despesa',
+                      descricao: `${d.tipo} - R$ ${Number(d.valor).toFixed(2)}`,
+                    });
+                  }
+                });
+
+                // Localizações das transações
+                transacoes.forEach((t: any) => {
+                  if (t.latitude && t.longitude && t.localizacao_timestamp) {
+                    localizacoes.push({
+                      latitude: t.latitude,
+                      longitude: t.longitude,
+                      timestamp: t.localizacao_timestamp,
+                      tipo: t.tipo,
+                      descricao: `${t.tipo === 'adiantamento' ? 'Adiantamento' : 'Recebimento'} - R$ ${Number(t.valor).toFixed(2)}`,
+                    });
+                  }
+                });
+
+                return <MapaLocalizacoes localizacoes={localizacoes} />;
+              })()}
             </TabsContent>
 
             <TabsContent value="calculos" className="space-y-4 pt-4">

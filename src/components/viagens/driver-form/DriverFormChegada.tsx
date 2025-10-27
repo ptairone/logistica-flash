@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, MapPin } from 'lucide-react';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface DriverFormChegadaProps {
   viagemId: string;
@@ -21,6 +22,7 @@ export function DriverFormChegada({ viagemId }: DriverFormChegadaProps) {
   const queryClient = useQueryClient();
   const [fotoPainel, setFotoPainel] = useState<File | null>(null);
   const [fotoComprovante, setFotoComprovante] = useState<File | null>(null);
+  const { getCurrentLocation } = useGeolocation();
 
   const { data: viagem } = useQuery({
     queryKey: ['viagem-driver', viagemId],
@@ -51,6 +53,9 @@ export function DriverFormChegada({ viagemId }: DriverFormChegadaProps) {
         throw new Error('KM final deve ser maior ou igual ao KM inicial');
       }
 
+      // Capturar localização GPS
+      const locationData = await getCurrentLocation();
+
       let chegadaFotoUrl = null;
 
       if (fotoPainel) {
@@ -70,7 +75,7 @@ export function DriverFormChegada({ viagemId }: DriverFormChegadaProps) {
 
       const kmPercorrido = data.km_final - (viagem.km_inicial || 0);
 
-      // Atualizar viagem
+      // Atualizar viagem com localização
       const { error } = await supabase
         .from('viagens')
         .update({
@@ -79,6 +84,9 @@ export function DriverFormChegada({ viagemId }: DriverFormChegadaProps) {
           km_final: data.km_final,
           km_percorrido: kmPercorrido,
           chegada_foto_url: chegadaFotoUrl,
+          chegada_latitude: locationData?.latitude,
+          chegada_longitude: locationData?.longitude,
+          chegada_localizacao_timestamp: locationData ? new Date(locationData.timestamp).toISOString() : null,
         })
         .eq('id', viagemId);
 

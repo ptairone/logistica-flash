@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Camera, CheckCircle } from 'lucide-react';
+import { Camera, CheckCircle, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface EtapaChegadaProps {
   viagem: any;
@@ -15,11 +16,15 @@ interface EtapaChegadaProps {
 export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaChegadaProps) {
   const [kmFinal, setKmFinal] = useState('');
   const [fotoChegada, setFotoChegada] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { getCurrentLocation, loading: gpsLoading } = useGeolocation();
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
-      setFotoChegada(e.target.files[0]);
+      const file = e.target.files[0];
+      setFotoChegada(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
@@ -39,6 +44,10 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
 
     setLoading(true);
     try {
+      // Capturar localização GPS
+      toast.info('📍 Capturando localização...');
+      const locationData = await getCurrentLocation();
+
       let fotoUrl = null;
 
       // Upload da foto se houver
@@ -61,7 +70,7 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
 
       const kmPercorrido = kmFinalNum - kmInicialNum;
 
-      // Atualizar viagem
+      // Atualizar viagem com localização
       const { error } = await supabase
         .from('viagens')
         .update({
@@ -70,6 +79,9 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
           km_final: kmFinalNum,
           km_percorrido: kmPercorrido,
           chegada_foto_url: fotoUrl,
+          chegada_latitude: locationData?.latitude,
+          chegada_longitude: locationData?.longitude,
+          chegada_localizacao_timestamp: locationData ? new Date(locationData.timestamp).toISOString() : null,
         })
         .eq('id', viagem.id);
 
@@ -133,18 +145,47 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
           onChange={handleFotoChange}
           className="hidden"
         />
+        {previewUrl && (
+          <div className="space-y-2">
+            <img src={previewUrl} alt="Preview" className="w-full max-w-xs rounded-lg border" />
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setFotoChegada(null);
+                setPreviewUrl(null);
+              }}
+            >
+              Tirar Outra Foto
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Botões */}
       <div className="space-y-3">
         <Button
           onClick={handleFinalizarViagem}
-          disabled={loading || !kmFinal}
+          disabled={loading || gpsLoading || !kmFinal}
           className="w-full h-16 text-xl font-bold"
           size="lg"
         >
-          <CheckCircle className="mr-2 h-6 w-6" />
-          {loading ? 'Finalizando...' : 'Finalizar Viagem'}
+          {gpsLoading ? (
+            <>
+              <MapPin className="mr-2 h-6 w-6 animate-pulse" />
+              Capturando GPS...
+            </>
+          ) : loading ? (
+            <>
+              <CheckCircle className="mr-2 h-6 w-6" />
+              Finalizando...
+            </>
+          ) : (
+            <>
+              <CheckCircle className="mr-2 h-6 w-6" />
+              Finalizar Viagem
+            </>
+          )}
         </Button>
 
         <Button

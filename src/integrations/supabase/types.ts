@@ -265,6 +265,9 @@ export type Database = {
           data: string
           descricao: string | null
           id: string
+          latitude: number | null
+          localizacao_timestamp: string | null
+          longitude: number | null
           origem: string | null
           reembolsavel: boolean | null
           tipo: Database["public"]["Enums"]["tipo_despesa"]
@@ -277,6 +280,9 @@ export type Database = {
           data?: string
           descricao?: string | null
           id?: string
+          latitude?: number | null
+          localizacao_timestamp?: string | null
+          longitude?: number | null
           origem?: string | null
           reembolsavel?: boolean | null
           tipo: Database["public"]["Enums"]["tipo_despesa"]
@@ -289,6 +295,9 @@ export type Database = {
           data?: string
           descricao?: string | null
           id?: string
+          latitude?: number | null
+          localizacao_timestamp?: string | null
+          longitude?: number | null
           origem?: string | null
           reembolsavel?: boolean | null
           tipo?: Database["public"]["Enums"]["tipo_despesa"]
@@ -773,6 +782,9 @@ export type Database = {
           descricao: string | null
           forma_pagamento: string | null
           id: string
+          latitude: number | null
+          localizacao_timestamp: string | null
+          longitude: number | null
           tipo: string
           valor: number
           viagem_id: string
@@ -783,6 +795,9 @@ export type Database = {
           descricao?: string | null
           forma_pagamento?: string | null
           id?: string
+          latitude?: number | null
+          localizacao_timestamp?: string | null
+          longitude?: number | null
           tipo: string
           valor: number
           viagem_id: string
@@ -793,6 +808,9 @@ export type Database = {
           descricao?: string | null
           forma_pagamento?: string | null
           id?: string
+          latitude?: number | null
+          localizacao_timestamp?: string | null
+          longitude?: number | null
           tipo?: string
           valor?: number
           viagem_id?: string
@@ -904,6 +922,9 @@ export type Database = {
         Row: {
           acerto_id: string | null
           chegada_foto_url: string | null
+          chegada_latitude: number | null
+          chegada_localizacao_timestamp: string | null
+          chegada_longitude: number | null
           codigo: string
           created_at: string
           data_chegada: string | null
@@ -925,6 +946,9 @@ export type Database = {
           origem: string
           origem_cep: string | null
           partida_foto_url: string | null
+          partida_latitude: number | null
+          partida_localizacao_timestamp: string | null
+          partida_longitude: number | null
           status: Database["public"]["Enums"]["status_viagem"] | null
           ultimo_acesso_em: string | null
           updated_at: string
@@ -933,6 +957,9 @@ export type Database = {
         Insert: {
           acerto_id?: string | null
           chegada_foto_url?: string | null
+          chegada_latitude?: number | null
+          chegada_localizacao_timestamp?: string | null
+          chegada_longitude?: number | null
           codigo: string
           created_at?: string
           data_chegada?: string | null
@@ -954,6 +981,9 @@ export type Database = {
           origem: string
           origem_cep?: string | null
           partida_foto_url?: string | null
+          partida_latitude?: number | null
+          partida_localizacao_timestamp?: string | null
+          partida_longitude?: number | null
           status?: Database["public"]["Enums"]["status_viagem"] | null
           ultimo_acesso_em?: string | null
           updated_at?: string
@@ -962,6 +992,9 @@ export type Database = {
         Update: {
           acerto_id?: string | null
           chegada_foto_url?: string | null
+          chegada_latitude?: number | null
+          chegada_localizacao_timestamp?: string | null
+          chegada_longitude?: number | null
           codigo?: string
           created_at?: string
           data_chegada?: string | null
@@ -983,6 +1016,9 @@ export type Database = {
           origem?: string
           origem_cep?: string | null
           partida_foto_url?: string | null
+          partida_latitude?: number | null
+          partida_localizacao_timestamp?: string | null
+          partida_longitude?: number | null
           status?: Database["public"]["Enums"]["status_viagem"] | null
           ultimo_acesso_em?: string | null
           updated_at?: string
