@@ -232,11 +232,11 @@ export function useSaveConfigCLT() {
 // Hook para processar relatório de rastreador
 export function useProcessarRelatorio() {
   return useMutation({
-    mutationFn: async (fileBase64: string) => {
+    mutationFn: async ({ imagens, fileName }: { imagens: string[], fileName: string }) => {
       const { data, error } = await supabase.functions.invoke('processar-relatorio-rastreador', {
         body: { 
-          fileBase64,
-          fileName: 'relatorio.pdf'
+          imagens,
+          fileName
         },
       });
 

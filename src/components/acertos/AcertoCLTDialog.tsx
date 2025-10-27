@@ -9,12 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Upload, Plus, Trash2, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { acertoCLTSchema, type AcertoCLT, type DiaTrabalhadoCLT } from "@/lib/validations-acerto-clt";
 import { useMotoristas } from "@/hooks/useMotoristas";
 import { useConfigCLT, useProcessarRelatorio, calcularAcertoCLT } from "@/hooks/useAcertosCLT";
 import { format } from "date-fns";
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 interface AcertoCLTDialogProps {
   open: boolean;
@@ -33,6 +38,7 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
   const [feriados, setFeriados] = useState<string[]>([]);
   const [novaDataFeriado, setNovaDataFeriado] = useState("");
   const [nomeFeriado, setNomeFeriado] = useState("");
+  const [progressoConversao, setProgressoConversao] = useState({ atual: 0, total: 0 });
 
   const form = useForm<AcertoCLT>({
     resolver: zodResolver(acertoCLTSchema),
@@ -83,56 +89,107 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const base64 = e.target?.result?.toString().split(',')[1];
-        if (!base64) throw new Error("Erro ao ler arquivo");
+    try {
+      let paginasBase64: string[] = [];
 
-        toast.info("Processando relatório...");
-        const resultado = await processarRelatorio(base64);
+      // Se for PDF, converter todas as páginas
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const numPages = pdf.numPages;
 
-        // Converter dados do rastreador para dias trabalhados
-        const diasProcessados: DiaTrabalhadoCLT[] = resultado.dias.map((dia: any) => {
-          const horasTrabalhadas = dia.horas_trabalhadas;
-          const horasExtras = Math.max(0, horasTrabalhadas - 8);
-          const horasNormais = Math.min(horasTrabalhadas, 8);
-          const isFimDeSemana = dia.dia_semana === 0 || dia.dia_semana === 6;
-          const isFeriado = feriados.includes(dia.data);
+        toast.info(`Convertendo ${numPages} páginas do PDF...`);
+        setProgressoConversao({ atual: 0, total: numPages });
 
-          let valorDiaria = horasTrabalhadas > 0 ? config.valor_diaria : 0;
-          let valorHE = horasExtras * config.valor_hora_extra;
-          let valorFds = isFimDeSemana ? horasTrabalhadas * config.valor_hora_fds : 0;
-          let valorFeriado = isFeriado ? horasTrabalhadas * config.valor_hora_feriado : 0;
-
-          return {
-            data: dia.data,
-            dia_semana: dia.dia_semana,
-            horas_totais: horasTrabalhadas,
-            horas_normais: horasNormais,
-            horas_extras: horasExtras,
-            horas_em_movimento: dia.horas_em_movimento || 0,
-            horas_parado_ligado: dia.horas_parado_ligado || 0,
-            valor_diaria: valorDiaria,
-            valor_horas_extras: valorHE,
-            valor_adicional_fds: valorFds,
-            valor_adicional_feriado: valorFeriado,
-            valor_total_dia: valorDiaria + valorHE + valorFds + valorFeriado,
-            eh_feriado: isFeriado,
-            origem: 'pdf' as const,
-            dados_rastreador: dia,
+        // Converter cada página
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          setProgressoConversao({ atual: pageNum, total: numPages });
+          
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 2.0 });
+          
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('Canvas não suportado');
+          
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          
+          const renderContext: any = {
+            canvasContext: context,
+            viewport: viewport,
           };
-        });
+          await page.render(renderContext).promise;
+          
+          // Converter para PNG base64
+          const base64 = canvas.toDataURL('image/png');
+          paginasBase64.push(base64);
+        }
 
-        setDias(diasProcessados);
-        form.setValue("tipo_entrada", "pdf");
-        toast.success(`${diasProcessados.length} dias processados com sucesso!`);
-      } catch (error: any) {
-        console.error(error);
-        toast.error(error.message || "Erro ao processar relatório");
+        toast.success(`${numPages} páginas convertidas com sucesso!`);
+      } else if (file.type.startsWith('image/')) {
+        // Se for imagem, apenas converter para base64
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        paginasBase64.push(base64);
+      } else {
+        throw new Error('Formato de arquivo não suportado. Use PDF ou imagens (PNG/JPG).');
       }
-    };
-    reader.readAsDataURL(file);
+
+      // Processar com a edge function
+      toast.info("Enviando para processamento...");
+      setProgressoConversao({ atual: 0, total: 0 });
+      
+      const resultado = await processarRelatorio({
+        imagens: paginasBase64,
+        fileName: file.name
+      });
+
+      // Converter dados do rastreador para dias trabalhados
+      const diasProcessados: DiaTrabalhadoCLT[] = resultado.dias.map((dia: any) => {
+        const horasTrabalhadas = dia.horas_trabalhadas;
+        const horasExtras = Math.max(0, horasTrabalhadas - 8);
+        const horasNormais = Math.min(horasTrabalhadas, 8);
+        const isFimDeSemana = dia.dia_semana === 0 || dia.dia_semana === 6;
+        const isFeriado = feriados.includes(dia.data);
+
+        let valorDiaria = horasTrabalhadas > 0 ? config.valor_diaria : 0;
+        let valorHE = horasExtras * config.valor_hora_extra;
+        let valorFds = isFimDeSemana ? horasTrabalhadas * config.valor_hora_fds : 0;
+        let valorFeriado = isFeriado ? horasTrabalhadas * config.valor_hora_feriado : 0;
+
+        return {
+          data: dia.data,
+          dia_semana: dia.dia_semana,
+          horas_totais: horasTrabalhadas,
+          horas_normais: horasNormais,
+          horas_extras: horasExtras,
+          horas_em_movimento: dia.horas_em_movimento || 0,
+          horas_parado_ligado: dia.horas_parado_ligado || 0,
+          valor_diaria: valorDiaria,
+          valor_horas_extras: valorHE,
+          valor_adicional_fds: valorFds,
+          valor_adicional_feriado: valorFeriado,
+          valor_total_dia: valorDiaria + valorHE + valorFds + valorFeriado,
+          eh_feriado: isFeriado,
+          origem: 'pdf' as const,
+          dados_rastreador: dia,
+        };
+      });
+
+      setDias(diasProcessados);
+      form.setValue("tipo_entrada", "pdf");
+      toast.success(`${diasProcessados.length} dias processados com sucesso!`);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Erro ao processar relatório");
+    } finally {
+      setProgressoConversao({ atual: 0, total: 0 });
+    }
   };
 
   const adicionarDiaManual = () => {
@@ -324,11 +381,11 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
                     <label className="block text-sm font-medium mb-2">
-                      Importar Relatório PDF
+                      Importar Relatório PDF ou Imagem
                     </label>
                     <Input
                       type="file"
-                      accept="application/pdf"
+                      accept="application/pdf,image/png,image/jpeg"
                       onChange={handleFileUpload}
                       disabled={isProcessing || !config}
                     />
@@ -348,6 +405,15 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
                     </Button>
                   </div>
                 </div>
+
+                {progressoConversao.total > 0 && (
+                  <div className="space-y-2">
+                    <Progress value={(progressoConversao.atual / progressoConversao.total) * 100} />
+                    <p className="text-sm text-muted-foreground text-center">
+                      Convertendo página {progressoConversao.atual} de {progressoConversao.total}
+                    </p>
+                  </div>
+                )}
 
                 {!config && selectedMotorista && (
                   <p className="text-sm text-amber-600">

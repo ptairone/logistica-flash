@@ -14,28 +14,34 @@ serve(async (req) => {
   }
 
   try {
-    const { fileBase64, fileName } = await req.json();
+    const { imagens, fileName } = await req.json();
 
-    if (!fileBase64) {
-      throw new Error('PDF não fornecido');
+    if (!imagens || !Array.isArray(imagens) || imagens.length === 0) {
+      throw new Error('Nenhuma imagem fornecida');
     }
 
-    console.log('Processando relatório de rastreador:', fileName);
+    console.log(`Processando ${imagens.length} imagens do relatório: ${fileName}`);
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `Você é um assistente especializado em extrair dados de relatórios de rastreadores de caminhões.
+    let todosDias: any[] = [];
 
-IMPORTANTE: Extraia TODOS os dias que aparecem no relatório.
+    // Processar cada imagem
+    for (let i = 0; i < imagens.length; i++) {
+      console.log(`Processando página ${i + 1}/${imagens.length}`);
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `Você é um assistente especializado em extrair dados de relatórios de rastreadores de caminhões.
+
+IMPORTANTE: Extraia TODOS os dias que aparecem nesta página do relatório.
 
 Para cada dia, extraia:
 1. Data (formato DD/MM/YYYY)
@@ -62,56 +68,62 @@ Retorne JSON no seguinte formato:
 }
 
 dia_semana: 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado`
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Extraia os dados de todos os dias deste relatório de rastreador:'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${fileBase64}`
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Extraia os dados de TODOS os dias desta página do relatório (página ${i + 1}/${imagens.length}):`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: imagens[i]
+                  }
                 }
-              }
-            ]
-          }
-        ],
-        max_tokens: 4000,
-      }),
-    });
+              ]
+            }
+          ],
+          max_tokens: 4000,
+        }),
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Erro OpenAI:', error);
-      throw new Error(`Erro ao processar com OpenAI: ${error}`);
+      if (!response.ok) {
+        const error = await response.text();
+        console.error(`Erro OpenAI na página ${i + 1}:`, error);
+        throw new Error(`Erro ao processar página ${i + 1} com OpenAI: ${error}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      console.log(`Resposta GPT-4o página ${i + 1}:`, content);
+
+      // Parse o JSON da resposta
+      try {
+        // Remove markdown code blocks se existirem
+        const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/```\n?([\s\S]*?)\n?```/);
+        const jsonStr = jsonMatch ? jsonMatch[1] : content;
+        const resultado = JSON.parse(jsonStr.trim());
+        
+        // Adicionar dias desta página
+        if (resultado.dias && Array.isArray(resultado.dias)) {
+          todosDias = todosDias.concat(resultado.dias);
+          console.log(`Página ${i + 1}: ${resultado.dias.length} dias extraídos`);
+        }
+      } catch (e) {
+        console.error(`Erro ao parsear JSON da página ${i + 1}:`, e);
+        throw new Error(`Não foi possível extrair dados estruturados da página ${i + 1}`);
+      }
     }
 
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    
-    console.log('Resposta GPT-4o:', content);
-
-    // Parse o JSON da resposta
-    let resultado;
-    try {
-      // Remove markdown code blocks se existirem
-      const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/```\n?([\s\S]*?)\n?```/);
-      const jsonStr = jsonMatch ? jsonMatch[1] : content;
-      resultado = JSON.parse(jsonStr.trim());
-    } catch (e) {
-      console.error('Erro ao parsear JSON:', e);
-      throw new Error('Não foi possível extrair dados estruturados do relatório');
-    }
-
-    console.log('Dados extraídos:', resultado);
+    console.log(`Total de dias extraídos: ${todosDias.length}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        dados: resultado 
+        dados: { dias: todosDias }
       }), 
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
