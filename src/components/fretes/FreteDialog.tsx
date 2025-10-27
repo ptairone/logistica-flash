@@ -11,7 +11,8 @@ import { freteSchema, FreteFormData, formatCPFCNPJ } from '@/lib/validations-fre
 import { formatCEP } from '@/lib/validations-viagem';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Calculator } from 'lucide-react';
+import { CalculadoraANTTDialog } from './CalculadoraANTTDialog';
 
 interface FreteDialogProps {
   open: boolean;
@@ -26,6 +27,8 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
   const [buscandoCEPOrigem, setBuscandoCEPOrigem] = useState(false);
   const [buscandoCEPDestino, setBuscandoCEPDestino] = useState(false);
   const [calculandoDistancia, setCalculandoDistancia] = useState(false);
+  const [mostrarCalculadoraANTT, setMostrarCalculadoraANTT] = useState(false);
+  const [distanciaCalculada, setDistanciaCalculada] = useState<number | undefined>(undefined);
 
   const {
     register,
@@ -115,6 +118,7 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
       if (error) throw error;
 
       if (data && data.distancia_km) {
+        setDistanciaCalculada(data.distancia_km);
         toast.success(`Distância estimada: ${data.distancia_km} km`);
       }
     } catch (error) {
@@ -454,13 +458,25 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
 
             <div className="space-y-2">
               <Label htmlFor="valor_frete">Valor do Frete (R$) *</Label>
-              <Input
-                id="valor_frete"
-                type="number"
-                step="0.01"
-                {...register('valor_frete', { valueAsNumber: true })}
-                placeholder="1500.00"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="valor_frete"
+                  type="number"
+                  step="0.01"
+                  {...register('valor_frete', { valueAsNumber: true })}
+                  placeholder="1500.00"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setMostrarCalculadoraANTT(true)}
+                  title="Calcular Piso Mínimo ANTT"
+                >
+                  <Calculator className="h-4 w-4" />
+                </Button>
+              </div>
               {errors.valor_frete && (
                 <p className="text-sm text-destructive">{errors.valor_frete.message}</p>
               )}
@@ -512,6 +528,16 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             </Button>
           </div>
         </form>
+
+        <CalculadoraANTTDialog
+          open={mostrarCalculadoraANTT}
+          onOpenChange={setMostrarCalculadoraANTT}
+          distanciaKm={distanciaCalculada}
+          onAplicarValor={(valor) => {
+            setValue('valor_frete', valor);
+            toast.success('Valor aplicado ao frete!');
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
