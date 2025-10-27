@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ interface ViagemDetailsDialogProps {
 }
 
 export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetailsDialogProps) {
+  const queryClient = useQueryClient();
   const { despesas, createDespesa, deleteDespesa } = useDespesas(viagem?.id);
   const { comprovantes, uploadComprovante } = useComprovantesViagem(viagem?.id);
   const { transacoes, createTransacao, deleteTransacao, totais: totaisTransacoes } = useTransacoesViagem(viagem?.id);
@@ -83,6 +85,9 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
 
       if (docError) throw docError;
 
+      // Invalidar queries para atualizar a lista de comprovantes
+      queryClient.invalidateQueries({ queryKey: ['comprovantes-viagem', viagem.id] });
+
       // Processar com OpenAI e criar automaticamente
       try {
         const formData = new FormData();
@@ -117,6 +122,7 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
               });
 
             if (transacaoError) throw transacaoError;
+            queryClient.invalidateQueries({ queryKey: ['transacoes-viagem', viagem.id] });
             toast.success(`${tipoComprovante === 'adiantamento' ? 'Adiantamento' : 'Recebimento de frete'} adicionado automaticamente`);
           } else if (tipoComprovante === 'despesa') {
             const { error: despesaError } = await supabase
@@ -131,6 +137,7 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
               });
 
             if (despesaError) throw despesaError;
+            queryClient.invalidateQueries({ queryKey: ['despesas-viagem', viagem.id] });
             toast.success('Despesa adicionada automaticamente');
           } else {
             toast.success('Comprovante salvo com sucesso');
