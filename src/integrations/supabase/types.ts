@@ -19,6 +19,7 @@ export type Database = {
           base_comissao: number | null
           codigo: string
           created_at: string
+          data_criacao: string
           data_pagamento: string | null
           forma_pagamento: string | null
           id: string
@@ -40,6 +41,7 @@ export type Database = {
           base_comissao?: number | null
           codigo: string
           created_at?: string
+          data_criacao?: string
           data_pagamento?: string | null
           forma_pagamento?: string | null
           id?: string
@@ -61,6 +63,7 @@ export type Database = {
           base_comissao?: number | null
           codigo?: string
           created_at?: string
+          data_criacao?: string
           data_pagamento?: string | null
           forma_pagamento?: string | null
           id?: string

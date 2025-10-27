@@ -40,6 +40,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
       percentual_comissao: 0,
       total_adiantamentos: 0,
       total_descontos: 0,
+      data_criacao: new Date().toISOString(),
     },
   });
 
@@ -49,6 +50,7 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
   const percentualComissao = watch('percentual_comissao') || 0;
   const totalAdiantamentos = watch('total_adiantamentos') || 0;
   const totalDescontos = watch('total_descontos') || 0;
+  const codigo = watch('codigo');
 
   const { data: viagensDisponiveis = [] } = useViagensDisponiveis(motoristaId);
 
@@ -62,13 +64,34 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
     }
   }, [motoristaId, motoristas, setValue, acerto]);
 
+  // Gerar código em tempo real
+  useEffect(() => {
+    if (motoristaId && selectedViagens.length > 0 && !acerto && motoristas.length > 0) {
+      const motorista = motoristas.find(m => m.id === motoristaId);
+      if (motorista) {
+        const codigoGerado = gerarCodigoAcerto(motorista.nome, new Date(), selectedViagens.length);
+        setValue('codigo', codigoGerado);
+      }
+    }
+  }, [motoristaId, selectedViagens.length, motoristas, setValue, acerto]);
 
-  // Calcular totais automaticamente
+  // Calcular período e totais automaticamente
   useEffect(() => {
     if (selectedViagens.length > 0 && viagensDisponiveis.length > 0) {
       const viagensSelecionadas = viagensDisponiveis.filter(v => 
         selectedViagens.includes(v.id)
       ) as ViagemAcerto[];
+
+      // Calcular período baseado nas viagens selecionadas
+      const datas = viagensSelecionadas
+        .map(v => new Date(v.data_saida))
+        .sort((a, b) => a.getTime() - b.getTime());
+      
+      const periodoInicio = datas[0].toISOString().split('T')[0];
+      const periodoFim = datas[datas.length - 1].toISOString().split('T')[0];
+
+      setValue('periodo_inicio', periodoInicio, { shouldValidate: false });
+      setValue('periodo_fim', periodoFim, { shouldValidate: false });
 
       const calculos = calcularAcerto(
         viagensSelecionadas,
@@ -100,10 +123,11 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
         percentual_comissao: 0,
         total_adiantamentos: 0,
         total_descontos: 0,
+        data_criacao: new Date().toISOString(),
       });
       setSelectedViagens([]);
     }
-  }, [acerto, reset]);
+  }, [acerto, reset, open]);
 
   const toggleViagem = (viagemId: string) => {
     setSelectedViagens(prev => 
@@ -114,16 +138,10 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
   };
 
   const handleFormSubmit = (data: AcertoFormData) => {
-    // Gerar código automático se for novo acerto
-    let finalData = { ...data };
-    
-    if (!acerto && motoristaId) {
-      const motorista = motoristas.find(m => m.id === motoristaId);
-      if (motorista) {
-        const codigo = gerarCodigoAcerto(motorista.nome, new Date(data.periodo_fim));
-        finalData.codigo = codigo;
-      }
-    }
+    let finalData = { 
+      ...data,
+      data_criacao: new Date().toISOString(),
+    };
     
     // Recalcular totais antes de submeter
     if (selectedViagens.length > 0 && viagensDisponiveis.length > 0) {
@@ -188,33 +206,20 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="periodo_inicio">Período Início *</Label>
-              <Input
-                id="periodo_inicio"
-                type="date"
-                {...register('periodo_inicio')}
-                disabled={!!acerto}
-              />
-              {errors.periodo_inicio && (
-                <p className="text-sm text-destructive">{errors.periodo_inicio.message}</p>
+          {/* Mostrar código gerado em tempo real */}
+          {codigo && selectedViagens.length > 0 && !acerto && (
+            <div className="rounded-lg border border-border bg-muted/50 p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Código do Acerto:</span>
+                <span className="text-lg font-bold text-foreground">{codigo}</span>
+              </div>
+              {periodoInicio && periodoFim && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Período: {formatDateBR(periodoInicio)} até {formatDateBR(periodoFim)}
+                </p>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="periodo_fim">Período Fim *</Label>
-              <Input
-                id="periodo_fim"
-                type="date"
-                {...register('periodo_fim')}
-                disabled={!!acerto}
-              />
-              {errors.periodo_fim && (
-                <p className="text-sm text-destructive">{errors.periodo_fim.message}</p>
-              )}
-            </div>
-          </div>
+          )}
 
           {!acerto && motoristaId && (
             <div className="space-y-2">

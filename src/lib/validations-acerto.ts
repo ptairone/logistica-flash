@@ -5,6 +5,7 @@ export const acertoSchema = z.object({
   periodo_inicio: z.string().min(1, 'Data inicial é obrigatória'),
   periodo_fim: z.string().min(1, 'Data final é obrigatória'),
   codigo: z.string().min(1, 'Código é obrigatório').max(50),
+  data_criacao: z.string().optional(), // Data de registro do acerto
   base_comissao: z.number().min(0).optional(),
   percentual_comissao: z.number().min(0).max(100).optional(),
   valor_comissao: z.number().min(0).optional(),
@@ -100,9 +101,10 @@ export function calcularAcerto(
 }
 
 // Gerar código automático para acerto
-export function gerarCodigoAcerto(motoristaNome: string, data: Date): string {
+export function gerarCodigoAcerto(motoristaNome: string, data: Date, numeroViagens: number): string {
   const ano = data.getFullYear();
   const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
   const iniciais = motoristaNome
     .split(' ')
     .map(n => n[0])
@@ -110,5 +112,5 @@ export function gerarCodigoAcerto(motoristaNome: string, data: Date): string {
     .toUpperCase()
     .slice(0, 3);
   
-  return `AC${ano}${mes}${iniciais}`;
+  return `AC${ano}${mes}${dia}-${iniciais}-${numeroViagens}V`;
 }
