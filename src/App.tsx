@@ -15,6 +15,7 @@ import AcertoCompleto from "./pages/AcertoCompleto";
 import Estoque from "./pages/Estoque";
 import Relatorios from "./pages/Relatorios";
 import DriverForm from "./pages/DriverForm";
+import InstallApp from "./pages/InstallApp";
 import MotoristaViagens from "./pages/motorista/Viagens";
 import ViagemMotorista from "./pages/motorista/ViagemMotorista";
 import AdicionarDespesa from "./pages/motorista/AdicionarDespesa";
@@ -32,6 +33,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/install" element={<InstallApp />} />
             
             {/* Rotas do Motorista */}
             <Route
