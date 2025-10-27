@@ -231,6 +231,175 @@ export type Database = {
           },
         ]
       }
+      acertos_clt: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          codigo: string
+          created_at: string
+          created_by: string | null
+          dias_trabalhados: number
+          id: string
+          motorista_id: string
+          observacoes: string | null
+          periodo_fim: string
+          periodo_inicio: string
+          salario_base: number
+          status: string
+          tipo_entrada: string
+          total_bruto: number
+          total_descontos: number
+          total_diarias: number
+          total_horas_extras: number
+          total_horas_fds: number
+          total_horas_feriados: number
+          total_liquido: number
+          updated_at: string
+          valor_horas_extras: number
+          valor_horas_fds: number
+          valor_horas_feriados: number
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          dias_trabalhados?: number
+          id?: string
+          motorista_id: string
+          observacoes?: string | null
+          periodo_fim: string
+          periodo_inicio: string
+          salario_base?: number
+          status?: string
+          tipo_entrada?: string
+          total_bruto?: number
+          total_descontos?: number
+          total_diarias?: number
+          total_horas_extras?: number
+          total_horas_fds?: number
+          total_horas_feriados?: number
+          total_liquido?: number
+          updated_at?: string
+          valor_horas_extras?: number
+          valor_horas_fds?: number
+          valor_horas_feriados?: number
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          dias_trabalhados?: number
+          id?: string
+          motorista_id?: string
+          observacoes?: string | null
+          periodo_fim?: string
+          periodo_inicio?: string
+          salario_base?: number
+          status?: string
+          tipo_entrada?: string
+          total_bruto?: number
+          total_descontos?: number
+          total_diarias?: number
+          total_horas_extras?: number
+          total_horas_fds?: number
+          total_horas_feriados?: number
+          total_liquido?: number
+          updated_at?: string
+          valor_horas_extras?: number
+          valor_horas_fds?: number
+          valor_horas_feriados?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acertos_clt_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acertos_clt_dias: {
+        Row: {
+          acerto_clt_id: string
+          created_at: string
+          dados_rastreador: Json | null
+          data: string
+          dia_semana: number
+          eh_feriado: boolean
+          horas_em_movimento: number
+          horas_extras: number
+          horas_normais: number
+          horas_parado_ligado: number
+          horas_totais: number
+          id: string
+          nome_feriado: string | null
+          origem: string
+          updated_at: string
+          valor_adicional_fds: number
+          valor_adicional_feriado: number
+          valor_diaria: number
+          valor_horas_extras: number
+          valor_total_dia: number
+        }
+        Insert: {
+          acerto_clt_id: string
+          created_at?: string
+          dados_rastreador?: Json | null
+          data: string
+          dia_semana: number
+          eh_feriado?: boolean
+          horas_em_movimento?: number
+          horas_extras?: number
+          horas_normais?: number
+          horas_parado_ligado?: number
+          horas_totais?: number
+          id?: string
+          nome_feriado?: string | null
+          origem?: string
+          updated_at?: string
+          valor_adicional_fds?: number
+          valor_adicional_feriado?: number
+          valor_diaria?: number
+          valor_horas_extras?: number
+          valor_total_dia?: number
+        }
+        Update: {
+          acerto_clt_id?: string
+          created_at?: string
+          dados_rastreador?: Json | null
+          data?: string
+          dia_semana?: number
+          eh_feriado?: boolean
+          horas_em_movimento?: number
+          horas_extras?: number
+          horas_normais?: number
+          horas_parado_ligado?: number
+          horas_totais?: number
+          id?: string
+          nome_feriado?: string | null
+          origem?: string
+          updated_at?: string
+          valor_adicional_fds?: number
+          valor_adicional_feriado?: number
+          valor_diaria?: number
+          valor_horas_extras?: number
+          valor_total_dia?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acertos_clt_dias_acerto_clt_id_fkey"
+            columns: ["acerto_clt_id"]
+            isOneToOne: false
+            referencedRelation: "acertos_clt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias_estoque: {
         Row: {
           cor: string | null
@@ -690,6 +859,50 @@ export type Database = {
           validade_cnh?: string
         }
         Relationships: []
+      }
+      motoristas_config_clt: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          motorista_id: string
+          salario_base: number
+          updated_at: string
+          valor_diaria: number
+          valor_hora_extra: number
+          valor_hora_fds: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          motorista_id: string
+          salario_base?: number
+          updated_at?: string
+          valor_diaria?: number
+          valor_hora_extra?: number
+          valor_hora_fds?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          motorista_id?: string
+          salario_base?: number
+          updated_at?: string
+          valor_diaria?: number
+          valor_hora_extra?: number
+          valor_hora_fds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motoristas_config_clt_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: true
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       movimentacoes_estoque: {
         Row: {
