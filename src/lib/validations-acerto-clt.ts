@@ -49,8 +49,8 @@ export const acertoCLTSchema = z.object({
   total_liquido: z.number().min(0).optional(),
   dias_trabalhados: z.number().int().min(0).optional(),
   observacoes: z.string().optional(),
-  status: z.enum(['aberto', 'aprovado', 'pago', 'cancelado']).optional(),
-  tipo_entrada: z.enum(['manual', 'pdf']).optional(),
+  status: z.enum(['aberto', 'revisao', 'aprovado', 'pago', 'cancelado']).optional(),
+  tipo_entrada: z.enum(['manual', 'automatico', 'hibrido']).optional(),
 });
 
 export type ConfigCLT = z.infer<typeof configCLTSchema>;

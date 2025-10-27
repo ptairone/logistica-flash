@@ -216,7 +216,6 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
       });
 
       setDias(diasProcessados);
-      form.setValue("tipo_entrada", "pdf");
       
       toast.success(
         <div>
@@ -328,9 +327,23 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
 
     if (!calculos) return;
 
+    // Determinar tipo_entrada baseado na origem dos dias
+    const temManual = dias.some(d => d.origem === 'manual');
+    const temRastreador = dias.some(d => d.origem === 'rastreador');
+    
+    let tipoEntrada: 'manual' | 'automatico' | 'hibrido';
+    if (temManual && temRastreador) {
+      tipoEntrada = 'hibrido';
+    } else if (temRastreador) {
+      tipoEntrada = 'automatico';
+    } else {
+      tipoEntrada = 'manual';
+    }
+
     const acertoCompleto: AcertoCLT = {
       ...data,
       ...calculos,
+      tipo_entrada: tipoEntrada,
     };
 
     onSubmit(acertoCompleto, dias);
