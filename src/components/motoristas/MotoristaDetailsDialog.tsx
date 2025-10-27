@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, MapPin, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { Upload, FileText, MapPin, DollarSign, TrendingUp, Clock, Settings } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import {
   useViagensMotorista,
@@ -14,10 +14,12 @@ import {
   useAcertosMotorista,
   useDocumentosMotorista,
 } from '@/hooks/useMotoristas';
+import { useConfigCLT, useSaveConfigCLT } from '@/hooks/useAcertosCLT';
 import { calcularKPIsMotorista } from '@/lib/validations-motorista';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CriarLoginDialog } from './CriarLoginDialog';
 import { AlterarSenhaDialog } from './AlterarSenhaDialog';
+import { toast } from 'sonner';
 
 interface MotoristaDetailsDialogProps {
   open: boolean;
@@ -32,6 +34,12 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
   const [uploading, setUploading] = useState(false);
   const [showCriarLogin, setShowCriarLogin] = useState(false);
   const [showAlterarSenha, setShowAlterarSenha] = useState(false);
+  
+  const [salarioBase, setSalarioBase] = useState('2700.00');
+  const [valorDiaria, setValorDiaria] = useState('80.00');
+  const [valorHoraExtra, setValorHoraExtra] = useState('19.64');
+  const [valorHoraFDS, setValorHoraFDS] = useState('24.55');
+  const [valorHoraFeriado, setValorHoraFeriado] = useState('24.55');
 
   const { data: viagens = [], isLoading: loadingViagens } = useViagensMotorista(
     motorista?.id,
@@ -45,6 +53,20 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
   );
   const { data: acertos = [] } = useAcertosMotorista(motorista?.id);
   const { documentos, uploadDocumento } = useDocumentosMotorista(motorista?.id);
+  
+  const { data: configCLT } = useConfigCLT(motorista?.id);
+  const { mutate: salvarConfig, isPending: salvandoConfig } = useSaveConfigCLT();
+  
+  // Pré-preencher valores se já existir configuração
+  useState(() => {
+    if (configCLT) {
+      setSalarioBase(configCLT.salario_base.toString());
+      setValorDiaria(configCLT.valor_diaria.toString());
+      setValorHoraExtra(configCLT.valor_hora_extra.toString());
+      setValorHoraFDS(configCLT.valor_hora_fds.toString());
+      setValorHoraFeriado(configCLT.valor_hora_feriado.toString());
+    }
+  });
 
   if (!motorista) return null;
 
@@ -80,6 +102,27 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
     return labels[tipo] || tipo;
   };
 
+  const handleSalvarConfigCLT = () => {
+    if (!motorista?.id) return;
+
+    salvarConfig({
+      motorista_id: motorista.id,
+      salario_base: parseFloat(salarioBase),
+      valor_diaria: parseFloat(valorDiaria),
+      valor_hora_extra: parseFloat(valorHoraExtra),
+      valor_hora_fds: parseFloat(valorHoraFDS),
+      valor_hora_feriado: parseFloat(valorHoraFeriado),
+      ativo: true,
+    }, {
+      onSuccess: () => {
+        toast.success('Configuração CLT salva com sucesso!');
+      },
+      onError: () => {
+        toast.error('Erro ao salvar configuração CLT');
+      },
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -88,11 +131,12 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
         </DialogHeader>
 
         <Tabs defaultValue="dados" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dados">Dados</TabsTrigger>
             <TabsTrigger value="documentos">Documentos</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
             <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+            <TabsTrigger value="config-clt">Config. CLT</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dados" className="space-y-4 pt-4">
@@ -440,6 +484,102 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="config-clt" className="space-y-4 pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Configuração CLT para {motorista.nome}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {configCLT && (
+                  <div className="mb-4 p-3 bg-primary/10 rounded-lg">
+                    <p className="text-sm text-primary font-medium flex items-center gap-2">
+                      ✓ Configuração ativa desde {formatDateBR(configCLT.created_at)}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="salario-base">Salário Base (R$)</Label>
+                    <Input
+                      id="salario-base"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={salarioBase}
+                      onChange={(e) => setSalarioBase(e.target.value)}
+                      placeholder="2700.00"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="valor-diaria">Valor da Diária (R$)</Label>
+                    <Input
+                      id="valor-diaria"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={valorDiaria}
+                      onChange={(e) => setValorDiaria(e.target.value)}
+                      placeholder="80.00"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="valor-hora-extra">Valor Hora Extra (R$)</Label>
+                    <Input
+                      id="valor-hora-extra"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={valorHoraExtra}
+                      onChange={(e) => setValorHoraExtra(e.target.value)}
+                      placeholder="19.64"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="valor-hora-fds">Valor Hora Fim de Semana (R$)</Label>
+                    <Input
+                      id="valor-hora-fds"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={valorHoraFDS}
+                      onChange={(e) => setValorHoraFDS(e.target.value)}
+                      placeholder="24.55"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="valor-hora-feriado">Valor Hora Feriado (R$)</Label>
+                    <Input
+                      id="valor-hora-feriado"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={valorHoraFeriado}
+                      onChange={(e) => setValorHoraFeriado(e.target.value)}
+                      placeholder="24.55"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button 
+                    onClick={handleSalvarConfigCLT}
+                    disabled={salvandoConfig}
+                  >
+                    {salvandoConfig ? 'Salvando...' : 'Salvar Configuração'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 
