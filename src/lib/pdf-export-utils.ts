@@ -205,34 +205,39 @@ export async function gerarPDFViagem(
         yPos = 20;
       }
 
-      const url = getPublicUrl(comprovante.url);
       doc.text(`${comprovante.nome} (${comprovante.tipo_documento || 'Documento'})`, 20, yPos);
       yPos += 5;
 
-      // Tentar adicionar miniatura da imagem
+      // Adicionar imagem do comprovante se for uma imagem
       if (comprovante.mime_type?.startsWith('image/')) {
         try {
-          const dataUrl = await imagemParaDataURL(url);
+          const dataUrl = await imagemParaDataURL(comprovante.url);
           if (dataUrl) {
-            doc.addImage(dataUrl, 'JPEG', 20, yPos, 80, 60);
-            yPos += 65;
+            // Adicionar imagem em tamanho maior para melhor visualização
+            const imgWidth = 170;
+            const imgHeight = 120;
+            
+            if (yPos + imgHeight > 280) {
+              doc.addPage();
+              yPos = 20;
+            }
+            
+            doc.addImage(dataUrl, 'JPEG', 20, yPos, imgWidth, imgHeight);
+            yPos += imgHeight + 10;
           }
         } catch (error) {
           console.error('Erro ao adicionar imagem:', error);
-          doc.setTextColor(128, 128, 128);
+          doc.setTextColor(255, 0, 0);
           doc.text('(Erro ao carregar imagem)', 20, yPos);
+          doc.setTextColor(0, 0, 0);
           yPos += 5;
         }
       } else {
         doc.setTextColor(128, 128, 128);
-        doc.text(`Tipo: ${comprovante.mime_type || 'Desconhecido'}`, 20, yPos);
-        yPos += 5;
+        doc.text(`Tipo: ${comprovante.mime_type || 'Desconhecido'} - Não é uma imagem`, 20, yPos);
+        doc.setTextColor(0, 0, 0);
+        yPos += 10;
       }
-
-      doc.setTextColor(0, 0, 255);
-      doc.textWithLink('Baixar comprovante', 20, yPos, { url });
-      doc.setTextColor(0, 0, 0);
-      yPos += 10;
     }
   }
 
