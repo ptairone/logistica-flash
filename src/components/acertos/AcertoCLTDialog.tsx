@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Upload, Plus, Trash2, DollarSign } from "lucide-react";
+import { Upload, Plus, Trash2, DollarSign, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { acertoCLTSchema, type AcertoCLT, type DiaTrabalhadoCLT } from "@/lib/validations-acerto-clt";
 import { useMotoristas } from "@/hooks/useMotoristas";
@@ -39,6 +39,8 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
   const [novaDataFeriado, setNovaDataFeriado] = useState("");
   const [nomeFeriado, setNomeFeriado] = useState("");
   const [progressoConversao, setProgressoConversao] = useState({ atual: 0, total: 0 });
+  const [tempoProcessamento, setTempoProcessamento] = useState(0);
+  const [statusProcessamento, setStatusProcessamento] = useState<'idle' | 'convertendo' | 'enviando' | 'processando' | 'concluido'>('idle');
 
   const form = useForm<AcertoCLT>({
     resolver: zodResolver(acertoCLTSchema),
@@ -89,11 +91,16 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
       return;
     }
 
+    const tempoInicio = Date.now();
+    let intervalId: NodeJS.Timeout | null = null;
+
     try {
       let paginasBase64: string[] = [];
 
       // Se for PDF, converter todas as páginas
       if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        setStatusProcessamento('convertendo');
+        
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const numPages = pdf.numPages;
@@ -128,6 +135,7 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
 
         toast.success(`${numPages} páginas convertidas com sucesso!`);
       } else if (file.type.startsWith('image/')) {
+        setStatusProcessamento('enviando');
         // Se for imagem, apenas converter para base64
         const reader = new FileReader();
         const base64 = await new Promise<string>((resolve, reject) => {
@@ -140,14 +148,35 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
         throw new Error('Formato de arquivo não suportado. Use PDF ou imagens (PNG/JPG).');
       }
 
-      // Processar com a edge function
-      toast.info("Enviando para processamento...");
+      // Iniciar temporizador
+      setStatusProcessamento('processando');
+      setTempoProcessamento(0);
       setProgressoConversao({ atual: 0, total: 0 });
+      
+      intervalId = setInterval(() => {
+        setTempoProcessamento(Math.floor((Date.now() - tempoInicio) / 1000));
+      }, 1000);
+
+      // Processar com a edge function
+      const toastId = toast.loading(
+        <div>
+          <p>🤖 Processando com IA (GPT-4o)...</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {paginasBase64.length} {paginasBase64.length === 1 ? 'imagem' : 'imagens'} • Aguarde...
+          </p>
+        </div>,
+        { duration: Infinity }
+      );
       
       const resultado = await processarRelatorio({
         imagens: paginasBase64,
         fileName: file.name
       });
+
+      // Parar temporizador
+      if (intervalId) clearInterval(intervalId);
+      const tempoTotal = Math.floor((Date.now() - tempoInicio) / 1000);
+      setStatusProcessamento('concluido');
 
       // Converter dados do rastreador para dias trabalhados
       const diasProcessados: DiaTrabalhadoCLT[] = resultado.dias.map((dia: any) => {
@@ -188,11 +217,25 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
 
       setDias(diasProcessados);
       form.setValue("tipo_entrada", "pdf");
-      toast.success(`${diasProcessados.length} dias processados com sucesso!`);
+      
+      toast.success(
+        <div>
+          <p className="font-semibold">✅ Processamento concluído!</p>
+          <ul className="text-xs mt-2 space-y-1">
+            <li>📄 {paginasBase64.length} {paginasBase64.length === 1 ? 'página' : 'páginas'} processada(s)</li>
+            <li>📅 {diasProcessados.length} dias extraídos</li>
+            <li>⏱️ Tempo: {tempoTotal}s</li>
+          </ul>
+        </div>,
+        { id: toastId, duration: 5000 }
+      );
     } catch (error: any) {
+      if (intervalId) clearInterval(intervalId);
       console.error(error);
       toast.error(error.message || "Erro ao processar relatório");
     } finally {
+      setStatusProcessamento('idle');
+      setTempoProcessamento(0);
       setProgressoConversao({ atual: 0, total: 0 });
     }
   };
@@ -388,12 +431,18 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
                     <label className="block text-sm font-medium mb-2">
                       Importar Relatório PDF ou Imagem
                     </label>
-                    <Input
-                      type="file"
-                      accept="application/pdf,image/png,image/jpeg"
-                      onChange={handleFileUpload}
-                      disabled={isProcessing || !config}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept="application/pdf,image/png,image/jpeg"
+                        onChange={handleFileUpload}
+                        disabled={isProcessing || statusProcessamento !== 'idle' || !config}
+                        className="cursor-pointer"
+                      />
+                      {(isProcessing || statusProcessamento !== 'idle') && (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
+                      )}
+                    </div>
                   </div>
                   <div className="text-center text-sm text-muted-foreground pt-6">
                     OU
@@ -411,13 +460,43 @@ export function AcertoCLTDialog({ open, onOpenChange, onSubmit, acerto }: Acerto
                   </div>
                 </div>
 
-                {progressoConversao.total > 0 && (
+                {progressoConversao.total > 0 && statusProcessamento === 'convertendo' && (
                   <div className="space-y-2">
                     <Progress value={(progressoConversao.atual / progressoConversao.total) * 100} />
                     <p className="text-sm text-muted-foreground text-center">
                       Convertendo página {progressoConversao.atual} de {progressoConversao.total}
                     </p>
                   </div>
+                )}
+
+                {statusProcessamento === 'processando' && (
+                  <Card className="border-blue-200 bg-blue-50">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                          <div>
+                            <p className="font-medium text-blue-900">
+                              🤖 Processando com IA (GPT-4o)
+                            </p>
+                            <p className="text-sm text-blue-700">
+                              Extraindo dados do relatório...
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="text-lg font-mono">
+                          {tempoProcessamento}s
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Progress value={33} className="h-2" />
+                        <p className="text-xs text-blue-600 text-center">
+                          ⏳ Aguarde enquanto a IA analisa o documento...
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
 
                 {!config && selectedMotorista && (
