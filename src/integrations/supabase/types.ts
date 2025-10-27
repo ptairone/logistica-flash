@@ -253,8 +253,11 @@ export type Database = {
           total_horas_extras: number
           total_horas_fds: number
           total_horas_feriados: number
+          total_horas_noturnas: number
+          total_km_rodados: number
           total_liquido: number
           updated_at: string
+          valor_adicional_noturno: number
           valor_horas_extras: number
           valor_horas_fds: number
           valor_horas_feriados: number
@@ -280,8 +283,11 @@ export type Database = {
           total_horas_extras?: number
           total_horas_fds?: number
           total_horas_feriados?: number
+          total_horas_noturnas?: number
+          total_km_rodados?: number
           total_liquido?: number
           updated_at?: string
+          valor_adicional_noturno?: number
           valor_horas_extras?: number
           valor_horas_fds?: number
           valor_horas_feriados?: number
@@ -307,8 +313,11 @@ export type Database = {
           total_horas_extras?: number
           total_horas_fds?: number
           total_horas_feriados?: number
+          total_horas_noturnas?: number
+          total_km_rodados?: number
           total_liquido?: number
           updated_at?: string
+          valor_adicional_noturno?: number
           valor_horas_extras?: number
           valor_horas_fds?: number
           valor_horas_feriados?: number
@@ -335,13 +344,16 @@ export type Database = {
           horas_extras: number
           horas_normais: number
           horas_parado_ligado: number
+          horas_tempo_noturno: number
           horas_totais: number
           id: string
+          km_rodados: number
           nome_feriado: string | null
           origem: string
           updated_at: string
           valor_adicional_fds: number
           valor_adicional_feriado: number
+          valor_adicional_noturno: number
           valor_diaria: number
           valor_horas_extras: number
           valor_total_dia: number
@@ -357,13 +369,16 @@ export type Database = {
           horas_extras?: number
           horas_normais?: number
           horas_parado_ligado?: number
+          horas_tempo_noturno?: number
           horas_totais?: number
           id?: string
+          km_rodados?: number
           nome_feriado?: string | null
           origem?: string
           updated_at?: string
           valor_adicional_fds?: number
           valor_adicional_feriado?: number
+          valor_adicional_noturno?: number
           valor_diaria?: number
           valor_horas_extras?: number
           valor_total_dia?: number
@@ -379,13 +394,16 @@ export type Database = {
           horas_extras?: number
           horas_normais?: number
           horas_parado_ligado?: number
+          horas_tempo_noturno?: number
           horas_totais?: number
           id?: string
+          km_rodados?: number
           nome_feriado?: string | null
           origem?: string
           updated_at?: string
           valor_adicional_fds?: number
           valor_adicional_feriado?: number
+          valor_adicional_noturno?: number
           valor_diaria?: number
           valor_horas_extras?: number
           valor_total_dia?: number
