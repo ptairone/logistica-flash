@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Camera, ArrowLeft, Loader2, DollarSign, Receipt, Banknote } from 'lucide-react';
+import { Camera, ArrowLeft, Loader2, DollarSign, Receipt, Banknote, FileImage } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RecebimentoFreteForm } from '@/components/motorista/RecebimentoFreteForm';
@@ -10,11 +10,21 @@ import { RecebimentoFreteForm } from '@/components/motorista/RecebimentoFreteFor
 export default function AdicionarDespesa() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [foto, setFoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [processando, setProcessando] = useState(false);
   const [showRecebimentoForm, setShowRecebimentoForm] = useState(false);
   const [dadosExtraidosRecebimento, setDadosExtraidosRecebimento] = useState<any>(null);
+
+  // Carregar foto do state (vinda do modal de captura rápida)
+  useEffect(() => {
+    if (location.state?.foto) {
+      const file = location.state.foto as File;
+      setFoto(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  }, [location.state]);
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -198,16 +208,26 @@ export default function AdicionarDespesa() {
       <div className="p-6 max-w-2xl mx-auto space-y-6">
         {/* Área de Captura */}
         {!foto ? (
-          <label
-            htmlFor="foto-comprovante"
-            className="flex flex-col items-center justify-center gap-4 h-64 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors"
-          >
-            <Camera className="h-16 w-16 text-muted-foreground" />
-            <div className="text-center">
-              <p className="text-xl font-semibold mb-1">Tirar Foto do Comprovante</p>
-              <p className="text-sm text-muted-foreground">Toque para abrir a câmera</p>
-            </div>
-          </label>
+          <div className="space-y-3">
+            <Button
+              onClick={() => document.getElementById('foto-camera')?.click()}
+              className="w-full h-20 text-lg font-semibold gap-3"
+              size="lg"
+            >
+              <Camera className="h-6 w-6" />
+              📸 Tirar Foto
+            </Button>
+            
+            <Button
+              onClick={() => document.getElementById('foto-galeria')?.click()}
+              variant="outline"
+              className="w-full h-20 text-lg font-semibold gap-3"
+              size="lg"
+            >
+              <FileImage className="h-6 w-6" />
+              📎 Escolher da Galeria
+            </Button>
+          </div>
         ) : (
           <div className="space-y-4">
             <Card className="overflow-hidden">
@@ -226,11 +246,19 @@ export default function AdicionarDespesa() {
           </div>
         )}
 
+        {/* Inputs ocultos - câmera e galeria separados */}
         <input
-          id="foto-comprovante"
+          id="foto-camera"
           type="file"
           accept="image/*"
           capture="environment"
+          onChange={handleFotoChange}
+          className="hidden"
+        />
+        <input
+          id="foto-galeria"
+          type="file"
+          accept="image/*"
           onChange={handleFotoChange}
           className="hidden"
         />
