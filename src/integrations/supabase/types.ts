@@ -871,6 +871,7 @@ export type Database = {
           valor_diaria: number
           valor_hora_extra: number
           valor_hora_fds: number
+          valor_hora_feriado: number
         }
         Insert: {
           ativo?: boolean
@@ -882,6 +883,7 @@ export type Database = {
           valor_diaria?: number
           valor_hora_extra?: number
           valor_hora_fds?: number
+          valor_hora_feriado?: number
         }
         Update: {
           ativo?: boolean
@@ -893,6 +895,7 @@ export type Database = {
           valor_diaria?: number
           valor_hora_extra?: number
           valor_hora_fds?: number
+          valor_hora_feriado?: number
         }
         Relationships: [
           {
