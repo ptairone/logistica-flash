@@ -14,14 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
+      acerto_ajustes: {
+        Row: {
+          acerto_id: string
+          categoria: string
+          comprovante_url: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          justificativa: string | null
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          acerto_id: string
+          categoria: string
+          comprovante_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          id?: string
+          justificativa?: string | null
+          tipo: string
+          valor: number
+        }
+        Update: {
+          acerto_id?: string
+          categoria?: string
+          comprovante_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          justificativa?: string | null
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acerto_ajustes_acerto_id_fkey"
+            columns: ["acerto_id"]
+            isOneToOne: false
+            referencedRelation: "acertos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acerto_debitos: {
+        Row: {
+          acerto_id: string | null
+          created_at: string
+          data_vencimento: string | null
+          descricao: string
+          id: string
+          motorista_id: string
+          observacoes: string | null
+          parcelas: number | null
+          saldo: number
+          status: string
+          tipo: string
+          updated_at: string
+          valor_original: number
+          valor_pago: number
+        }
+        Insert: {
+          acerto_id?: string | null
+          created_at?: string
+          data_vencimento?: string | null
+          descricao: string
+          id?: string
+          motorista_id: string
+          observacoes?: string | null
+          parcelas?: number | null
+          saldo: number
+          status?: string
+          tipo: string
+          updated_at?: string
+          valor_original: number
+          valor_pago?: number
+        }
+        Update: {
+          acerto_id?: string | null
+          created_at?: string
+          data_vencimento?: string | null
+          descricao?: string
+          id?: string
+          motorista_id?: string
+          observacoes?: string | null
+          parcelas?: number | null
+          saldo?: number
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor_original?: number
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acerto_debitos_acerto_id_fkey"
+            columns: ["acerto_id"]
+            isOneToOne: false
+            referencedRelation: "acertos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acerto_debitos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       acertos: {
         Row: {
           base_comissao: number | null
           codigo: string
+          comprovantes_validados: boolean | null
           created_at: string
           data_criacao: string
           data_pagamento: string | null
+          data_revisao: string | null
+          etapa_atual: string | null
           forma_pagamento: string | null
+          historico_alteracoes: Json | null
           id: string
           motorista_id: string
           observacoes: string | null
@@ -29,10 +146,15 @@ export type Database = {
           periodo_fim: string
           periodo_inicio: string
           recibo_url: string | null
+          revisado_por: string | null
           status: Database["public"]["Enums"]["status_acerto"] | null
           total_adiantamentos: number | null
+          total_ajustes_admin: number | null
+          total_bonificacoes: number | null
+          total_debitos_descontados: number | null
           total_descontos: number | null
           total_pagar: number | null
+          total_penalidades: number | null
           total_reembolsos: number | null
           updated_at: string
           valor_comissao: number | null
@@ -40,10 +162,14 @@ export type Database = {
         Insert: {
           base_comissao?: number | null
           codigo: string
+          comprovantes_validados?: boolean | null
           created_at?: string
           data_criacao?: string
           data_pagamento?: string | null
+          data_revisao?: string | null
+          etapa_atual?: string | null
           forma_pagamento?: string | null
+          historico_alteracoes?: Json | null
           id?: string
           motorista_id: string
           observacoes?: string | null
@@ -51,10 +177,15 @@ export type Database = {
           periodo_fim: string
           periodo_inicio: string
           recibo_url?: string | null
+          revisado_por?: string | null
           status?: Database["public"]["Enums"]["status_acerto"] | null
           total_adiantamentos?: number | null
+          total_ajustes_admin?: number | null
+          total_bonificacoes?: number | null
+          total_debitos_descontados?: number | null
           total_descontos?: number | null
           total_pagar?: number | null
+          total_penalidades?: number | null
           total_reembolsos?: number | null
           updated_at?: string
           valor_comissao?: number | null
@@ -62,10 +193,14 @@ export type Database = {
         Update: {
           base_comissao?: number | null
           codigo?: string
+          comprovantes_validados?: boolean | null
           created_at?: string
           data_criacao?: string
           data_pagamento?: string | null
+          data_revisao?: string | null
+          etapa_atual?: string | null
           forma_pagamento?: string | null
+          historico_alteracoes?: Json | null
           id?: string
           motorista_id?: string
           observacoes?: string | null
@@ -73,10 +208,15 @@ export type Database = {
           periodo_fim?: string
           periodo_inicio?: string
           recibo_url?: string | null
+          revisado_por?: string | null
           status?: Database["public"]["Enums"]["status_acerto"] | null
           total_adiantamentos?: number | null
+          total_ajustes_admin?: number | null
+          total_bonificacoes?: number | null
+          total_debitos_descontados?: number | null
           total_descontos?: number | null
           total_pagar?: number | null
+          total_penalidades?: number | null
           total_reembolsos?: number | null
           updated_at?: string
           valor_comissao?: number | null
@@ -161,6 +301,63 @@ export type Database = {
             columns: ["viagem_id"]
             isOneToOne: false
             referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      despesas_validacao: {
+        Row: {
+          acerto_id: string
+          created_at: string
+          despesa_id: string
+          id: string
+          justificativa: string | null
+          observacoes: string | null
+          status: string
+          validado_em: string | null
+          validado_por: string | null
+          valor_aprovado: number | null
+          valor_original: number
+        }
+        Insert: {
+          acerto_id: string
+          created_at?: string
+          despesa_id: string
+          id?: string
+          justificativa?: string | null
+          observacoes?: string | null
+          status?: string
+          validado_em?: string | null
+          validado_por?: string | null
+          valor_aprovado?: number | null
+          valor_original: number
+        }
+        Update: {
+          acerto_id?: string
+          created_at?: string
+          despesa_id?: string
+          id?: string
+          justificativa?: string | null
+          observacoes?: string | null
+          status?: string
+          validado_em?: string | null
+          validado_por?: string | null
+          valor_aprovado?: number | null
+          valor_original?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_validacao_acerto_id_fkey"
+            columns: ["acerto_id"]
+            isOneToOne: false
+            referencedRelation: "acertos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_validacao_despesa_id_fkey"
+            columns: ["despesa_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
             referencedColumns: ["id"]
           },
         ]

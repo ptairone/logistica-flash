@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search, FileSpreadsheet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAcertos, useVincularViagens } from '@/hooks/useAcertos';
-import { AcertoDialog } from '@/components/acertos/AcertoDialog';
+import { AcertoDialogWizard } from '@/components/acertos/AcertoDialogWizard';
 import { AcertoCard } from '@/components/acertos/AcertoCard';
 import { AcertoDetailsDialog } from '@/components/acertos/AcertoDetailsDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
