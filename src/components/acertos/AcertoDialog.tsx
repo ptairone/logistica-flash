@@ -13,6 +13,8 @@ import { acertoSchema, AcertoFormData, calcularAcerto, gerarCodigoAcerto, Viagem
 import { useMotoristasAtivos } from '@/hooks/useViagens';
 import { useViagensDisponiveis, useVincularViagens } from '@/hooks/useAcertos';
 import { formatDateBR } from '@/lib/validations';
+import { AcertoPreview } from './AcertoPreview';
+import { ChevronLeft } from 'lucide-react';
 
 interface AcertoDialogProps {
   open: boolean;
@@ -25,6 +27,8 @@ interface AcertoDialogProps {
 export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }: AcertoDialogProps) {
   const { data: motoristas = [] } = useMotoristasAtivos();
   const [selectedViagens, setSelectedViagens] = useState<string[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<AcertoFormData | null>(null);
   
   const {
     register,
@@ -127,6 +131,8 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
       });
       setSelectedViagens([]);
     }
+    setShowPreview(false);
+    setPreviewData(null);
   }, [acerto, reset, open]);
 
   const toggleViagem = (viagemId: string) => {
@@ -137,13 +143,13 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
     );
   };
 
-  const handleFormSubmit = (data: AcertoFormData) => {
+  const handlePreview = (data: AcertoFormData) => {
     let finalData = { 
       ...data,
       data_criacao: new Date().toISOString(),
     };
     
-    // Recalcular totais antes de submeter
+    // Recalcular totais antes de mostrar preview
     if (selectedViagens.length > 0 && viagensDisponiveis.length > 0) {
       const viagensSelecionadas = viagensDisponiveis.filter(v => 
         selectedViagens.includes(v.id)
@@ -163,10 +169,15 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
         total_reembolsos: calculos.totalReembolsos,
         total_pagar: calculos.totalPagar,
       };
-      
-      onSubmit(finalData, selectedViagens);
-    } else {
-      onSubmit(finalData, selectedViagens);
+    }
+    
+    setPreviewData(finalData);
+    setShowPreview(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    if (previewData) {
+      onSubmit(previewData, selectedViagens);
     }
   };
 
@@ -175,14 +186,62 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
   const totalReembolsos = watch('total_reembolsos') || 0;
   const totalPagar = watch('total_pagar') || 0;
 
+  const viagensSelecionadas = viagensDisponiveis.filter(v => 
+    selectedViagens.includes(v.id)
+  ) as ViagemAcerto[];
+
+  const motoristaSelecionado = motoristas.find(m => m.id === motoristaId);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{acerto ? 'Editar Acerto' : 'Novo Acerto'}</DialogTitle>
+          <DialogTitle>
+            {showPreview ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPreview(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span>Revisar Acerto</span>
+              </div>
+            ) : (
+              acerto ? 'Editar Acerto' : 'Novo Acerto'
+            )}
+          </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        {showPreview && previewData && motoristaSelecionado ? (
+          <div className="space-y-4">
+            <AcertoPreview 
+              data={previewData}
+              viagens={viagensSelecionadas}
+              motoristaNome={motoristaSelecionado.nome}
+            />
+            
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowPreview(false)}
+              >
+                Voltar para Edição
+              </Button>
+              <Button 
+                onClick={handleConfirmSubmit}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Salvando...' : 'Confirmar e Salvar'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit(handlePreview)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="motorista_id">Motorista *</Label>
             <Select
@@ -364,19 +423,20 @@ export function AcertoDialog({ open, onOpenChange, onSubmit, acerto, isLoading }
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isLoading || (!acerto && selectedViagens.length === 0)}>
-              {isLoading ? 'Salvando...' : acerto ? 'Atualizar' : 'Criar Acerto'}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading || (!acerto && selectedViagens.length === 0)}>
+                {acerto ? 'Atualizar' : 'Revisar Acerto'}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
