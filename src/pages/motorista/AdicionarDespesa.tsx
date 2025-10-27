@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Camera, ArrowLeft, Loader2, DollarSign, Receipt, Banknote, FileImage } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { RecebimentoFreteForm } from '@/components/motorista/RecebimentoFreteForm';
+import { RecebimentoFreteMultiplo } from '@/components/motorista/RecebimentoFreteMultiplo';
 
 export default function AdicionarDespesa() {
   const { id } = useParams<{ id: string }>();
@@ -177,34 +177,38 @@ export default function AdicionarDespesa() {
     }
   };
 
-  const handleRecebimentoSubmit = async (data: {
+  const handleRecebimentoSubmit = async (parcelas: Array<{
     valor: number;
     forma_pagamento: string;
     data: string;
     descricao?: string;
-  }) => {
+  }>) => {
     if (!id) return;
 
     setProcessando(true);
     try {
+      // Inserir todas as parcelas de uma vez
+      const transacoes = parcelas.map(parcela => ({
+        viagem_id: id,
+        tipo: 'recebimento_frete',
+        valor: parcela.valor,
+        data: parcela.data,
+        descricao: parcela.descricao || `Recebimento via ${parcela.forma_pagamento}`,
+        forma_pagamento: parcela.forma_pagamento,
+      }));
+
       const { error } = await supabase
         .from('transacoes_viagem')
-        .insert({
-          viagem_id: id,
-          tipo: 'recebimento_frete',
-          valor: data.valor,
-          data: data.data,
-          descricao: data.descricao || 'Recebimento de frete',
-          forma_pagamento: data.forma_pagamento,
-        });
+        .insert(transacoes);
 
       if (error) throw error;
       
-      toast.success('Recebimento de frete registrado com sucesso!');
+      const totalRecebido = parcelas.reduce((acc, p) => acc + p.valor, 0);
+      toast.success(`${parcelas.length} recebimento(s) registrado(s) - Total: R$ ${totalRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`);
       navigate(`/motorista/viagem/${id}`);
     } catch (error: any) {
       console.error('Erro ao salvar:', error);
-      toast.error('Erro ao salvar recebimento: ' + error.message);
+      toast.error('Erro ao salvar recebimentos: ' + error.message);
     } finally {
       setProcessando(false);
     }
@@ -329,7 +333,7 @@ export default function AdicionarDespesa() {
         )}
       </div>
 
-      <RecebimentoFreteForm
+      <RecebimentoFreteMultiplo
         open={showRecebimentoForm}
         onOpenChange={setShowRecebimentoForm}
         onSubmit={handleRecebimentoSubmit}

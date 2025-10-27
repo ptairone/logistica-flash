@@ -278,7 +278,8 @@ export function useDespesas(viagemId?: string) {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['despesas', variables.viagem_id] });
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
       toast({
         title: 'Sucesso',
@@ -303,7 +304,8 @@ export function useDespesas(viagemId?: string) {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
+      // Invalidar todas as queries de despesas para garantir atualização
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
       toast({
         title: 'Sucesso',
