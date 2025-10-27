@@ -108,4 +108,61 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Mobile-specific styles */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .pt-safe {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+}
+
+@layer utilities {
+  /* Touch-friendly targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Mobile text sizes */
+  .mobile-text-xs {
+    @apply text-xs;
+  }
+  .mobile-text-sm {
+    @apply text-sm;
+  }
+  .mobile-text-base {
+    @apply text-base; /* 16px - prevents zoom on iOS */
+  }
+
+  /* Mobile spacing */
+  .mobile-spacing {
+    @apply p-4;
+  }
+  .mobile-spacing-sm {
+    @apply p-3;
+  }
+
+  /* Ripple effect for touch */
+  .ripple {
+    @apply relative overflow-hidden;
+  }
+  .ripple::after {
+    content: '';
+    @apply absolute inset-0 bg-current opacity-0 transition-opacity;
+  }
+  .ripple:active::after {
+    @apply opacity-10;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

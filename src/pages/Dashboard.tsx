@@ -5,10 +5,34 @@ import { useDashboard } from '@/hooks/useDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useDevice } from '@/hooks/useDevice';
+import { DashboardMobile } from '@/components/mobile/DashboardMobile';
 
 export default function Dashboard() {
   const { kpis, isLoading } = useDashboard();
+  const { isMobile } = useDevice();
 
+  // Renderiza versão mobile
+  if (isMobile) {
+    return (
+      <MainLayout mobileTitle="Dashboard">
+        {isLoading ? (
+          <div className="p-4 space-y-4">
+            <Skeleton className="h-16 w-full" />
+            <div className="grid grid-cols-2 gap-3">
+              {[1, 2, 3, 4].map(i => (
+                <Skeleton key={i} className="h-24" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <DashboardMobile />
+        )}
+      </MainLayout>
+    );
+  }
+
+  // Renderiza versão desktop
   if (isLoading) {
     return (
       <MainLayout>

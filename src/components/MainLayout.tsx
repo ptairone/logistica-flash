@@ -2,12 +2,38 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { MobileMenu } from './MobileMenu';
+import { useDevice } from '@/hooks/useDevice';
+import { MobileLayout } from './mobile/MobileLayout';
 
 interface MainLayoutProps {
   children: ReactNode;
+  mobileTitle?: string;
+  showMobileBack?: boolean;
+  mobileRightAction?: ReactNode;
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
+export function MainLayout({ 
+  children, 
+  mobileTitle,
+  showMobileBack,
+  mobileRightAction 
+}: MainLayoutProps) {
+  const { isMobile } = useDevice();
+
+  // Renderiza layout mobile
+  if (isMobile) {
+    return (
+      <MobileLayout 
+        title={mobileTitle}
+        showBack={showMobileBack}
+        rightAction={mobileRightAction}
+      >
+        {children}
+      </MobileLayout>
+    );
+  }
+
+  // Renderiza layout desktop
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
