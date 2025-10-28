@@ -9,6 +9,8 @@ import { MecanicoDialog } from '@/components/mecanicos/MecanicoDialog';
 import { CriarLoginMecanicoDialog } from '@/components/mecanicos/CriarLoginMecanicoDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { MecanicoFormData } from '@/lib/validations-manutencao';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Mecanicos() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,11 +47,50 @@ export default function Mecanicos() {
     setLoginDialogOpen(true);
   };
 
-  const handleSubmit = (data: MecanicoFormData) => {
+  const handleSubmit = async (data: MecanicoFormData & { senha?: string }) => {
+    const { senha, ...mecanicoData } = data;
+    
     if (selectedMecanico) {
-      updateMecanico.mutate({ id: selectedMecanico.id, data });
+      updateMecanico.mutate({ id: selectedMecanico.id, data: mecanicoData });
     } else {
-      createMecanico.mutate(data);
+      // Criar mecânico
+      const { data: novoMecanico, error: createError } = await supabase
+        .from('mecanicos' as any)
+        .insert([mecanicoData as any])
+        .select()
+        .single();
+
+      if (createError) {
+        toast.error('Erro ao cadastrar mecânico: ' + createError.message);
+        return;
+      }
+
+      const mecanicoId = (novoMecanico as any)?.id;
+
+      if (mecanicoId && senha && data.email) {
+        // Criar login automaticamente
+        try {
+          const { error } = await supabase.functions.invoke('criar-usuario-motorista', {
+            body: {
+              email: data.email,
+              password: senha,
+              nome: data.nome,
+              entityType: 'mecanico',
+              entityId: mecanicoId,
+            },
+          });
+
+          if (error) throw error;
+          toast.success('Mecânico cadastrado e login criado com sucesso!');
+        } catch (error: any) {
+          toast.error('Mecânico criado, mas erro ao criar login: ' + error.message);
+        }
+      } else {
+        toast.success('Mecânico cadastrado com sucesso!');
+      }
+      
+      // Recarregar lista
+      window.location.reload();
     }
   };
 

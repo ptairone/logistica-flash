@@ -1,20 +1,21 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { X } from 'lucide-react';
 import { mecanicoSchema, especialidadesOptions, type MecanicoFormData } from '@/lib/validations-manutencao';
-import { useState } from 'react';
 
 interface MecanicoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: MecanicoFormData) => void;
+  onSubmit: (data: MecanicoFormData & { senha?: string }) => void;
   mecanico?: any;
 }
 
@@ -22,6 +23,8 @@ export function MecanicoDialog({ open, onOpenChange, onSubmit, mecanico }: Mecan
   const [especialidadesSelecionadas, setEspecialidadesSelecionadas] = useState<string[]>(
     mecanico?.especialidades || []
   );
+  const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
 
   const form = useForm<MecanicoFormData>({
     resolver: zodResolver(mecanicoSchema),
@@ -37,9 +40,15 @@ export function MecanicoDialog({ open, onOpenChange, onSubmit, mecanico }: Mecan
   });
 
   const handleSubmit = (data: MecanicoFormData) => {
-    onSubmit({ ...data, especialidades: especialidadesSelecionadas });
+    if (!mecanico && senha && senha !== confirmarSenha) {
+      form.setError('email' as any, { message: 'As senhas não coincidem' });
+      return;
+    }
+    onSubmit({ ...data, especialidades: especialidadesSelecionadas, senha: !mecanico ? senha : undefined } as any);
     form.reset();
     setEspecialidadesSelecionadas([]);
+    setSenha('');
+    setConfirmarSenha('');
   };
 
   const adicionarEspecialidade = (especialidade: string) => {
@@ -131,20 +140,53 @@ export function MecanicoDialog({ open, onOpenChange, onSubmit, mecanico }: Mecan
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="ativo">Ativo</SelectItem>
-                        <SelectItem value="inativo">Inativo</SelectItem>
-                        <SelectItem value="ferias">Férias</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="ativo">Ativo</SelectItem>
+                <SelectItem value="inativo">Inativo</SelectItem>
+                <SelectItem value="ferias">Férias</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+
+    {!mecanico && (
+      <>
+        <Separator className="my-4" />
+        <div className="space-y-4">
+          <h3 className="font-medium">Criar Login (Opcional)</h3>
+          <p className="text-sm text-muted-foreground">
+            Preencha os campos abaixo para criar automaticamente um login para o mecânico
+          </p>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Senha</label>
+              <Input
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
               />
             </div>
-
             <div className="space-y-2">
+              <label className="text-sm font-medium">Confirmar Senha</label>
+              <Input
+                type="password"
+                placeholder="Digite novamente"
+                value={confirmarSenha}
+                onChange={(e) => setConfirmarSenha(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+
+    <div className="space-y-2">
               <FormLabel>Especialidades</FormLabel>
               <Select onValueChange={adicionarEspecialidade}>
                 <SelectTrigger>
