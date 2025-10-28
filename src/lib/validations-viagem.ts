@@ -31,15 +31,6 @@ export const viagemSchema = z.object({
   message: 'Origem e destino são obrigatórios quando não há frete vinculado',
   path: ['origem'],
 }).refine((data) => {
-  // Se status é concluída, deve ter data de chegada
-  if (data.status === 'concluida' && !data.data_chegada) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Viagem concluída deve ter data/hora de chegada',
-  path: ['data_chegada'],
-}).refine((data) => {
   // km_final deve ser maior que km_inicial quando ambos existirem
   if (data.km_inicial !== undefined && data.km_final !== undefined && 
       data.km_inicial !== null && data.km_final !== null) {

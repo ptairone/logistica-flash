@@ -328,29 +328,6 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="data_saida">Data/Hora Saída</Label>
-              <Input
-                id="data_saida"
-                type="datetime-local"
-                {...register('data_saida')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="data_chegada">Data/Hora Chegada</Label>
-              <Input
-                id="data_chegada"
-                type="datetime-local"
-                {...register('data_chegada')}
-              />
-              {errors.data_chegada && (
-                <p className="text-sm text-destructive">{errors.data_chegada.message}</p>
-              )}
-            </div>
-          </div>
-
           {/* KM - Visibilidade conforme status */}
           {status === 'planejada' && (
             <div className="space-y-2">
