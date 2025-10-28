@@ -74,43 +74,91 @@ Deno.serve(async (req) => {
   }
 });
 
+async function consultarViaCEP(cep: string): Promise<{
+  localidade: string;
+  uf: string;
+  bairro?: string;
+  logradouro?: string;
+} | null> {
+  try {
+    const cepLimpo = cep.replace(/\D/g, '');
+    const url = `https://viacep.com.br/ws/${cepLimpo}/json/`;
+    
+    console.log('Consultando ViaCEP:', url);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.error('Erro ao consultar ViaCEP:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.erro) {
+      console.error('CEP não encontrado no ViaCEP');
+      return null;
+    }
+    
+    console.log('ViaCEP retornou:', data);
+    
+    return {
+      localidade: data.localidade,
+      uf: data.uf,
+      bairro: data.bairro,
+      logradouro: data.logradouro
+    };
+  } catch (error) {
+    console.error('Erro ao consultar ViaCEP:', error);
+    return null;
+  }
+}
+
 async function geocodificar(cep: string, cidade?: string, uf?: string): Promise<Coordinates | null> {
   try {
-    // Tentar geocodificar usando CEP brasileiro
-    const cepLimpo = cep.replace(/\D/g, '');
+    // PASSO 1: Tentar obter dados do CEP via ViaCEP
+    const dadosCEP = await consultarViaCEP(cep);
     
-    // Se tiver cidade e UF, usar uma busca mais precisa
-    let query = '';
-    if (cidade && uf) {
-      query = `${cepLimpo}, ${cidade}, ${uf}, Brazil`;
-    } else {
-      query = `${cepLimpo}, Brazil`;
+    // Se ViaCEP falhar, usar cidade/UF fornecidos
+    const cidadeFinal = dadosCEP?.localidade || cidade;
+    const ufFinal = dadosCEP?.uf || uf;
+    
+    if (!cidadeFinal || !ufFinal) {
+      console.error('Não foi possível obter cidade/UF para o CEP:', cep);
+      return null;
     }
-
+    
+    // PASSO 2: Geocodificar usando cidade + UF (muito mais preciso que CEP)
+    const query = `${cidadeFinal}, ${ufFinal}, Brazil`;
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=br&limit=1`;
     
-    console.log('Geocodificando:', url);
+    console.log('Geocodificando via Nominatim:', query);
+    
+    // Delay para respeitar rate limit do Nominatim (1 req/segundo)
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'TransportManager/1.0', // Nominatim requer User-Agent
+        'User-Agent': 'TransportManager/1.0',
       },
     });
 
     if (!response.ok) {
-      console.error('Erro na geocodificação:', response.status);
+      console.error('Erro na geocodificação Nominatim:', response.status);
       return null;
     }
 
     const data = await response.json();
     
     if (data && data.length > 0) {
+      console.log('Coordenadas encontradas:', { lat: data[0].lat, lon: data[0].lon, display_name: data[0].display_name });
       return {
         lat: parseFloat(data[0].lat),
         lon: parseFloat(data[0].lon),
       };
     }
 
+    console.error('Nenhuma coordenada encontrada para:', query);
     return null;
   } catch (error) {
     console.error('Erro ao geocodificar:', error);
