@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Info } from 'lucide-react';
+import { Info, Route, Loader2 } from 'lucide-react';
 import { viagemSchema, ViagemFormData, formatCEP } from '@/lib/validations-viagem';
 import { useVeiculosAtivos, useMotoristasAtivos, useFretesDisponiveis } from '@/hooks/useViagens';
 import { supabase } from '@/integrations/supabase/client';
@@ -354,22 +354,45 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
           {/* KM - Visibilidade conforme status */}
           {status === 'planejada' && (
             <div className="space-y-2">
-              <Label htmlFor="km_estimado">
-                KM Estimado (Planejamento) {calculandoDistancia && '(calculando...)'}
-              </Label>
-              <Input
-                id="km_estimado"
-                type="number"
-                step="0.01"
-                {...register('km_estimado', { valueAsNumber: true })}
-                placeholder="450"
-                disabled={calculandoDistancia}
-              />
+              <Label htmlFor="km_estimado">KM Estimado (Planejamento)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="km_estimado"
+                  type="number"
+                  step="0.01"
+                  {...register('km_estimado', { valueAsNumber: true })}
+                  placeholder="450"
+                  disabled={calculandoDistancia}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={calcularDistanciaAutomatica}
+                  disabled={calculandoDistancia || !watch('origem_cep') || !watch('destino_cep')}
+                  className="whitespace-nowrap"
+                >
+                  {calculandoDistancia ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Calculando...
+                    </>
+                  ) : (
+                    <>
+                      <Route className="h-4 w-4 mr-2" />
+                      Calcular
+                    </>
+                  )}
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                {calculandoDistancia 
-                  ? 'Calculando distância automaticamente...' 
-                  : 'Preencha os CEPs para cálculo automático ou insira manualmente'}
+                {!watch('origem_cep') || !watch('destino_cep')
+                  ? 'Preencha os CEPs de origem e destino para calcular automaticamente'
+                  : 'Clique em "Calcular" ou os CEPs já preenchem automaticamente'}
               </p>
+              {errors.km_estimado && (
+                <p className="text-sm text-destructive">{errors.km_estimado.message}</p>
+              )}
             </div>
           )}
 
