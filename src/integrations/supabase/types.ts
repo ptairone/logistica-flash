@@ -418,6 +418,50 @@ export type Database = {
           },
         ]
       }
+      alertas_manutencao: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_alerta: string | null
+          descricao: string
+          id: string
+          km_alerta: number | null
+          tipo: string
+          updated_at: string
+          veiculo_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_alerta?: string | null
+          descricao: string
+          id?: string
+          km_alerta?: number | null
+          tipo: string
+          updated_at?: string
+          veiculo_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_alerta?: string | null
+          descricao?: string
+          id?: string
+          km_alerta?: number | null
+          tipo?: string
+          updated_at?: string
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_manutencao_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias_estoque: {
         Row: {
           cor: string | null
@@ -788,39 +832,73 @@ export type Database = {
           created_at: string
           custo: number | null
           data: string
+          data_conclusao: string | null
+          data_inicio: string | null
           descricao: string | null
           fornecedor: string | null
           id: string
           km_veiculo: number | null
+          mecanico_id: string | null
+          notas_mecanico: string | null
           observacoes: string | null
+          prioridade: string
+          proxima_manutencao_data: string | null
+          proxima_manutencao_km: number | null
+          status: string
           tipo: string
+          updated_at: string
           veiculo_id: string
         }
         Insert: {
           created_at?: string
           custo?: number | null
           data: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
           descricao?: string | null
           fornecedor?: string | null
           id?: string
           km_veiculo?: number | null
+          mecanico_id?: string | null
+          notas_mecanico?: string | null
           observacoes?: string | null
+          prioridade?: string
+          proxima_manutencao_data?: string | null
+          proxima_manutencao_km?: number | null
+          status?: string
           tipo: string
+          updated_at?: string
           veiculo_id: string
         }
         Update: {
           created_at?: string
           custo?: number | null
           data?: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
           descricao?: string | null
           fornecedor?: string | null
           id?: string
           km_veiculo?: number | null
+          mecanico_id?: string | null
+          notas_mecanico?: string | null
           observacoes?: string | null
+          prioridade?: string
+          proxima_manutencao_data?: string | null
+          proxima_manutencao_km?: number | null
+          status?: string
           tipo?: string
+          updated_at?: string
           veiculo_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "manutencoes_mecanico_id_fkey"
+            columns: ["mecanico_id"]
+            isOneToOne: false
+            referencedRelation: "mecanicos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "manutencoes_veiculo_id_fkey"
             columns: ["veiculo_id"]
@@ -829,6 +907,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      manutencoes_itens: {
+        Row: {
+          created_at: string
+          custo_unitario: number
+          id: string
+          item_id: string
+          manutencao_id: string
+          quantidade: number
+        }
+        Insert: {
+          created_at?: string
+          custo_unitario?: number
+          id?: string
+          item_id: string
+          manutencao_id: string
+          quantidade: number
+        }
+        Update: {
+          created_at?: string
+          custo_unitario?: number
+          id?: string
+          item_id?: string
+          manutencao_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencoes_itens_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_estoque"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencoes_itens_manutencao_id_fkey"
+            columns: ["manutencao_id"]
+            isOneToOne: false
+            referencedRelation: "manutencoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mecanicos: {
+        Row: {
+          cpf: string
+          created_at: string
+          email: string | null
+          especialidades: string[] | null
+          id: string
+          nome: string
+          observacoes: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cpf: string
+          created_at?: string
+          email?: string | null
+          especialidades?: string[] | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cpf?: string
+          created_at?: string
+          email?: string | null
+          especialidades?: string[] | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       motoristas: {
         Row: {
@@ -1304,7 +1466,12 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "operacional" | "motorista" | "financeiro"
+      app_role:
+        | "admin"
+        | "operacional"
+        | "motorista"
+        | "financeiro"
+        | "mecanico"
       status_acerto: "aberto" | "fechado" | "pago"
       status_frete:
         | "aberto"
@@ -1450,7 +1617,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "operacional", "motorista", "financeiro"],
+      app_role: ["admin", "operacional", "motorista", "financeiro", "mecanico"],
       status_acerto: ["aberto", "fechado", "pago"],
       status_frete: [
         "aberto",
