@@ -49,9 +49,9 @@ serve(async (req) => {
 
     // Validar número de eixos (2-9, padrão 3)
     const eixosValidados = Math.min(9, Math.max(2, numero_eixos || 3));
-    const vehicle = { type: 'Truck', axles: eixosValidados };
+    const vehicle = { axles: eixosValidados };
     
-    console.log('Veículo enviado ao TollGuru:', vehicle);
+    console.log('Veículo enviado ao TollGuru:', vehicle, 'serviceProvider: here');
 
     const response = await fetch('https://apis.tollguru.com/toll/v2/origin-destination-waypoints', {
       method: 'POST',
@@ -69,7 +69,7 @@ serve(async (req) => {
           lng: destino.lon,
         },
         vehicle: vehicle,
-        mapProvider: 'osrm',
+        serviceProvider: 'here',
       }),
     });
 
@@ -89,13 +89,18 @@ serve(async (req) => {
     }
 
     const costs = route.costs || {};
+    console.log('Costs retornados:', costs);
+    
+    // Priorizar cash, senão tag, senão 0
+    const valorTotalOriginal = costs.cash || costs.tag || 0;
+    const moedaOriginal = costs.currency || 'USD';
     
     const pedagios: PedagioResponse = {
-      valor_total: costs.toll || 0,
-      moeda: costs.currency || 'USD',
+      valor_total: valorTotalOriginal,
+      moeda: moedaOriginal,
       pracas: (route.tolls || []).map((toll: any) => ({
         nome: toll.name || 'Praça não identificada',
-        valor: toll.cost || 0,
+        valor: toll.cashCost || toll.tagCost || 0,
         latitude: toll.lat || 0,
         longitude: toll.lng || 0,
       })),
@@ -103,21 +108,25 @@ serve(async (req) => {
       tempo_estimado_minutos: Math.round((route.duration?.value || 0) / 60),
     };
 
-    const taxaCambio = await obterTaxaCambio();
-    const pedagiosBRL = {
-      ...pedagios,
-      valor_total: pedagios.valor_total * taxaCambio,
-      moeda: 'BRL',
-      pracas: pedagios.pracas.map(p => ({
-        ...p,
-        valor: p.valor * taxaCambio,
-      })),
-    };
+    // Converter moeda apenas se não for BRL
+    let pedagiosFinais = pedagios;
+    if (moedaOriginal !== 'BRL') {
+      const taxaCambio = await obterTaxaCambio();
+      pedagiosFinais = {
+        ...pedagios,
+        valor_total: pedagios.valor_total * taxaCambio,
+        moeda: 'BRL',
+        pracas: pedagios.pracas.map(p => ({
+          ...p,
+          valor: p.valor * taxaCambio,
+        })),
+      };
+    }
 
-    console.log('Pedágios calculados:', pedagiosBRL);
+    console.log('Pedágios calculados:', pedagiosFinais);
 
     return new Response(
-      JSON.stringify(pedagiosBRL),
+      JSON.stringify(pedagiosFinais),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
