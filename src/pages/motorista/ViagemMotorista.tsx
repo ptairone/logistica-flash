@@ -3,16 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Fuel } from 'lucide-react';
 import { EtapaPartida } from '@/components/motorista/EtapaPartida';
 import { EtapaAndamento } from '@/components/motorista/EtapaAndamento';
 import { EtapaChegada } from '@/components/motorista/EtapaChegada';
 import { Card } from '@/components/ui/card';
+import { AbastecimentoDialog } from '@/components/abastecimentos/AbastecimentoDialog';
 
 export default function ViagemMotorista() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [mostrarEncerramento, setMostrarEncerramento] = useState(false);
+  const [showAbastecimentoDialog, setShowAbastecimentoDialog] = useState(false);
 
   const { data: viagem, isLoading, refetch } = useQuery({
     queryKey: ['viagem-motorista', id],
@@ -84,10 +86,25 @@ export default function ViagemMotorista() {
         )}
 
         {viagem.status === 'em_andamento' && !mostrarEncerramento && (
-          <EtapaAndamento 
-            viagem={viagem} 
-            onEncerrar={() => setMostrarEncerramento(true)} 
-          />
+          <>
+            {/* Botão de Abastecimento */}
+            <div className="p-4">
+              <Button
+                onClick={() => setShowAbastecimentoDialog(true)}
+                className="w-full"
+                variant="outline"
+                size="lg"
+              >
+                <Fuel className="h-5 w-5 mr-2" />
+                ⛽ Registrar Abastecimento
+              </Button>
+            </div>
+
+            <EtapaAndamento 
+              viagem={viagem} 
+              onEncerrar={() => setMostrarEncerramento(true)} 
+            />
+          </>
         )}
 
         {viagem.status === 'em_andamento' && mostrarEncerramento && (
@@ -123,6 +140,15 @@ export default function ViagemMotorista() {
           </div>
         )}
       </div>
+
+      {/* Dialog de Abastecimento */}
+      <AbastecimentoDialog
+        open={showAbastecimentoDialog}
+        onClose={() => setShowAbastecimentoDialog(false)}
+        veiculoId={viagem.veiculo_id}
+        viagemId={viagem.id}
+        motoristaId={viagem.motorista_id}
+      />
     </div>
   );
 }

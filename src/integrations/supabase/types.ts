@@ -14,6 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
+      abastecimentos: {
+        Row: {
+          comprovante_url: string | null
+          created_at: string | null
+          data_abastecimento: string
+          id: string
+          km_anterior: number | null
+          km_rodados: number | null
+          km_veiculo: number
+          latitude: number | null
+          litros: number
+          localizacao_timestamp: string | null
+          longitude: number | null
+          media_calculada: number | null
+          motorista_id: string | null
+          observacoes: string | null
+          posto_cidade: string | null
+          posto_nome: string | null
+          posto_uf: string | null
+          status: string | null
+          updated_at: string | null
+          validado_em: string | null
+          validado_por: string | null
+          valor_por_litro: number | null
+          valor_total: number
+          veiculo_id: string
+          viagem_id: string | null
+        }
+        Insert: {
+          comprovante_url?: string | null
+          created_at?: string | null
+          data_abastecimento: string
+          id?: string
+          km_anterior?: number | null
+          km_rodados?: number | null
+          km_veiculo: number
+          latitude?: number | null
+          litros: number
+          localizacao_timestamp?: string | null
+          longitude?: number | null
+          media_calculada?: number | null
+          motorista_id?: string | null
+          observacoes?: string | null
+          posto_cidade?: string | null
+          posto_nome?: string | null
+          posto_uf?: string | null
+          status?: string | null
+          updated_at?: string | null
+          validado_em?: string | null
+          validado_por?: string | null
+          valor_por_litro?: number | null
+          valor_total: number
+          veiculo_id: string
+          viagem_id?: string | null
+        }
+        Update: {
+          comprovante_url?: string | null
+          created_at?: string | null
+          data_abastecimento?: string
+          id?: string
+          km_anterior?: number | null
+          km_rodados?: number | null
+          km_veiculo?: number
+          latitude?: number | null
+          litros?: number
+          localizacao_timestamp?: string | null
+          longitude?: number | null
+          media_calculada?: number | null
+          motorista_id?: string | null
+          observacoes?: string | null
+          posto_cidade?: string | null
+          posto_nome?: string | null
+          posto_uf?: string | null
+          status?: string | null
+          updated_at?: string | null
+          validado_em?: string | null
+          validado_por?: string | null
+          valor_por_litro?: number | null
+          valor_total?: number
+          veiculo_id?: string
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abastecimentos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abastecimentos_validado_por_fkey"
+            columns: ["validado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abastecimentos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abastecimentos_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       acerto_ajustes: {
         Row: {
           acerto_id: string
@@ -1253,6 +1366,7 @@ export type Database = {
           id: string
           km_atual: number | null
           marca: string
+          media_consumo_geral: number | null
           modelo: string
           observacoes: string | null
           placa: string
@@ -1261,6 +1375,11 @@ export type Database = {
           renavam: string | null
           status: Database["public"]["Enums"]["status_veiculo"] | null
           tipo: Database["public"]["Enums"]["tipo_veiculo"]
+          total_abastecimentos: number | null
+          total_km_rodados: number | null
+          total_litros_abastecidos: number | null
+          ultimo_abastecimento_data: string | null
+          ultimo_abastecimento_km: number | null
           updated_at: string
           vencimento_ipva: string | null
           vencimento_licenciamento: string | null
@@ -1276,6 +1395,7 @@ export type Database = {
           id?: string
           km_atual?: number | null
           marca: string
+          media_consumo_geral?: number | null
           modelo: string
           observacoes?: string | null
           placa: string
@@ -1284,6 +1404,11 @@ export type Database = {
           renavam?: string | null
           status?: Database["public"]["Enums"]["status_veiculo"] | null
           tipo: Database["public"]["Enums"]["tipo_veiculo"]
+          total_abastecimentos?: number | null
+          total_km_rodados?: number | null
+          total_litros_abastecidos?: number | null
+          ultimo_abastecimento_data?: string | null
+          ultimo_abastecimento_km?: number | null
           updated_at?: string
           vencimento_ipva?: string | null
           vencimento_licenciamento?: string | null
@@ -1299,6 +1424,7 @@ export type Database = {
           id?: string
           km_atual?: number | null
           marca?: string
+          media_consumo_geral?: number | null
           modelo?: string
           observacoes?: string | null
           placa?: string
@@ -1307,6 +1433,11 @@ export type Database = {
           renavam?: string | null
           status?: Database["public"]["Enums"]["status_veiculo"] | null
           tipo?: Database["public"]["Enums"]["tipo_veiculo"]
+          total_abastecimentos?: number | null
+          total_km_rodados?: number | null
+          total_litros_abastecidos?: number | null
+          ultimo_abastecimento_data?: string | null
+          ultimo_abastecimento_km?: number | null
           updated_at?: string
           vencimento_ipva?: string | null
           vencimento_licenciamento?: string | null

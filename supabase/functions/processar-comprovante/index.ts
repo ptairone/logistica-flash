@@ -24,15 +24,17 @@ serve(async (req) => {
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const viagemId = formData.get('viagemId') as string;
+    const tipo = formData.get('tipo') as string || 'despesa';
 
-    if (!file || !viagemId) {
+    if (!file) {
       return new Response(
-        JSON.stringify({ error: 'Arquivo e ID da viagem são obrigatórios' }),
+        JSON.stringify({ error: 'Arquivo é obrigatório' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('📸 Processando comprovante:', {
+      tipo,
       viagemId,
       fileName: file.name,
       fileSize: `${(file.size / 1024).toFixed(2)}KB`,
@@ -51,6 +53,47 @@ serve(async (req) => {
     const base64 = btoa(binary);
     const mimeType = file.type || 'image/jpeg';
 
+    // Definir prompt baseado no tipo
+    let systemPrompt = '';
+    
+    if (tipo === 'abastecimento') {
+      systemPrompt = `Você é um assistente especializado em extrair informações de comprovantes de ABASTECIMENTO de combustível.
+
+INSTRUÇÕES:
+- Extraia o KM DO VEÍCULO (odômetro) no momento do abastecimento
+- Extraia a QUANTIDADE DE LITROS abastecida
+- Extraia o VALOR TOTAL pago
+- Identifique o NOME DO POSTO (ex: "Shell", "Petrobras", "Ipiranga")
+- Identifique CIDADE e UF do posto (se visível)
+- Identifique a DATA e HORA do abastecimento
+
+RETORNE APENAS JSON válido no formato:
+{
+  "km_veiculo": 123456,
+  "litros": 120.5,
+  "valor_total": 689.50,
+  "posto_nome": "Shell",
+  "posto_cidade": "São Paulo",
+  "posto_uf": "SP",
+  "data_abastecimento": "2025-10-28T14:30:00"
+}
+
+Se não conseguir identificar algum campo, retorne null para esse campo.`;
+    } else {
+      systemPrompt = `Você é um assistente especializado em extrair informações de comprovantes fiscais brasileiros (notas fiscais, recibos, cupons).
+
+INSTRUÇÕES:
+- Identifique o tipo de despesa: combustivel, pedagio, alimentacao, hospedagem, manutencao, outros
+- Extraia o VALOR TOTAL do documento (procure por "Total", "Valor", "R$")
+- Identifique a DATA (formato YYYY-MM-DD)
+- Crie uma descrição breve (ex: "Abastecimento Posto Shell", "Pedágio BR-101")
+
+RETORNE APENAS JSON válido no formato:
+{"tipo": "combustivel", "valor": 123.45, "data": "2025-10-27", "descricao": "texto breve"}
+
+Se não conseguir identificar algum campo, use valores padrão sensatos.`;
+    }
+
     // Chamar Lovable AI para extrair informações
     console.log('🤖 Chamando Lovable AI para análise da imagem...');
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -64,18 +107,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Você é um assistente especializado em extrair informações de comprovantes fiscais brasileiros (notas fiscais, recibos, cupons).
-
-INSTRUÇÕES:
-- Identifique o tipo de despesa: combustivel, pedagio, alimentacao, hospedagem, manutencao, outros
-- Extraia o VALOR TOTAL do documento (procure por "Total", "Valor", "R$")
-- Identifique a DATA (formato YYYY-MM-DD)
-- Crie uma descrição breve (ex: "Abastecimento Posto Shell", "Pedágio BR-101")
-
-RETORNE APENAS JSON válido no formato:
-{"tipo": "combustivel", "valor": 123.45, "data": "2025-10-27", "descricao": "texto breve"}
-
-Se não conseguir identificar algum campo, use valores padrão sensatos.`
+            content: systemPrompt
           },
           {
             role: 'user',
@@ -133,12 +165,12 @@ Se não conseguir identificar algum campo, use valores padrão sensatos.`
     }
 
     // Parsear o JSON retornado
-    let despesaInfo;
+    let dadosExtraidos;
     try {
       // Remover possíveis markdown code blocks
       const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      despesaInfo = JSON.parse(cleanContent);
-      console.log('📋 Informações extraídas:', despesaInfo);
+      dadosExtraidos = JSON.parse(cleanContent);
+      console.log('📋 Informações extraídas:', dadosExtraidos);
     } catch (e) {
       console.error('❌ Erro ao parsear JSON:', e, 'Conteúdo:', content);
       return new Response(
@@ -147,19 +179,27 @@ Se não conseguir identificar algum campo, use valores padrão sensatos.`
       );
     }
 
-    // Validar e normalizar os dados
-    const tiposValidos = ['combustivel', 'pedagio', 'alimentacao', 'hospedagem', 'manutencao', 'outros'];
-    if (!tiposValidos.includes(despesaInfo.tipo)) {
-      despesaInfo.tipo = 'outros';
-    }
+    let resultado;
+    
+    if (tipo === 'abastecimento') {
+      resultado = {
+        dados: dadosExtraidos
+      };
+    } else {
+      // Validar e normalizar os dados de despesa
+      const tiposValidos = ['combustivel', 'pedagio', 'alimentacao', 'hospedagem', 'manutencao', 'outros'];
+      if (!tiposValidos.includes(dadosExtraidos.tipo)) {
+        dadosExtraidos.tipo = 'outros';
+      }
 
-    const resultado = {
-      tipo: despesaInfo.tipo,
-      valor: parseFloat(despesaInfo.valor) || 0,
-      data: despesaInfo.data || new Date().toISOString().split('T')[0],
-      descricao: despesaInfo.descricao || 'Extraído automaticamente do comprovante',
-      reembolsavel: true
-    };
+      resultado = {
+        tipo: dadosExtraidos.tipo,
+        valor: parseFloat(dadosExtraidos.valor) || 0,
+        data: dadosExtraidos.data || new Date().toISOString().split('T')[0],
+        descricao: dadosExtraidos.descricao || 'Extraído automaticamente do comprovante',
+        reembolsavel: true
+      };
+    }
 
     console.log('🎯 Resultado final:', resultado);
 
