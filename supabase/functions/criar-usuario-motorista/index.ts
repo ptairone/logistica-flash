@@ -43,9 +43,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, nome, motoristaId } = await req.json();
+    const { email, password, nome, motoristaId, entityType = 'motorista', entityId } = await req.json();
+    
+    const finalEntityId = entityId || motoristaId;
+    const finalEntityType = entityType;
 
-    console.log('Criando usuário motorista:', { email, nome, motoristaId });
+    console.log('Criando usuário:', { email, nome, entityType: finalEntityType, entityId: finalEntityId });
 
     // Verificar se email já existe
     const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
@@ -65,7 +68,7 @@ Deno.serve(async (req) => {
       email_confirm: true,
       user_metadata: {
         nome,
-        tipo: 'motorista'
+        tipo: finalEntityType
       }
     });
 
@@ -79,12 +82,12 @@ Deno.serve(async (req) => {
 
     console.log('Usuário criado:', authData.user.id);
 
-    // Adicionar role motorista
+    // Adicionar role apropriada
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .insert({
         user_id: authData.user.id,
-        role: 'motorista'
+        role: finalEntityType
       });
 
     if (roleError) {
@@ -97,24 +100,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Vincular user_id ao motorista
+    // Vincular user_id à entidade (motorista ou mecânico)
+    const tableName = finalEntityType === 'mecanico' ? 'mecanicos' : 'motoristas';
     const { error: updateError } = await supabaseAdmin
-      .from('motoristas')
+      .from(tableName)
       .update({ user_id: authData.user.id })
-      .eq('id', motoristaId);
+      .eq('id', finalEntityId);
 
     if (updateError) {
-      console.error('Erro ao vincular motorista:', updateError);
+      console.error(`Erro ao vincular ${finalEntityType}:`, updateError);
       // Reverter criação
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       await supabaseAdmin.from('user_roles').delete().eq('user_id', authData.user.id);
       return new Response(
-        JSON.stringify({ error: 'Erro ao vincular motorista' }),
+        JSON.stringify({ error: `Erro ao vincular ${finalEntityType}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Login criado com sucesso para motorista:', motoristaId);
+    console.log(`Login criado com sucesso para ${finalEntityType}:`, finalEntityId);
 
     return new Response(
       JSON.stringify({ 
