@@ -18,18 +18,20 @@ interface CalculadoraANTTDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   distanciaKm?: number;
-  onAplicarValor: (valor: number) => void;
+  numeroEixosInicial?: number;
+  onAplicarValor: (valor: number, numeroEixos?: number) => void;
 }
 
 export function CalculadoraANTTDialog({
   open,
   onOpenChange,
   distanciaKm,
+  numeroEixosInicial,
   onAplicarValor,
 }: CalculadoraANTTDialogProps) {
   const [parametros, setParametros] = useState<ParametrosCalculoANTT>({
     tipo_carga: 'geral',
-    numero_eixos: 3,
+    numero_eixos: numeroEixosInicial || 3,
     distancia_km: distanciaKm || 0,
     composicao_veicular: false,
     alto_desempenho: false,
@@ -69,7 +71,7 @@ export function CalculadoraANTTDialog({
 
   const handleAplicar = () => {
     if (resultado) {
-      onAplicarValor(resultado.valor_com_acrescimos);
+      onAplicarValor(resultado.valor_com_acrescimos, parametros.numero_eixos);
       onOpenChange(false);
     }
   };

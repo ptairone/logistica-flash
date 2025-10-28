@@ -99,6 +99,7 @@ export const freteSchema = z.object({
   numero_pracas_pedagio: z.number().optional(),
   pracas_pedagio: z.any().optional(),
   tempo_estimado_horas: z.number().optional(),
+  numero_eixos: z.number().min(2).max(9).optional(),
 });
 
 export type FreteFormData = z.infer<typeof freteSchema>;

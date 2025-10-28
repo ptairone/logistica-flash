@@ -102,9 +102,15 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
   const handleCalcularEstimativas = async () => {
     const origemCep = watch('origem_cep');
     const destinoCep = watch('destino_cep');
+    const numeroEixos = watch('numero_eixos');
     
     if (!origemCep || !destinoCep || origemCep.replace(/\D/g, '').length !== 8 || destinoCep.replace(/\D/g, '').length !== 8) {
       toast.error('Preencha os CEPs de origem e destino antes de calcular');
+      return;
+    }
+    
+    if (!numeroEixos) {
+      toast.error('Selecione o número de eixos antes de calcular os custos');
       return;
     }
     
@@ -118,7 +124,7 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
         origem_uf: watch('origem_uf'),
         destino_cidade: watch('destino_cidade'),
         destino_uf: watch('destino_uf'),
-        numero_eixos: 3,
+        numero_eixos: numeroEixos,
       });
       
       setEstimativas(resultado);
@@ -401,26 +407,6 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
                 placeholder="Em frente ao mercado..."
               />
             </div>
-            
-            <Button 
-              type="button" 
-              onClick={handleCalcularEstimativas}
-              disabled={calculandoEstimativas}
-              className="w-full mt-4"
-              variant="secondary"
-            >
-              {calculandoEstimativas ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Calculando custos...
-                </>
-              ) : (
-                <>
-                  <Calculator className="mr-2 h-4 w-4" />
-                  Calcular Custos Estimados
-                </>
-              )}
-            </Button>
           </div>
           
           {estimativas && (
@@ -571,6 +557,33 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="numero_eixos">Número de Eixos *</Label>
+              <Select
+                value={watch('numero_eixos')?.toString()}
+                onValueChange={(value) => setValue('numero_eixos', parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2">2 Eixos</SelectItem>
+                  <SelectItem value="3">3 Eixos</SelectItem>
+                  <SelectItem value="4">4 Eixos</SelectItem>
+                  <SelectItem value="5">5 Eixos</SelectItem>
+                  <SelectItem value="6">6 Eixos</SelectItem>
+                  <SelectItem value="7">7 Eixos</SelectItem>
+                  <SelectItem value="8">8 Eixos</SelectItem>
+                  <SelectItem value="9">9 Eixos</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.numero_eixos && (
+                <p className="text-sm text-destructive">{errors.numero_eixos.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="valor_frete">Valor do Frete (R$) *</Label>
               <div className="flex gap-2">
                 <Input
@@ -629,6 +642,31 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             />
           </div>
 
+          <Separator className="my-4" />
+
+          <Button 
+            type="button" 
+            onClick={handleCalcularEstimativas}
+            disabled={calculandoEstimativas || !watch('numero_eixos')}
+            className="w-full"
+            variant="secondary"
+          >
+            {calculandoEstimativas ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Calculando custos...
+              </>
+            ) : (
+              <>
+                <Calculator className="mr-2 h-4 w-4" />
+                Calcular Custos Estimados
+                {!watch('numero_eixos') && (
+                  <span className="ml-2 text-xs opacity-70">(selecione o número de eixos)</span>
+                )}
+              </>
+            )}
+          </Button>
+
           <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
@@ -647,8 +685,12 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
           open={mostrarCalculadoraANTT}
           onOpenChange={setMostrarCalculadoraANTT}
           distanciaKm={distanciaCalculada}
-          onAplicarValor={(valor) => {
+          numeroEixosInicial={watch('numero_eixos')}
+          onAplicarValor={(valor, numeroEixos) => {
             setValue('valor_frete', valor);
+            if (numeroEixos) {
+              setValue('numero_eixos', numeroEixos);
+            }
             toast.success('Valor aplicado ao frete!');
           }}
         />
