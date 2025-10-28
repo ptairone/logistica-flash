@@ -11,6 +11,7 @@ import {
   LogOut,
   BarChart3,
   Wrench,
+  Cog,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -85,8 +86,14 @@ export function AppSidebar() {
       roles: ['admin', 'operacional']
     },
     { 
+      title: 'Manutenções', 
+      url: '/manutencoes', 
+      icon: Settings,
+      roles: ['admin', 'operacional']
+    },
+    { 
       title: 'Relatórios', 
-      url: '/relatorios', 
+      url: '/relatorios',
       icon: BarChart3,
       roles: ['admin', 'operacional', 'financeiro']
     },
