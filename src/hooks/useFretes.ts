@@ -148,16 +148,23 @@ export function useFretes() {
       if (distError) throw distError;
       if (!distData) throw new Error('Erro ao calcular distância');
 
-      // 2. Calcular pedágios
-      const { data: pedagioData, error: pedagioError } = await supabase.functions.invoke('calcular-pedagios', {
-        body: {
-          origem: distData.origem,
-          destino: distData.destino,
-          numero_eixos: params.numero_eixos || 3,
-        }
-      });
-
-      if (pedagioError) throw pedagioError;
+      // 2. Calcular pedágios (soft-fail - não quebra se falhar)
+      let pedagioData = null;
+      try {
+        const { data, error } = await supabase.functions.invoke('calcular-pedagios', {
+          body: {
+            origem: distData.origem,
+            destino: distData.destino,
+            numero_eixos: params.numero_eixos || 3,
+          }
+        });
+        
+        if (error) throw error;
+        pedagioData = data;
+      } catch (e) {
+        console.warn('Falha ao calcular pedágios, prosseguindo sem pedágios:', e);
+        pedagioData = { valor_total: 0, pracas: [], tempo_estimado_minutos: null };
+      }
 
       // 3. Calcular combustível
       const mediaConsumo = 2.5; // km/l

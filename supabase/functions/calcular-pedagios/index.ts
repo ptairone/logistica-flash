@@ -47,7 +47,11 @@ serve(async (req) => {
 
     console.log('Calculando pedágios:', { origem, destino, tipo_veiculo, numero_eixos });
 
-    const vehicleType = mapearTipoVeiculo(tipo_veiculo, numero_eixos);
+    // Validar número de eixos (2-9, padrão 3)
+    const eixosValidados = Math.min(9, Math.max(2, numero_eixos || 3));
+    const vehicle = { type: 'Truck', axles: eixosValidados };
+    
+    console.log('Veículo enviado ao TollGuru:', vehicle);
 
     const response = await fetch('https://apis.tollguru.com/toll/v2/origin-destination-waypoints', {
       method: 'POST',
@@ -64,7 +68,7 @@ serve(async (req) => {
           lat: destino.lat,
           lng: destino.lon,
         },
-        vehicleType: vehicleType,
+        vehicle: vehicle,
         mapProvider: 'osrm',
       }),
     });
@@ -72,6 +76,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Erro TollGuru:', response.status, errorText);
+      console.error('Veículo enviado:', vehicle);
       throw new Error(`TollGuru API erro: ${response.status} - ${errorText}`);
     }
 
@@ -134,15 +139,7 @@ serve(async (req) => {
   }
 });
 
-function mapearTipoVeiculo(tipo?: string, eixos?: number): string {
-  if (tipo) return tipo;
-  
-  if (eixos) {
-    return `${eixos}AxlesTruck`;
-  }
-  
-  return '3AxlesTruck';
-}
+// Função removida - agora usamos objeto vehicle diretamente
 
 async function obterTaxaCambio(): Promise<number> {
   try {
