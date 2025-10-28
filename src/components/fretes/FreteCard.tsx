@@ -119,6 +119,39 @@ export function FreteCard({ frete, onEdit, onDelete, onViewDetails }: FreteCardP
             Fatura: {frete.numero_fatura}
           </div>
         )}
+        
+        {(frete.distancia_estimada_km || frete.pedagios_estimados || frete.margem_estimada !== null) && (
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+            {frete.distancia_estimada_km && (
+              <Badge variant="outline" className="gap-1">
+                <MapPin className="h-3 w-3" />
+                {frete.distancia_estimada_km} km
+              </Badge>
+            )}
+            
+            {frete.pedagios_estimados > 0 && (
+              <Badge variant="outline" className="gap-1 bg-amber-50 border-amber-200 text-amber-700">
+                🛣️ R$ {frete.pedagios_estimados.toFixed(2)}
+              </Badge>
+            )}
+            
+            {frete.combustivel_estimado_litros && (
+              <Badge variant="outline" className="gap-1 bg-green-50 border-green-200 text-green-700">
+                ⛽ {frete.combustivel_estimado_litros}L
+              </Badge>
+            )}
+            
+            {frete.margem_estimada !== null && frete.margem_estimada !== undefined && (
+              <Badge 
+                variant={frete.margem_estimada > 0 ? "default" : "destructive"}
+                className="gap-1"
+              >
+                💰 {frete.margem_estimada > 0 ? '+' : ''}R$ {frete.margem_estimada.toFixed(2)}
+                {frete.percentual_margem && ` (${frete.percentual_margem.toFixed(1)}%)`}
+              </Badge>
+            )}
+          </div>
+        )}
 
         <Button
           variant="outline"

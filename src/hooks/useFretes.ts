@@ -123,6 +123,70 @@ export function useFretes() {
     },
   });
 
+  const calcularCustosEstimados = useMutation({
+    mutationFn: async (params: {
+      origem_cep: string;
+      destino_cep: string;
+      origem_cidade?: string;
+      origem_uf?: string;
+      destino_cidade?: string;
+      destino_uf?: string;
+      numero_eixos?: number;
+    }) => {
+      // 1. Calcular distância
+      const { data: distData, error: distError } = await supabase.functions.invoke('calcular-distancia', {
+        body: {
+          origem_cep: params.origem_cep,
+          destino_cep: params.destino_cep,
+          origem_cidade: params.origem_cidade,
+          origem_uf: params.origem_uf,
+          destino_cidade: params.destino_cidade,
+          destino_uf: params.destino_uf,
+        }
+      });
+
+      if (distError) throw distError;
+      if (!distData) throw new Error('Erro ao calcular distância');
+
+      // 2. Calcular pedágios
+      const { data: pedagioData, error: pedagioError } = await supabase.functions.invoke('calcular-pedagios', {
+        body: {
+          origem: distData.origem,
+          destino: distData.destino,
+          numero_eixos: params.numero_eixos || 3,
+        }
+      });
+
+      if (pedagioError) throw pedagioError;
+
+      // 3. Calcular combustível
+      const mediaConsumo = 2.5; // km/l
+      const precoDiesel = 6.50; // R$/l
+      const litrosEstimados = distData.distancia_km / mediaConsumo;
+      const custoEstimadoCombustivel = litrosEstimados * precoDiesel;
+
+      return {
+        distancia_km: distData.distancia_km,
+        pedagios_estimados: pedagioData?.valor_total || 0,
+        pracas_pedagio: pedagioData?.pracas || [],
+        numero_pracas_pedagio: pedagioData?.pracas?.length || 0,
+        combustivel_estimado_litros: Math.round(litrosEstimados),
+        combustivel_estimado_valor: custoEstimadoCombustivel,
+        custo_total_estimado: (pedagioData?.valor_total || 0) + custoEstimadoCombustivel,
+        tempo_estimado_horas: pedagioData?.tempo_estimado_minutos 
+          ? Math.round(pedagioData.tempo_estimado_minutos / 60) 
+          : null,
+      };
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao calcular custos',
+        description: error.message || 'Não foi possível calcular os custos estimados',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     fretes: fretesQuery.data ?? [],
     isLoading: fretesQuery.isLoading,
@@ -130,6 +194,7 @@ export function useFretes() {
     createFrete,
     updateFrete,
     deleteFrete,
+    calcularCustosEstimados,
   };
 }
 

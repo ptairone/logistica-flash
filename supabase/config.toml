@@ -3,6 +3,9 @@ project_id = "plfpczvnqmvqpmsbjrra"
 [functions.calcular-distancia]
 verify_jwt = false
 
+[functions.calcular-pedagios]
+verify_jwt = false
+
 [functions.processar-documento-estoque]
 verify_jwt = false
 

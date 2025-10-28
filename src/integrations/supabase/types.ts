@@ -760,8 +760,11 @@ export type Database = {
           cliente_contato: string | null
           cliente_nome: string
           codigo: string
+          combustivel_estimado_litros: number | null
+          combustivel_estimado_valor: number | null
           condicao_pagamento: string | null
           created_at: string
+          custo_total_estimado: number | null
           data_coleta: string | null
           data_entrega: string | null
           destino: string
@@ -771,8 +774,11 @@ export type Database = {
           destino_numero: string | null
           destino_ponto_referencia: string | null
           destino_uf: string | null
+          distancia_estimada_km: number | null
           id: string
+          margem_estimada: number | null
           numero_fatura: string | null
+          numero_pracas_pedagio: number | null
           observacoes: string | null
           origem: string
           origem_cep: string | null
@@ -781,9 +787,13 @@ export type Database = {
           origem_numero: string | null
           origem_ponto_referencia: string | null
           origem_uf: string | null
+          pedagios_estimados: number | null
+          percentual_margem: number | null
           peso: number | null
+          pracas_pedagio: Json | null
           produto: string | null
           status: Database["public"]["Enums"]["status_frete"] | null
+          tempo_estimado_horas: number | null
           tipo_carga: string | null
           updated_at: string
           valor_frete: number
@@ -794,8 +804,11 @@ export type Database = {
           cliente_contato?: string | null
           cliente_nome: string
           codigo: string
+          combustivel_estimado_litros?: number | null
+          combustivel_estimado_valor?: number | null
           condicao_pagamento?: string | null
           created_at?: string
+          custo_total_estimado?: number | null
           data_coleta?: string | null
           data_entrega?: string | null
           destino: string
@@ -805,8 +818,11 @@ export type Database = {
           destino_numero?: string | null
           destino_ponto_referencia?: string | null
           destino_uf?: string | null
+          distancia_estimada_km?: number | null
           id?: string
+          margem_estimada?: number | null
           numero_fatura?: string | null
+          numero_pracas_pedagio?: number | null
           observacoes?: string | null
           origem: string
           origem_cep?: string | null
@@ -815,9 +831,13 @@ export type Database = {
           origem_numero?: string | null
           origem_ponto_referencia?: string | null
           origem_uf?: string | null
+          pedagios_estimados?: number | null
+          percentual_margem?: number | null
           peso?: number | null
+          pracas_pedagio?: Json | null
           produto?: string | null
           status?: Database["public"]["Enums"]["status_frete"] | null
+          tempo_estimado_horas?: number | null
           tipo_carga?: string | null
           updated_at?: string
           valor_frete: number
@@ -828,8 +848,11 @@ export type Database = {
           cliente_contato?: string | null
           cliente_nome?: string
           codigo?: string
+          combustivel_estimado_litros?: number | null
+          combustivel_estimado_valor?: number | null
           condicao_pagamento?: string | null
           created_at?: string
+          custo_total_estimado?: number | null
           data_coleta?: string | null
           data_entrega?: string | null
           destino?: string
@@ -839,8 +862,11 @@ export type Database = {
           destino_numero?: string | null
           destino_ponto_referencia?: string | null
           destino_uf?: string | null
+          distancia_estimada_km?: number | null
           id?: string
+          margem_estimada?: number | null
           numero_fatura?: string | null
+          numero_pracas_pedagio?: number | null
           observacoes?: string | null
           origem?: string
           origem_cep?: string | null
@@ -849,9 +875,13 @@ export type Database = {
           origem_numero?: string | null
           origem_ponto_referencia?: string | null
           origem_uf?: string | null
+          pedagios_estimados?: number | null
+          percentual_margem?: number | null
           peso?: number | null
+          pracas_pedagio?: Json | null
           produto?: string | null
           status?: Database["public"]["Enums"]["status_frete"] | null
+          tempo_estimado_horas?: number | null
           tipo_carga?: string | null
           updated_at?: string
           valor_frete?: number

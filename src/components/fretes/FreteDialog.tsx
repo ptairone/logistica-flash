@@ -7,12 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { freteSchema, FreteFormData, formatCPFCNPJ } from '@/lib/validations-frete';
 import { formatCEP } from '@/lib/validations-viagem';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Calculator } from 'lucide-react';
+import { Loader2, Calculator, TrendingUp, ChevronDown, Fuel, Navigation } from 'lucide-react';
 import { CalculadoraANTTDialog } from './CalculadoraANTTDialog';
+import { useFretes } from '@/hooks/useFretes';
+import { cn } from '@/lib/utils';
 
 interface FreteDialogProps {
   open: boolean;
@@ -29,6 +34,10 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
   const [calculandoDistancia, setCalculandoDistancia] = useState(false);
   const [mostrarCalculadoraANTT, setMostrarCalculadoraANTT] = useState(false);
   const [distanciaCalculada, setDistanciaCalculada] = useState<number | undefined>(undefined);
+  const [estimativas, setEstimativas] = useState<any>(null);
+  const [calculandoEstimativas, setCalculandoEstimativas] = useState(false);
+  
+  const { calcularCustosEstimados } = useFretes();
 
   const {
     register,
@@ -90,41 +99,45 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
     }
   };
 
-  const calcularDistanciaAutomatica = async () => {
+  const handleCalcularEstimativas = async () => {
     const origemCep = watch('origem_cep');
     const destinoCep = watch('destino_cep');
-    const origemCidade = watch('origem_cidade');
-    const origemUf = watch('origem_uf');
-    const destinoCidade = watch('destino_cidade');
-    const destinoUf = watch('destino_uf');
-
+    
     if (!origemCep || !destinoCep || origemCep.replace(/\D/g, '').length !== 8 || destinoCep.replace(/\D/g, '').length !== 8) {
+      toast.error('Preencha os CEPs de origem e destino antes de calcular');
       return;
     }
-
-    setCalculandoDistancia(true);
+    
+    setCalculandoEstimativas(true);
+    
     try {
-      const { data, error } = await supabase.functions.invoke('calcular-distancia', {
-        body: { 
-          origem_cep: origemCep,
-          destino_cep: destinoCep,
-          origem_cidade: origemCidade,
-          origem_uf: origemUf,
-          destino_cidade: destinoCidade,
-          destino_uf: destinoUf,
-        }
+      const resultado = await calcularCustosEstimados.mutateAsync({
+        origem_cep: origemCep,
+        destino_cep: destinoCep,
+        origem_cidade: watch('origem_cidade'),
+        origem_uf: watch('origem_uf'),
+        destino_cidade: watch('destino_cidade'),
+        destino_uf: watch('destino_uf'),
+        numero_eixos: 3,
       });
-
-      if (error) throw error;
-
-      if (data && data.distancia_km) {
-        setDistanciaCalculada(data.distancia_km);
-        toast.success(`Distância estimada: ${data.distancia_km} km`);
-      }
+      
+      setEstimativas(resultado);
+      setDistanciaCalculada(resultado.distancia_km);
+      
+      // Auto-preencher campos
+      setValue('distancia_estimada_km', resultado.distancia_km);
+      setValue('pedagios_estimados', resultado.pedagios_estimados);
+      setValue('combustivel_estimado_litros', resultado.combustivel_estimado_litros);
+      setValue('combustivel_estimado_valor', resultado.combustivel_estimado_valor);
+      setValue('numero_pracas_pedagio', resultado.numero_pracas_pedagio);
+      setValue('pracas_pedagio', resultado.pracas_pedagio);
+      setValue('tempo_estimado_horas', resultado.tempo_estimado_horas);
+      
+      toast.success('Custos calculados com sucesso!');
     } catch (error) {
-      console.error('Erro ao calcular distância:', error);
+      console.error('Erro ao calcular estimativas:', error);
     } finally {
-      setCalculandoDistancia(false);
+      setCalculandoEstimativas(false);
     }
   };
 
@@ -145,14 +158,11 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
         if (error) throw error;
 
         if (data) {
-          const prefix = field === 'origem_cep' ? 'origem' : 'destino';
+      const prefix = field === 'origem_cep' ? 'origem' : 'destino';
           setValue(`${prefix}_logradouro` as any, data.logradouro || '');
           setValue(`${prefix}_cidade` as any, data.localidade || '');
           setValue(`${prefix}_uf` as any, data.uf || '');
           toast.success('Endereço carregado com sucesso!');
-          
-          // Calcular distância automaticamente após preencher ambos os CEPs
-          setTimeout(() => calcularDistanciaAutomatica(), 500);
         }
       } catch (error: any) {
         console.error('Erro ao buscar CEP:', error);
@@ -391,7 +401,111 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
                 placeholder="Em frente ao mercado..."
               />
             </div>
+            
+            <Button 
+              type="button" 
+              onClick={handleCalcularEstimativas}
+              disabled={calculandoEstimativas}
+              className="w-full mt-4"
+              variant="secondary"
+            >
+              {calculandoEstimativas ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Calculando custos...
+                </>
+              ) : (
+                <>
+                  <Calculator className="mr-2 h-4 w-4" />
+                  Calcular Custos Estimados
+                </>
+              )}
+            </Button>
           </div>
+          
+          {estimativas && (
+            <Card className="p-4 bg-primary/5 border-primary/20">
+              <h3 className="font-semibold mb-3 flex items-center gap-2 text-primary">
+                <TrendingUp className="h-5 w-5" />
+                Estimativas Calculadas
+              </h3>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Distância</Label>
+                  <p className="text-lg font-bold">{estimativas.distancia_km} km</p>
+                  {estimativas.tempo_estimado_horas && (
+                    <p className="text-xs text-muted-foreground">
+                      ~{estimativas.tempo_estimado_horas}h de viagem
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-muted-foreground">Pedágios</Label>
+                  <p className="text-lg font-bold text-amber-600">
+                    R$ {estimativas.pedagios_estimados?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {estimativas.numero_pracas_pedagio || 0} praças
+                  </p>
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-muted-foreground">Combustível</Label>
+                  <p className="text-lg font-bold text-green-600">
+                    R$ {estimativas.combustivel_estimado_valor?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    ~{estimativas.combustivel_estimado_litros}L
+                  </p>
+                </div>
+              </div>
+              
+              <Separator className="my-3" />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Custo Total Estimado</Label>
+                  <p className="text-xl font-bold text-destructive">
+                    R$ {estimativas.custo_total_estimado?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-muted-foreground">Margem Estimada</Label>
+                  <p className={cn(
+                    "text-xl font-bold",
+                    (watch('valor_frete') - estimativas.custo_total_estimado) > 0 
+                      ? "text-green-600" 
+                      : "text-destructive"
+                  )}>
+                    R$ {((watch('valor_frete') || 0) - estimativas.custo_total_estimado)?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {watch('valor_frete') > 0 ? ((((watch('valor_frete') || 0) - estimativas.custo_total_estimado) / watch('valor_frete')) * 100).toFixed(1) : '0'}% do frete
+                  </p>
+                </div>
+              </div>
+              
+              {estimativas.pracas_pedagio && estimativas.pracas_pedagio.length > 0 && (
+                <Collapsible className="mt-4">
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:underline">
+                    <ChevronDown className="h-4 w-4" />
+                    Ver {estimativas.pracas_pedagio.length} praças de pedágio
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 space-y-1">
+                    {estimativas.pracas_pedagio.map((praca: any, idx: number) => (
+                      <div key={idx} className="text-sm flex justify-between items-center py-1 border-b last:border-0">
+                        <span className="text-muted-foreground">{praca.nome}</span>
+                        <span className="font-medium">R$ {praca.valor?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </Card>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

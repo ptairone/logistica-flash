@@ -92,6 +92,13 @@ export const freteSchema = z.object({
   status: z.enum(['aberto', 'faturado', 'cancelado']),
   numero_fatura: z.string().optional(),
   observacoes: z.string().optional(),
+  distancia_estimada_km: z.number().optional(),
+  pedagios_estimados: z.number().optional(),
+  combustivel_estimado_litros: z.number().optional(),
+  combustivel_estimado_valor: z.number().optional(),
+  numero_pracas_pedagio: z.number().optional(),
+  pracas_pedagio: z.any().optional(),
+  tempo_estimado_horas: z.number().optional(),
 });
 
 export type FreteFormData = z.infer<typeof freteSchema>;
