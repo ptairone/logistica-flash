@@ -777,6 +777,7 @@ export type Database = {
           distancia_estimada_km: number | null
           id: string
           margem_estimada: number | null
+          numero_eixos: number | null
           numero_fatura: string | null
           numero_pracas_pedagio: number | null
           observacoes: string | null
@@ -821,6 +822,7 @@ export type Database = {
           distancia_estimada_km?: number | null
           id?: string
           margem_estimada?: number | null
+          numero_eixos?: number | null
           numero_fatura?: string | null
           numero_pracas_pedagio?: number | null
           observacoes?: string | null
@@ -865,6 +867,7 @@ export type Database = {
           distancia_estimada_km?: number | null
           id?: string
           margem_estimada?: number | null
+          numero_eixos?: number | null
           numero_fatura?: string | null
           numero_pracas_pedagio?: number | null
           observacoes?: string | null
