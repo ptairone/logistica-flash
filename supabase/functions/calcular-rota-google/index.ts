@@ -194,6 +194,20 @@ async function geocodificar(
   };
 }
 
+/**
+ * NOTA SOBRE PEDÁGIOS NO BRASIL:
+ * 
+ * A Google Maps Routes API tem cobertura limitada de pedágios no Brasil.
+ * Nem todas as rodovias têm dados de pedágio cadastrados.
+ * 
+ * Casos comuns onde pedágios podem vir zerados:
+ * - Rodovias estaduais sem convênio com Google
+ * - Trechos com pedágios recém-instalados
+ * - Regiões Sul/Nordeste com cobertura menor
+ * 
+ * Solução atual: Retornar 0 e permitir entrada manual pelo usuário
+ * Solução futura: Implementar base de dados própria de pedágios
+ */
 async function calcularRotaGoogle(
   origem: Coordinates,
   destino: Coordinates,
@@ -223,12 +237,14 @@ async function calcularRotaGoogle(
       computeAlternativeRoutes: false,
       routeModifiers: {
         vehicleInfo: {
-          emissionType: "DIESEL"
+          emissionType: "DIESEL",
         },
         avoidTolls: false,
         avoidHighways: false,
-        avoidFerries: false
+        avoidFerries: false,
+        tollPasses: []
       },
+      extraComputations: ["TOLLS"],
       languageCode: "pt-BR",
       units: "METRIC"
     };
@@ -242,7 +258,7 @@ async function calcularRotaGoogle(
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory.tollInfo'
+          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory.tollInfo,routes.travelAdvisory.tollInfo.estimatedPrice'
         },
         body: JSON.stringify(requestBody)
       }
@@ -283,14 +299,43 @@ async function calcularRotaGoogle(
     let pedagiosValor = 0;
     let numeroPracas = 0;
     
+    console.log('TollInfo recebido:', JSON.stringify(tollInfo));
+    
     if (tollInfo && tollInfo.estimatedPrice) {
-      // Google retorna preço em formato de moeda
-      // estimatedPrice tem estrutura: [{ currencyCode: "BRL", units: "50", nanos: 500000000 }]
+      // Google retorna array de preços (pode ter múltiplas moedas)
       const prices = tollInfo.estimatedPrice;
+      
       if (prices && prices.length > 0) {
-        const price = prices[0];
-        // Converter para BRL: units + (nanos / 1000000000)
-        pedagiosValor = parseFloat(price.units || 0) + (parseFloat(price.nanos || 0) / 1000000000);
+        // Procurar preço em BRL
+        const brlPrice = prices.find((p: any) => p.currencyCode === 'BRL') || prices[0];
+        
+        // Converter: units (parte inteira) + nanos (parte decimal)
+        const units = parseFloat(brlPrice.units || '0');
+        const nanos = parseFloat(brlPrice.nanos || '0');
+        pedagiosValor = units + (nanos / 1000000000);
+        
+        console.log('Pedágio calculado:', {
+          units,
+          nanos,
+          total: pedagiosValor,
+          currencyCode: brlPrice.currencyCode
+        });
+      }
+    }
+    
+    // Se Google não retornar pedágios, logar aviso
+    if (!tollInfo || !tollInfo.estimatedPrice) {
+      console.warn('⚠️ Google Maps não retornou informações de pedágio para esta rota');
+      console.warn('Isso pode indicar:');
+      console.warn('1. Rota sem pedágios cadastrados');
+      console.warn('2. Cobertura incompleta no Brasil');
+      console.warn('3. API Key sem permissões corretas');
+      
+      // Estimativa: R$ 0,20 por km para caminhões (média Brasil)
+      if (distanciaKm > 0) {
+        const estimativaKm = 0.20;
+        pedagiosValor = distanciaKm * estimativaKm;
+        console.warn(`📊 Usando estimativa de pedágios: R$ ${pedagiosValor.toFixed(2)} (baseado em ${distanciaKm.toFixed(2)}km)`);
       }
     }
 
