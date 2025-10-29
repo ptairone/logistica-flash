@@ -68,29 +68,42 @@ export default function InstallApp() {
   return (
     <MainLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/80 p-8 md:p-12 mb-8 text-primary-foreground">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
+        {/* Hero Section Premium */}
+        <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 mb-8 text-white">
+          {/* Gradiente Animado de Fundo */}
+          <div className="absolute inset-0 bg-gradient-hero animate-gradient" />
+          
+          {/* Orbs Flutuantes */}
+          <div className="absolute top-20 left-20 w-72 h-72 bg-cyan/20 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
+          
+          {/* Padrão Geométrico Sobreposto */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.08),transparent_70%)]" />
           
           <div className="relative z-10 max-w-3xl">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 mb-6 border border-white/20">
               <Smartphone className="h-4 w-4" />
               <span className="text-sm font-medium">Progressive Web App</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-              Transforme sua experiência com o Logística Flash
+            <h1 className="text-4xl md:text-6xl font-display font-bold mb-4 leading-tight">
+              Transforme sua experiência com o <br/>
+              <span className="bg-gradient-to-r from-cyan via-white to-purple bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
+                Logística Flash ⚡
+              </span>
             </h1>
             <p className="text-lg md:text-xl opacity-90 mb-8">
               Instale nosso app e tenha acesso instantâneo, trabalhe offline e receba notificações em tempo real
             </p>
 
             {isInstalled ? (
-              <div className="flex items-center gap-3 bg-success/20 backdrop-blur-sm rounded-2xl px-6 py-4 border border-success/30">
-                <Check className="h-6 w-6 text-success-foreground" />
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/20">
+                <div className="p-2 rounded-full bg-success/20">
+                  <Check className="h-6 w-6 text-white" />
+                </div>
                 <div>
-                  <p className="font-semibold">App já instalado! 🎉</p>
-                  <p className="text-sm opacity-90">Você pode acessá-lo pela tela inicial</p>
+                  <p className="font-semibold text-white">App já instalado! 🎉</p>
+                  <p className="text-sm text-white/80">Você pode acessá-lo pela tela inicial</p>
                 </div>
               </div>
             ) : canInstall ? (
@@ -98,7 +111,7 @@ export default function InstallApp() {
                 size="lg"
                 onClick={handleInstall}
                 disabled={isInstalling}
-                className="bg-white text-primary hover:bg-white/90 font-semibold text-lg px-8 py-6 h-auto shadow-2xl hover:shadow-xl transition-all hover:scale-105"
+                className="bg-white text-primary hover:bg-white/90 font-bold text-lg px-8 py-6 h-auto shadow-2xl hover:shadow-xl transition-all hover:scale-105 animate-pulse-glow"
               >
                 <Download className="h-5 w-5 mr-2" />
                 {isInstalling ? 'Instalando...' : 'Instalar App Grátis'}
@@ -198,15 +211,17 @@ export default function InstallApp() {
             {benefits.map((benefit, index) => (
               <Card 
                 key={index} 
-                className="border-2 hover:border-primary/50 transition-all hover-scale group"
+                variant="premium"
+                className="border-2 hover:border-primary/50 transition-all group overflow-hidden"
               >
                 <CardHeader>
-                  <div className={`inline-flex w-12 h-12 items-center justify-center rounded-xl bg-gradient-to-br ${benefit.gradient} mb-4 group-hover:scale-110 transition-transform`}>
-                    <benefit.icon className="h-6 w-6 text-white" />
+                  <div className={`inline-flex w-14 h-14 items-center justify-center rounded-2xl bg-gradient-to-br ${benefit.gradient} mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
+                    <benefit.icon className="h-7 w-7 text-white" />
                   </div>
-                  <CardTitle>{benefit.title}</CardTitle>
-                  <CardDescription>{benefit.description}</CardDescription>
+                  <CardTitle className="text-xl font-display">{benefit.title}</CardTitle>
+                  <CardDescription className="text-base">{benefit.description}</CardDescription>
                 </CardHeader>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </Card>
             ))}
           </div>

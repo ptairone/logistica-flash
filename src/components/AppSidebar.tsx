@@ -111,11 +111,15 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={collapsed ? 'w-14' : 'w-60'}>
-      <div className="flex h-14 items-center border-b border-sidebar-border px-4">
+      {/* Logo Header com Gradiente */}
+      <div className="flex h-14 items-center border-b border-sidebar-border px-4 bg-gradient-to-r from-primary/10 to-purple/10">
         {!collapsed && (
-          <h2 className="text-lg font-bold text-sidebar-foreground">
-            Logística Flash
+          <h2 className="text-lg font-bold font-display bg-gradient-to-r from-primary to-purple bg-clip-text text-transparent">
+            ⚡ Logística Flash
           </h2>
+        )}
+        {collapsed && (
+          <span className="text-2xl">⚡</span>
         )}
       </div>
 
@@ -130,13 +134,24 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       className={({ isActive }) =>
-                        isActive
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                          : 'hover:bg-sidebar-accent/50'
+                        `relative group transition-all ${
+                          isActive
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                            : 'hover:bg-sidebar-accent/50'
+                        }`
                       }
                     >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {({ isActive }) => (
+                        <>
+                          {isActive && (
+                            <div className="absolute left-0 w-1 h-full bg-gradient-to-b from-primary via-cyan to-purple rounded-r" />
+                          )}
+                          <item.icon className={`h-4 w-4 transition-colors ${isActive ? 'text-primary' : 'group-hover:text-primary'}`} />
+                          {!collapsed && (
+                            <span className="transition-colors">{item.title}</span>
+                          )}
+                        </>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

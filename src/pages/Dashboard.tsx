@@ -63,30 +63,36 @@ export default function Dashboard() {
 
         {/* KPIs Principais */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card variant="gradient" colorScheme="cyan" className="hover:shadow-lg hover:shadow-cyan/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Viagens Concluídas
               </CardTitle>
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 rounded-lg bg-gradient-to-br from-cyan to-primary">
+                <MapPin className="h-4 w-4 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{kpis?.viagensConcluidas || 0}</div>
+              <div className="text-2xl font-bold bg-gradient-to-r from-cyan to-primary bg-clip-text text-transparent">
+                {kpis?.viagensConcluidas || 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Este mês
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="gradient" colorScheme="warning" className="hover:shadow-lg hover:shadow-warning/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Custo por KM
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 rounded-lg bg-gradient-warning">
+                <DollarSign className="h-4 w-4 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold bg-gradient-warning bg-clip-text text-transparent">
                 R$ {kpis?.custoKm.toFixed(2) || '0,00'}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -95,30 +101,38 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="gradient" colorScheme="purple" className="hover:shadow-lg hover:shadow-purple/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Fretes em Aberto
               </CardTitle>
-              <Truck className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 rounded-lg bg-gradient-purple">
+                <Truck className="h-4 w-4 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{kpis?.fretesAberto || 0}</div>
+              <div className="text-2xl font-bold bg-gradient-purple bg-clip-text text-transparent">
+                {kpis?.fretesAberto || 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Aguardando início
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card variant="gradient" colorScheme="success" className="hover:shadow-lg hover:shadow-success/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Viagens em Andamento
               </CardTitle>
-              <Truck className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 rounded-lg bg-gradient-success">
+                <Truck className="h-4 w-4 text-white" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{kpis?.viagensEmAndamento || 0}</div>
+              <div className="text-2xl font-bold bg-gradient-success bg-clip-text text-transparent">
+                {kpis?.viagensEmAndamento || 0}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Veículos na rua
               </p>
