@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import {
   type ParametrosCalculoANTT,
   type ResultadoCalculoANTT 
 } from '@/lib/calculadora-antt';
-import { Calculator, TrendingUp, Info } from 'lucide-react';
+import { Calculator, TrendingUp, Info, Navigation } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface CalculadoraANTTDialogProps {
@@ -39,6 +39,29 @@ export function CalculadoraANTTDialog({
   });
 
   const [resultado, setResultado] = useState<ResultadoCalculoANTT | null>(null);
+
+  // Sincronizar distância quando o dialog abre ou distância muda
+  useEffect(() => {
+    if (open && distanciaKm && distanciaKm > 0) {
+      setParametros(prev => ({
+        ...prev,
+        distancia_km: distanciaKm
+      }));
+      
+      // Calcular automaticamente
+      const novosParams = { 
+        ...parametros, 
+        numero_eixos: numeroEixosInicial || parametros.numero_eixos,
+        distancia_km: distanciaKm 
+      };
+      try {
+        const calc = calcularPisoMinimoANTT(novosParams);
+        setResultado(calc);
+      } catch (error) {
+        console.error('Erro ao calcular:', error);
+      }
+    }
+  }, [distanciaKm, open]);
 
   // Recalcular automaticamente quando parâmetros mudam
   const handleCalcular = () => {
@@ -141,19 +164,36 @@ export function CalculadoraANTTDialog({
 
             <div className="space-y-2">
               <Label htmlFor="distancia_km">Distância (km) *</Label>
-              <input
-                id="distancia_km"
-                type="number"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={parametros.distancia_km}
-                onChange={(e) => updateParam('distancia_km', parseFloat(e.target.value) || 0)}
-                placeholder="Ex: 450"
-                min="0"
-                step="0.01"
-              />
-              {!distanciaKm && (
+              <div className="flex gap-2">
+                <input
+                  id="distancia_km"
+                  type="number"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={parametros.distancia_km}
+                  onChange={(e) => updateParam('distancia_km', parseFloat(e.target.value) || 0)}
+                  placeholder="Ex: 450"
+                  min="0"
+                  step="0.01"
+                />
+                {distanciaKm && distanciaKm > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => updateParam('distancia_km', distanciaKm)}
+                    title="Recarregar distância do frete"
+                  >
+                    <Navigation className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {distanciaKm && distanciaKm > 0 ? (
+                <p className="text-xs text-success flex items-center gap-1">
+                  <span className="text-green-600">✓</span> Distância preenchida automaticamente do cálculo do frete ({distanciaKm.toFixed(1)} km)
+                </p>
+              ) : (
                 <p className="text-xs text-muted-foreground">
-                  Preencha os CEPs de origem e destino para calcular automaticamente
+                  Preencha os CEPs de origem e destino no frete e clique em "Calcular Custos"
                 </p>
               )}
             </div>
