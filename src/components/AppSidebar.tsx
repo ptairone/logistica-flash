@@ -12,6 +12,7 @@ import {
   BarChart3,
   Wrench,
   Cog,
+  Download,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -26,6 +27,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/lib/auth';
+import { InstallButton } from '@/components/pwa/InstallButton';
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -146,6 +148,14 @@ export function AppSidebar() {
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/install">
+                    <Download className="h-4 w-4" />
+                    {!collapsed && <span>Instalar App</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleSignOut}>
                   <LogOut className="h-4 w-4" />

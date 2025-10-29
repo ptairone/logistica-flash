@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, ProtectedRoute } from "./lib/auth";
+import { InstallPrompt } from "./components/pwa/InstallPrompt";
+import { WelcomeModal } from "./components/pwa/WelcomeModal";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Veiculos from "./pages/Veiculos";
@@ -30,6 +32,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <InstallPrompt />
+      <WelcomeModal />
       <BrowserRouter>
         <AuthProvider>
           <Routes>

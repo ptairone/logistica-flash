@@ -4,10 +4,11 @@ import {
   MapPin, 
   Receipt, 
   BarChart3,
-  User
+  Download
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface NavItem {
   title: string;
@@ -18,6 +19,7 @@ interface NavItem {
 
 export function BottomNavigation() {
   const { hasRole } = useAuth();
+  const { isInstalled } = usePWAInstall();
 
   const navItems: NavItem[] = [
     {
@@ -45,16 +47,17 @@ export function BottomNavigation() {
       roles: ['admin', 'operacional', 'financeiro']
     },
     {
-      title: 'Perfil',
-      url: '/perfil',
-      icon: User,
+      title: 'App',
+      url: '/install',
+      icon: Download,
       roles: ['admin', 'operacional', 'motorista', 'financeiro']
     },
   ];
 
-  const filteredNavItems = navItems.filter(item =>
-    item.roles.some(role => hasRole(role as any))
-  );
+  // Filtrar item "App" se já estiver instalado
+  const filteredNavItems = navItems
+    .filter(item => item.url === '/install' ? !isInstalled : true)
+    .filter(item => item.roles.some(role => hasRole(role as any)));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe">

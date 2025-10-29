@@ -1,178 +1,291 @@
-import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Smartphone, Monitor, CheckCircle2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Download, 
+  Zap, 
+  Wifi, 
+  Bell, 
+  Shield, 
+  Smartphone, 
+  Monitor,
+  Check,
+  ChevronDown
+} from 'lucide-react';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useState } from 'react';
 
 export default function InstallApp() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const { isInstalled, canInstall, promptInstall } = usePWAInstall();
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [showMobileInstructions, setShowMobileInstructions] = useState(false);
+  const [showDesktopInstructions, setShowDesktopInstructions] = useState(false);
 
-  useEffect(() => {
-    // Verificar se já está instalado
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      return;
+  const handleInstall = async () => {
+    setIsInstalling(true);
+    const success = await promptInstall();
+    if (!success) {
+      setIsInstalling(false);
     }
-
-    // Listener para o evento de instalação
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setIsInstallable(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Listener para verificar se foi instalado
-    window.addEventListener('appinstalled', () => {
-      setIsInstalled(true);
-      setIsInstallable(false);
-    });
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setIsInstallable(false);
-    }
-    
-    setDeferredPrompt(null);
   };
+
+  const benefits = [
+    {
+      icon: Zap,
+      title: 'Acesso Instantâneo',
+      description: 'Abra direto da tela inicial do seu dispositivo, sem precisar do navegador',
+      gradient: 'from-yellow-500 to-orange-500'
+    },
+    {
+      icon: Wifi,
+      title: 'Funciona Offline',
+      description: 'Continue trabalhando mesmo sem conexão com a internet',
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+    {
+      icon: Bell,
+      title: 'Notificações em Tempo Real',
+      description: 'Receba alertas importantes sobre viagens, manutenções e mais',
+      gradient: 'from-purple-500 to-pink-500'
+    },
+    {
+      icon: Shield,
+      title: '100% Seguro',
+      description: 'Seus dados ficam protegidos com criptografia de ponta',
+      gradient: 'from-green-500 to-emerald-500'
+    }
+  ];
+
+  const comparison = [
+    { feature: 'Acesso rápido', web: false, app: true },
+    { feature: 'Funciona offline', web: false, app: true },
+    { feature: 'Notificações push', web: false, app: true },
+    { feature: 'Instalação na tela inicial', web: false, app: true },
+    { feature: 'Atualizações automáticas', web: true, app: true },
+    { feature: 'Sem ocupar espaço', web: true, app: true },
+  ];
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Instalar Aplicativo</h2>
-          <p className="text-muted-foreground">
-            Use o Logística Flash como um aplicativo nativo
-          </p>
+      <div className="max-w-6xl mx-auto">
+        {/* Hero Section */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/80 p-8 md:p-12 mb-8 text-primary-foreground">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
+          
+          <div className="relative z-10 max-w-3xl">
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
+              <Smartphone className="h-4 w-4" />
+              <span className="text-sm font-medium">Progressive Web App</span>
+            </div>
+
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+              Transforme sua experiência com o Logística Flash
+            </h1>
+            <p className="text-lg md:text-xl opacity-90 mb-8">
+              Instale nosso app e tenha acesso instantâneo, trabalhe offline e receba notificações em tempo real
+            </p>
+
+            {isInstalled ? (
+              <div className="flex items-center gap-3 bg-success/20 backdrop-blur-sm rounded-2xl px-6 py-4 border border-success/30">
+                <Check className="h-6 w-6 text-success-foreground" />
+                <div>
+                  <p className="font-semibold">App já instalado! 🎉</p>
+                  <p className="text-sm opacity-90">Você pode acessá-lo pela tela inicial</p>
+                </div>
+              </div>
+            ) : canInstall ? (
+              <Button
+                size="lg"
+                onClick={handleInstall}
+                disabled={isInstalling}
+                className="bg-white text-primary hover:bg-white/90 font-semibold text-lg px-8 py-6 h-auto shadow-2xl hover:shadow-xl transition-all hover:scale-105"
+              >
+                <Download className="h-5 w-5 mr-2" />
+                {isInstalling ? 'Instalando...' : 'Instalar App Grátis'}
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm opacity-90">
+                  Veja como instalar no seu dispositivo:
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowMobileInstructions(!showMobileInstructions)}
+                    className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-white/30"
+                  >
+                    <Smartphone className="h-4 w-4 mr-2" />
+                    Mobile (iOS/Android)
+                    <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showMobileInstructions ? 'rotate-180' : ''}`} />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowDesktopInstructions(!showDesktopInstructions)}
+                    className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border-white/30"
+                  >
+                    <Monitor className="h-4 w-4 mr-2" />
+                    Desktop (Chrome/Edge)
+                    <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showDesktopInstructions ? 'rotate-180' : ''}`} />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {isInstalled && (
-          <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 dark:text-green-200">
-              ✅ O aplicativo já está instalado no seu dispositivo!
-            </AlertDescription>
-          </Alert>
+        {/* Instruções Mobile */}
+        {showMobileInstructions && (
+          <Card className="mb-8 animate-in slide-in-from-top-5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5" />
+                Instalação no Mobile
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">📱 iOS (iPhone/iPad):</h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                  <li>Abra este site no Safari</li>
+                  <li>Toque no botão de compartilhar (quadrado com seta)</li>
+                  <li>Role para baixo e toque em "Adicionar à Tela de Início"</li>
+                  <li>Toque em "Adicionar"</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">🤖 Android:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                  <li>Abra este site no Chrome</li>
+                  <li>Toque no menu (três pontos) no canto superior direito</li>
+                  <li>Toque em "Instalar app" ou "Adicionar à tela inicial"</li>
+                  <li>Confirme a instalação</li>
+                </ol>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+        {/* Instruções Desktop */}
+        {showDesktopInstructions && (
+          <Card className="mb-8 animate-in slide-in-from-top-5">
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <Smartphone className="h-8 w-8 text-primary" />
-                <div>
-                  <CardTitle>Instalar no Celular</CardTitle>
-                  <CardDescription>iOS e Android</CardDescription>
-                </div>
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Monitor className="h-5 w-5" />
+                Instalação no Desktop
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isInstallable ? (
-                <Button onClick={handleInstallClick} className="w-full" size="lg">
-                  <Download className="h-4 w-4 mr-2" />
-                  Instalar Agora
-                </Button>
-              ) : (
-                <div className="space-y-3 text-sm">
-                  <p className="font-semibold">📱 iPhone/iPad (Safari):</p>
-                  <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                    <li>Toque no botão "Compartilhar" (ícone de quadrado com seta)</li>
-                    <li>Role para baixo e toque em "Adicionar à Tela Inicial"</li>
-                    <li>Toque em "Adicionar" no canto superior direito</li>
-                  </ol>
-
-                  <p className="font-semibold pt-4">🤖 Android (Chrome):</p>
-                  <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                    <li>Toque no menu (três pontos) no canto superior direito</li>
-                    <li>Toque em "Instalar app" ou "Adicionar à tela inicial"</li>
-                    <li>Confirme a instalação</li>
-                  </ol>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <Monitor className="h-8 w-8 text-primary" />
-                <div>
-                  <CardTitle>Instalar no Computador</CardTitle>
-                  <CardDescription>Windows, Mac e Linux</CardDescription>
-                </div>
+              <div>
+                <h4 className="font-semibold mb-2">💻 Chrome/Edge:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                  <li>Clique no ícone de instalação na barra de endereço (ou menu)</li>
+                  <li>Clique em "Instalar"</li>
+                  <li>O app abrirá em uma janela própria</li>
+                </ol>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isInstallable ? (
-                <Button onClick={handleInstallClick} className="w-full" size="lg">
-                  <Download className="h-4 w-4 mr-2" />
-                  Instalar Agora
-                </Button>
-              ) : (
-                <div className="space-y-3 text-sm">
-                  <p className="font-semibold">💻 Chrome/Edge:</p>
-                  <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                    <li>Clique no ícone de instalação (➕) na barra de endereços</li>
-                    <li>Ou vá no menu (três pontos) → "Instalar Logística Flash"</li>
-                    <li>Confirme a instalação</li>
-                  </ol>
-
-                  <p className="font-semibold pt-4">🦊 Firefox:</p>
-                  <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                    <li>Clique no ícone de casa com um "+" na barra de endereços</li>
-                    <li>Ou pressione Ctrl+Shift+A (Windows/Linux) ou Cmd+Shift+A (Mac)</li>
-                  </ol>
-                </div>
-              )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Benefícios */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-2 text-center">Por que instalar?</h2>
+          <p className="text-muted-foreground text-center mb-8">
+            Veja todos os benefícios que você terá
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {benefits.map((benefit, index) => (
+              <Card 
+                key={index} 
+                className="border-2 hover:border-primary/50 transition-all hover-scale group"
+              >
+                <CardHeader>
+                  <div className={`inline-flex w-12 h-12 items-center justify-center rounded-xl bg-gradient-to-br ${benefit.gradient} mb-4 group-hover:scale-110 transition-transform`}>
+                    <benefit.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <CardTitle>{benefit.title}</CardTitle>
+                  <CardDescription>{benefit.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
         </div>
 
-        <Card>
+        {/* Comparação */}
+        <Card className="mb-12">
           <CardHeader>
-            <CardTitle>Benefícios do App Instalado</CardTitle>
+            <CardTitle className="text-2xl text-center">App vs Navegador</CardTitle>
+            <CardDescription className="text-center">
+              Veja a diferença entre usar no navegador e o app instalado
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="grid gap-3 md:grid-cols-2">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Acesso rápido direto da tela inicial</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Funciona offline após primeiro acesso</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Carregamento mais rápido</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Experiência igual a um app nativo</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Modo tela cheia (sem barra do navegador)</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">Atualizações automáticas</span>
-              </li>
-            </ul>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">Recurso</th>
+                    <th className="text-center py-3 px-4">Navegador</th>
+                    <th className="text-center py-3 px-4 bg-primary/5">App Instalado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.map((item, index) => (
+                    <tr key={index} className="border-b last:border-0">
+                      <td className="py-3 px-4 font-medium">{item.feature}</td>
+                      <td className="text-center py-3 px-4">
+                        {item.web ? (
+                          <Check className="h-5 w-5 text-success mx-auto" />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="text-center py-3 px-4 bg-primary/5">
+                        {item.app ? (
+                          <Check className="h-5 w-5 text-success mx-auto" />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* FAQ */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Perguntas Frequentes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="font-semibold mb-1">O app ocupa muito espaço?</h4>
+              <p className="text-sm text-muted-foreground">
+                Não! O app é apenas um atalho inteligente que usa tecnologia PWA, ocupando menos de 5MB.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">Preciso atualizar manualmente?</h4>
+              <p className="text-sm text-muted-foreground">
+                Não! O app se atualiza automaticamente quando você o abre e há uma nova versão disponível.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">Funciona sem internet?</h4>
+              <p className="text-sm text-muted-foreground">
+                Sim! Você pode visualizar dados já carregados e fazer algumas ações offline. Quando voltar online, tudo sincroniza automaticamente.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">É seguro?</h4>
+              <p className="text-sm text-muted-foreground">
+                100%! O app usa a mesma tecnologia de segurança do site, com criptografia HTTPS e dados protegidos.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
