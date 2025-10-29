@@ -154,8 +154,8 @@ export function useFretes() {
       destino_uf?: string;
       numero_eixos?: number;
     }) => {
-      // 1. Calcular distância
-      const { data: distData, error: distError } = await supabase.functions.invoke('calcular-distancia', {
+      // Calcular rota unificada (distância + pedágios) com Google Maps
+      const { data: rotaData, error: rotaError } = await supabase.functions.invoke('calcular-rota-google', {
         body: {
           origem_cep: params.origem_cep,
           destino_cep: params.destino_cep,
@@ -163,46 +163,31 @@ export function useFretes() {
           origem_uf: params.origem_uf,
           destino_cidade: params.destino_cidade,
           destino_uf: params.destino_uf,
+          numero_eixos: params.numero_eixos || 3,
         }
       });
 
-      if (distError) throw distError;
-      if (!distData) throw new Error('Erro ao calcular distância');
+      if (rotaError) throw rotaError;
+      if (!rotaData) throw new Error('Erro ao calcular rota');
 
-      // 2. Calcular pedágios (soft-fail - não quebra se falhar)
-      let pedagioData = null;
-      try {
-        const { data, error } = await supabase.functions.invoke('calcular-pedagios', {
-          body: {
-            origem: distData.origem,
-            destino: distData.destino,
-            numero_eixos: params.numero_eixos || 3,
-          }
-        });
-        
-        if (error) throw error;
-        pedagioData = data;
-      } catch (e) {
-        console.warn('Falha ao calcular pedágios, prosseguindo sem pedágios:', e);
-        pedagioData = { valor_total: 0, pracas: [], tempo_estimado_minutos: null };
-      }
+      console.log('Rota calculada com Google Maps:', rotaData);
 
-      // 3. Calcular combustível
+      // Calcular combustível
       const mediaConsumo = 2.5; // km/l
       const precoDiesel = 6.50; // R$/l
-      const litrosEstimados = distData.distancia_km / mediaConsumo;
+      const litrosEstimados = rotaData.distancia_km / mediaConsumo;
       const custoEstimadoCombustivel = litrosEstimados * precoDiesel;
 
       return {
-        distancia_km: distData.distancia_km,
-        pedagios_estimados: pedagioData?.valor_total || 0,
-        pracas_pedagio: pedagioData?.pracas || [],
-        numero_pracas_pedagio: pedagioData?.pracas?.length || 0,
+        distancia_km: rotaData.distancia_km,
+        pedagios_estimados: rotaData.pedagios_valor || 0,
+        pracas_pedagio: [], // Google Maps não retorna lista de praças
+        numero_pracas_pedagio: rotaData.numero_pracas_pedagio || 0,
         combustivel_estimado_litros: Math.round(litrosEstimados),
         combustivel_estimado_valor: custoEstimadoCombustivel,
-        custo_total_estimado: (pedagioData?.valor_total || 0) + custoEstimadoCombustivel,
-        tempo_estimado_horas: pedagioData?.tempo_estimado_minutos 
-          ? Math.round(pedagioData.tempo_estimado_minutos / 60) 
+        custo_total_estimado: (rotaData.pedagios_valor || 0) + custoEstimadoCombustivel,
+        tempo_estimado_horas: rotaData.tempo_estimado_horas 
+          ? Math.round(rotaData.tempo_estimado_horas) 
           : null,
       };
     },

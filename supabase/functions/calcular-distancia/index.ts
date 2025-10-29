@@ -1,3 +1,7 @@
+/**
+ * @deprecated Esta função está deprecated. Use calcular-rota-google ao invés.
+ * Mantida por compatibilidade temporária.
+ */
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
