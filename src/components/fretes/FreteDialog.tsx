@@ -163,8 +163,11 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
 
         if (error) throw error;
 
-        if (data) {
-      const prefix = field === 'origem_cep' ? 'origem' : 'destino';
+        if (data && data.error) {
+          // CEP inválido ou não encontrado
+          toast.error(data.error === 'CEP inválido' ? 'CEP não encontrado na base de dados' : data.error);
+        } else if (data) {
+          const prefix = field === 'origem_cep' ? 'origem' : 'destino';
           setValue(`${prefix}_logradouro` as any, data.logradouro || '');
           setValue(`${prefix}_cidade` as any, data.localidade || '');
           setValue(`${prefix}_uf` as any, data.uf || '');
@@ -172,7 +175,7 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
         }
       } catch (error: any) {
         console.error('Erro ao buscar CEP:', error);
-        toast.error('Não foi possível buscar o endereço');
+        toast.error('Erro ao consultar CEP. Tente novamente.');
       } finally {
         setBuscando(false);
       }
