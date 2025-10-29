@@ -1,14 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
+  Truck,
   MapPin, 
   Receipt, 
-  BarChart3,
-  Download
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
-import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface NavItem {
   title: string;
@@ -19,7 +18,6 @@ interface NavItem {
 
 export function BottomNavigation() {
   const { hasRole } = useAuth();
-  const { isInstalled } = usePWAInstall();
 
   const navItems: NavItem[] = [
     {
@@ -27,6 +25,12 @@ export function BottomNavigation() {
       url: '/dashboard',
       icon: LayoutDashboard,
       roles: ['admin', 'operacional', 'motorista', 'financeiro']
+    },
+    {
+      title: 'Veículos',
+      url: '/veiculos',
+      icon: Truck,
+      roles: ['admin', 'operacional']
     },
     {
       title: 'Viagens',
@@ -46,18 +50,11 @@ export function BottomNavigation() {
       icon: BarChart3,
       roles: ['admin', 'operacional', 'financeiro']
     },
-    {
-      title: 'App',
-      url: '/install',
-      icon: Download,
-      roles: ['admin', 'operacional', 'motorista', 'financeiro']
-    },
   ];
 
-  // Filtrar item "App" se já estiver instalado
-  const filteredNavItems = navItems
-    .filter(item => item.url === '/install' ? !isInstalled : true)
-    .filter(item => item.roles.some(role => hasRole(role as any)));
+  const filteredNavItems = navItems.filter(item =>
+    item.roles.some(role => hasRole(role as any))
+  );
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe">
