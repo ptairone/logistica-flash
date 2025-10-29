@@ -84,7 +84,7 @@ export const freteSchema = z.object({
   data_coleta: z.string().optional(),
   data_entrega: z.string().optional(),
   produto: z.string().optional(),
-  tipo_carga: z.string().optional(),
+  tipo_carga: z.string().min(1, 'Tipo de carga é obrigatório'),
   peso: z.number().min(0).optional(),
   volume: z.number().min(0).optional(),
   valor_frete: z.number().min(0, 'Valor do frete deve ser maior que zero'),
@@ -99,7 +99,12 @@ export const freteSchema = z.object({
   numero_pracas_pedagio: z.number().optional(),
   pracas_pedagio: z.any().optional(),
   tempo_estimado_horas: z.number().optional(),
-  numero_eixos: z.number().min(2).max(9).optional(),
+  numero_eixos: z.number().min(2, 'Mínimo 2 eixos').max(9, 'Máximo 9 eixos'),
+  // Novos campos para cálculo ANTT
+  composicao_veicular: z.boolean().optional(),
+  alto_desempenho: z.boolean().optional(),
+  retorno_vazio: z.boolean().optional(),
+  piso_minimo_antt: z.number().optional(),
 });
 
 export type FreteFormData = z.infer<typeof freteSchema>;

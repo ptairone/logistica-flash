@@ -52,7 +52,17 @@ export function useFretes() {
         codigo = gerarCodigoFrete((count || 0) + 1);
       }
       
-      const dadosPreparados = prepararDadosFrete({ ...data, codigo });
+      const dadosPreparados = prepararDadosFrete({
+        ...data,
+        codigo,
+        // Garantir que campos ANTT sejam salvos
+        tipo_carga: data.tipo_carga,
+        numero_eixos: data.numero_eixos,
+        composicao_veicular: data.composicao_veicular || false,
+        alto_desempenho: data.alto_desempenho || false,
+        retorno_vazio: data.retorno_vazio || false,
+        piso_minimo_antt: data.piso_minimo_antt,
+      });
       
       const { data: result, error } = await supabase
         .from('fretes')

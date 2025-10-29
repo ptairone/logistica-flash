@@ -756,12 +756,14 @@ export type Database = {
       }
       fretes: {
         Row: {
+          alto_desempenho: boolean | null
           cliente_cnpj_cpf: string
           cliente_contato: string | null
           cliente_nome: string
           codigo: string
           combustivel_estimado_litros: number | null
           combustivel_estimado_valor: number | null
+          composicao_veicular: boolean | null
           condicao_pagamento: string | null
           created_at: string
           custo_total_estimado: number | null
@@ -791,8 +793,10 @@ export type Database = {
           pedagios_estimados: number | null
           percentual_margem: number | null
           peso: number | null
+          piso_minimo_antt: number | null
           pracas_pedagio: Json | null
           produto: string | null
+          retorno_vazio: boolean | null
           status: Database["public"]["Enums"]["status_frete"] | null
           tempo_estimado_horas: number | null
           tipo_carga: string | null
@@ -801,12 +805,14 @@ export type Database = {
           volume: number | null
         }
         Insert: {
+          alto_desempenho?: boolean | null
           cliente_cnpj_cpf: string
           cliente_contato?: string | null
           cliente_nome: string
           codigo: string
           combustivel_estimado_litros?: number | null
           combustivel_estimado_valor?: number | null
+          composicao_veicular?: boolean | null
           condicao_pagamento?: string | null
           created_at?: string
           custo_total_estimado?: number | null
@@ -836,8 +842,10 @@ export type Database = {
           pedagios_estimados?: number | null
           percentual_margem?: number | null
           peso?: number | null
+          piso_minimo_antt?: number | null
           pracas_pedagio?: Json | null
           produto?: string | null
+          retorno_vazio?: boolean | null
           status?: Database["public"]["Enums"]["status_frete"] | null
           tempo_estimado_horas?: number | null
           tipo_carga?: string | null
@@ -846,12 +854,14 @@ export type Database = {
           volume?: number | null
         }
         Update: {
+          alto_desempenho?: boolean | null
           cliente_cnpj_cpf?: string
           cliente_contato?: string | null
           cliente_nome?: string
           codigo?: string
           combustivel_estimado_litros?: number | null
           combustivel_estimado_valor?: number | null
+          composicao_veicular?: boolean | null
           condicao_pagamento?: string | null
           created_at?: string
           custo_total_estimado?: number | null
@@ -881,8 +891,10 @@ export type Database = {
           pedagios_estimados?: number | null
           percentual_margem?: number | null
           peso?: number | null
+          piso_minimo_antt?: number | null
           pracas_pedagio?: Json | null
           produto?: string | null
+          retorno_vazio?: boolean | null
           status?: Database["public"]["Enums"]["status_frete"] | null
           tempo_estimado_horas?: number | null
           tipo_carga?: string | null

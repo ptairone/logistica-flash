@@ -1,3 +1,9 @@
+/**
+ * @deprecated Este componente está sendo descontinuado.
+ * O cálculo ANTT agora é feito diretamente no FreteDialog.
+ * Manter por compatibilidade temporária.
+ */
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';

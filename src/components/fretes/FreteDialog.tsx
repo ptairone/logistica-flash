@@ -14,10 +14,12 @@ import { freteSchema, FreteFormData, formatCPFCNPJ } from '@/lib/validations-fre
 import { formatCEP } from '@/lib/validations-viagem';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Calculator, TrendingUp, ChevronDown, Fuel, Navigation } from 'lucide-react';
-import { CalculadoraANTTDialog } from './CalculadoraANTTDialog';
+import { Loader2, Calculator, TrendingUp, ChevronDown, Fuel, Navigation, Info } from 'lucide-react';
 import { useFretes } from '@/hooks/useFretes';
 import { cn } from '@/lib/utils';
+import { calcularPisoMinimoANTT, TIPOS_CARGA } from '@/lib/calculadora-antt';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface FreteDialogProps {
   open: boolean;
@@ -31,9 +33,6 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
   const [buscandoCNPJ, setBuscandoCNPJ] = useState(false);
   const [buscandoCEPOrigem, setBuscandoCEPOrigem] = useState(false);
   const [buscandoCEPDestino, setBuscandoCEPDestino] = useState(false);
-  const [calculandoDistancia, setCalculandoDistancia] = useState(false);
-  const [mostrarCalculadoraANTT, setMostrarCalculadoraANTT] = useState(false);
-  const [distanciaCalculada, setDistanciaCalculada] = useState<number | undefined>(undefined);
   const [estimativas, setEstimativas] = useState<any>(null);
   const [calculandoEstimativas, setCalculandoEstimativas] = useState(false);
   
@@ -103,20 +102,27 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
     const origemCep = watch('origem_cep');
     const destinoCep = watch('destino_cep');
     const numeroEixos = watch('numero_eixos');
+    const tipoCarga = watch('tipo_carga');
     
     if (!origemCep || !destinoCep || origemCep.replace(/\D/g, '').length !== 8 || destinoCep.replace(/\D/g, '').length !== 8) {
-      toast.error('Preencha os CEPs de origem e destino antes de calcular');
+      toast.error('Preencha os CEPs de origem e destino');
       return;
     }
     
     if (!numeroEixos) {
-      toast.error('Selecione o número de eixos antes de calcular os custos');
+      toast.error('Selecione o número de eixos');
+      return;
+    }
+    
+    if (!tipoCarga) {
+      toast.error('Selecione o tipo de carga');
       return;
     }
     
     setCalculandoEstimativas(true);
     
     try {
+      // 1. CALCULAR DISTÂNCIA, PEDÁGIOS, COMBUSTÍVEL
       const resultado = await calcularCustosEstimados.mutateAsync({
         origem_cep: origemCep,
         destino_cep: destinoCep,
@@ -128,9 +134,8 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
       });
       
       setEstimativas(resultado);
-      setDistanciaCalculada(resultado.distancia_km);
       
-      // Auto-preencher campos
+      // Auto-preencher campos de estimativa
       setValue('distancia_estimada_km', resultado.distancia_km);
       setValue('pedagios_estimados', resultado.pedagios_estimados);
       setValue('combustivel_estimado_litros', resultado.combustivel_estimado_litros);
@@ -139,9 +144,30 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
       setValue('pracas_pedagio', resultado.pracas_pedagio);
       setValue('tempo_estimado_horas', resultado.tempo_estimado_horas);
       
-      toast.success('Custos calculados com sucesso!');
+      // 2. CALCULAR PISO MÍNIMO ANTT
+      const resultadoANTT = calcularPisoMinimoANTT({
+        tipo_carga: tipoCarga,
+        numero_eixos: numeroEixos,
+        distancia_km: resultado.distancia_km,
+        composicao_veicular: watch('composicao_veicular') || false,
+        alto_desempenho: watch('alto_desempenho') || false,
+        retorno_vazio: watch('retorno_vazio') || false,
+      });
+      
+      // 3. AUTO-PREENCHER VALOR DO FRETE COM PISO MÍNIMO ANTT
+      setValue('piso_minimo_antt', resultadoANTT.valor_com_acrescimos);
+      setValue('valor_frete', resultadoANTT.valor_com_acrescimos);
+      
+      toast.success(
+        `Piso ANTT: R$ ${resultadoANTT.valor_com_acrescimos.toLocaleString('pt-BR', { 
+          minimumFractionDigits: 2 
+        })}`,
+        { duration: 5000 }
+      );
+      
     } catch (error) {
-      console.error('Erro ao calcular estimativas:', error);
+      console.error('Erro ao calcular:', error);
+      toast.error('Erro ao calcular custos e piso ANTT');
     } finally {
       setCalculandoEstimativas(false);
     }
@@ -414,15 +440,105 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
               />
             </div>
           </div>
+
+          <div className="space-y-4 border rounded-lg p-4 bg-accent/30">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Parâmetros do Veículo e Carga
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tipo_carga">Tipo de Carga *</Label>
+                <Select
+                  value={watch('tipo_carga')}
+                  onValueChange={(value) => setValue('tipo_carga', value)}
+                >
+                  <SelectTrigger id="tipo_carga">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_CARGA.map((tipo) => (
+                      <SelectItem key={tipo.value} value={tipo.value}>
+                        {tipo.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.tipo_carga && (
+                  <p className="text-sm text-destructive">{errors.tipo_carga.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="numero_eixos">Número de Eixos *</Label>
+                <Select
+                  value={watch('numero_eixos')?.toString()}
+                  onValueChange={(value) => setValue('numero_eixos', parseInt(value))}
+                >
+                  <SelectTrigger id="numero_eixos">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[2, 3, 4, 5, 6, 7, 9].map((eixos) => (
+                      <SelectItem key={eixos} value={eixos.toString()}>
+                        {eixos} eixos
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.numero_eixos && (
+                  <p className="text-sm text-destructive">{errors.numero_eixos.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3 border rounded-lg p-3 bg-background">
+              <Label className="text-sm font-medium">Características do Veículo</Label>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="composicao_veicular"
+                  checked={watch('composicao_veicular') || false}
+                  onCheckedChange={(checked) => setValue('composicao_veicular', checked as boolean)}
+                />
+                <label htmlFor="composicao_veicular" className="text-sm cursor-pointer">
+                  Composição veicular (caminhão + reboque) <span className="text-muted-foreground">+15%</span>
+                </label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="alto_desempenho"
+                  checked={watch('alto_desempenho') || false}
+                  onCheckedChange={(checked) => setValue('alto_desempenho', checked as boolean)}
+                />
+                <label htmlFor="alto_desempenho" className="text-sm cursor-pointer">
+                  Veículo de alto desempenho <span className="text-muted-foreground">+10%</span>
+                </label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="retorno_vazio"
+                  checked={watch('retorno_vazio') || false}
+                  onCheckedChange={(checked) => setValue('retorno_vazio', checked as boolean)}
+                />
+                <label htmlFor="retorno_vazio" className="text-sm cursor-pointer">
+                  Retorno vazio <span className="text-muted-foreground">+20%</span>
+                </label>
+              </div>
+            </div>
+          </div>
           
           {estimativas && (
             <Card className="p-4 bg-primary/5 border-primary/20">
               <h3 className="font-semibold mb-3 flex items-center gap-2 text-primary">
                 <TrendingUp className="h-5 w-5" />
-                Estimativas Calculadas
+                Resultados do Cálculo
               </h3>
               
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div>
                   <Label className="text-xs text-muted-foreground">Distância</Label>
                   <p className="text-lg font-bold">{estimativas.distancia_km} km</p>
@@ -452,7 +568,41 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
                     ~{estimativas.combustivel_estimado_litros}L
                   </p>
                 </div>
+                
+                <div className="col-span-2 md:col-span-1">
+                  <Label className="text-xs text-muted-foreground">Piso Mínimo ANTT</Label>
+                  <p className="text-2xl font-bold text-primary">
+                    R$ {watch('piso_minimo_antt')?.toLocaleString('pt-BR', { 
+                      minimumFractionDigits: 2 
+                    })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Aplicado ao frete
+                  </p>
+                </div>
               </div>
+              
+              <Alert className="mt-3 bg-blue-50 border-blue-200">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-900">
+                  O valor do frete foi preenchido com o Piso Mínimo ANTT calculado. Você pode ajustá-lo manualmente se necessário.
+                </AlertDescription>
+              </Alert>
+              
+              <Collapsible className="mt-3">
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+                  <ChevronDown className="h-4 w-4" />
+                  Ver detalhes do cálculo ANTT
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 text-xs space-y-1 p-3 bg-background rounded border">
+                  <p><strong>Tipo de carga:</strong> {TIPOS_CARGA.find(t => t.value === watch('tipo_carga'))?.label}</p>
+                  <p><strong>Número de eixos:</strong> {watch('numero_eixos')}</p>
+                  <p><strong>Distância:</strong> {watch('distancia_estimada_km')} km</p>
+                  {watch('composicao_veicular') && <p>✓ Composição veicular (+15%)</p>}
+                  {watch('alto_desempenho') && <p>✓ Alto desempenho (+10%)</p>}
+                  {watch('retorno_vazio') && <p>✓ Retorno vazio (+20%)</p>}
+                </CollapsibleContent>
+              </Collapsible>
               
               <Separator className="my-3" />
               
@@ -589,31 +739,6 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
           </div>
 
           <div className="grid grid-cols-1 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="valor_frete">Valor do Frete (R$) *</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="valor_frete"
-                  type="number"
-                  step="0.01"
-                  {...register('valor_frete', { valueAsNumber: true })}
-                  placeholder="1500.00"
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setMostrarCalculadoraANTT(true)}
-                  title="Calcular Piso Mínimo ANTT"
-                >
-                  <Calculator className="h-4 w-4" />
-                </Button>
-              </div>
-              {errors.valor_frete && (
-                <p className="text-sm text-destructive">{errors.valor_frete.message}</p>
-              )}
-            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -653,21 +778,21 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
           <Button 
             type="button" 
             onClick={handleCalcularEstimativas}
-            disabled={calculandoEstimativas || !watch('numero_eixos')}
+            disabled={calculandoEstimativas || !watch('numero_eixos') || !watch('tipo_carga')}
             className="w-full"
             variant="secondary"
           >
             {calculandoEstimativas ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Calculando custos...
+                Calculando custos e piso ANTT...
               </>
             ) : (
               <>
                 <Calculator className="mr-2 h-4 w-4" />
-                Calcular Custos Estimados
-                {!watch('numero_eixos') && (
-                  <span className="ml-2 text-xs opacity-70">(selecione o número de eixos)</span>
+                Calcular Custos e Piso Mínimo ANTT
+                {(!watch('numero_eixos') || !watch('tipo_carga')) && (
+                  <span className="ml-2 text-xs opacity-70">(preencha tipo de carga e nº de eixos)</span>
                 )}
               </>
             )}
@@ -686,20 +811,6 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             </Button>
           </div>
         </form>
-
-        <CalculadoraANTTDialog
-          open={mostrarCalculadoraANTT}
-          onOpenChange={setMostrarCalculadoraANTT}
-          distanciaKm={distanciaCalculada}
-          numeroEixosInicial={watch('numero_eixos')}
-          onAplicarValor={(valor, numeroEixos) => {
-            setValue('valor_frete', valor);
-            if (numeroEixos) {
-              setValue('numero_eixos', numeroEixos);
-            }
-            toast.success('Valor aplicado ao frete!');
-          }}
-        />
       </DialogContent>
     </Dialog>
   );
