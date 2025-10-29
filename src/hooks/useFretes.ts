@@ -41,7 +41,18 @@ export function useFretes() {
 
   const createFrete = useMutation({
     mutationFn: async (data: FreteFormData) => {
-      const dadosPreparados = prepararDadosFrete(data);
+      // Gerar código automático se não foi fornecido
+      let codigo = data.codigo;
+      if (!codigo || codigo.trim() === '') {
+        const { count } = await supabase
+          .from('fretes')
+          .select('*', { count: 'exact', head: true });
+        
+        const { gerarCodigoFrete } = await import('@/lib/validations-frete');
+        codigo = gerarCodigoFrete((count || 0) + 1);
+      }
+      
+      const dadosPreparados = prepararDadosFrete({ ...data, codigo });
       
       const { data: result, error } = await supabase
         .from('fretes')

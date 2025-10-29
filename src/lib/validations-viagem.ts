@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const viagemSchema = z.object({
-  codigo: z.string().min(1, 'Código é obrigatório').max(50),
+  codigo: z.string().max(50).optional(),
   veiculo_id: z.string().uuid('Selecione um veículo'),
   motorista_id: z.string().uuid('Selecione um motorista'),
   frete_id: z.string().uuid().optional(),

@@ -189,12 +189,15 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="codigo">Código *</Label>
+              <Label htmlFor="codigo">Código</Label>
               <Input
                 id="codigo"
                 {...register('codigo')}
-                placeholder="FRT001"
+                placeholder="Gerado automaticamente"
               />
+              <p className="text-xs text-muted-foreground">
+                Deixe em branco para gerar automaticamente
+              </p>
               {errors.codigo && (
                 <p className="text-sm text-destructive">{errors.codigo.message}</p>
               )}

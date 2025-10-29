@@ -56,7 +56,7 @@ function validarCNPJ(cnpj: string): boolean {
 }
 
 export const freteSchema = z.object({
-  codigo: z.string().min(1, 'Código é obrigatório').max(50),
+  codigo: z.string().max(50).optional(),
   cliente_nome: z.string().min(1, 'Nome do cliente é obrigatório').max(255),
   cliente_cnpj_cpf: z.string()
     .min(1, 'CPF/CNPJ é obrigatório')
@@ -139,6 +139,11 @@ export function podeFaturarFrete(viagens: any[]): { pode: boolean; motivo?: stri
 }
 
 // Exportar fretes para CSV
+// Função para gerar código de frete
+export function gerarCodigoFrete(sequencia: number): string {
+  return `FRT-${String(sequencia).padStart(6, '0')}`;
+}
+
 export function exportarFretesCSV(fretes: any[]): void {
   const headers = [
     'Código',
