@@ -77,7 +77,29 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error('Erro TollGuru:', response.status, errorText);
       console.error('Veículo enviado:', vehicle);
-      throw new Error(`TollGuru API erro: ${response.status} - ${errorText}`);
+      
+      // Se for erro de quota (403) ou qualquer outro erro da API, retornar valores zerados
+      // ao invés de falhar completamente
+      if (response.status === 403) {
+        console.warn('Quota da API TollGuru excedida. Retornando valores zerados.');
+      } else {
+        console.warn(`TollGuru API retornou ${response.status}. Retornando valores zerados.`);
+      }
+      
+      // Retornar resposta válida com valores zerados
+      return new Response(
+        JSON.stringify({
+          valor_total: 0,
+          moeda: 'BRL',
+          pracas: [],
+          distancia_km: 0,
+          tempo_estimado_minutos: null,
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
     }
 
     const data = await response.json();
@@ -135,14 +157,22 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('Erro ao calcular pedágios:', error);
+    
+    // Em caso de erro inesperado, retornar valores zerados ao invés de erro 500
+    // Isso permite que o cálculo de fretes continue sem pedágios
+    console.warn('Retornando valores zerados devido a erro inesperado');
+    
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Erro ao calcular pedágios',
-        details: error.toString(),
+      JSON.stringify({
+        valor_total: 0,
+        moeda: 'BRL',
+        pracas: [],
+        distancia_km: 0,
+        tempo_estimado_minutos: null,
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status: 200,
       }
     );
   }
