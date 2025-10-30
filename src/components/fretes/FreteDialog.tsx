@@ -588,7 +588,7 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
               <Alert className="mt-3 bg-blue-50 border-blue-200">
                 <Info className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-900">
-                  O valor do frete foi preenchido com o Piso Mínimo ANTT calculado. Você pode ajustá-lo manualmente se necessário.
+                  O campo "Valor do Frete" foi atualizado com o Piso Mínimo ANTT de R$ {watch('piso_minimo_antt')?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Você pode editá-lo manualmente acima.
                 </AlertDescription>
               </Alert>
               
@@ -755,10 +755,25 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="valor_frete">Valor do Frete (R$) *</Label>
+              <Input
+                id="valor_frete"
+                type="number"
+                step="0.01"
+                {...register('valor_frete', { valueAsNumber: true })}
+                placeholder="0.00"
+                className="font-semibold text-lg"
+              />
+              {errors.valor_frete && (
+                <p className="text-sm text-destructive">{errors.valor_frete.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Preencha manualmente ou use o cálculo ANTT abaixo
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="condicao_pagamento">Condição de Pagamento</Label>
               <Input
@@ -767,6 +782,9 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
                 placeholder="À vista / 30 dias"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
 
             {status === 'faturado' && (
               <div className="space-y-2">
