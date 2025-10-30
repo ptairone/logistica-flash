@@ -79,6 +79,11 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
           : freteSelecionado.destino
         );
         setValue('destino_cep', freteSelecionado.destino_cep || '');
+        
+        // Auto-preencher KM estimado se disponível
+        if (freteSelecionado.distancia_estimada_km) {
+          setValue('km_estimado', freteSelecionado.distancia_estimada_km);
+        }
       }
     }
   }, [freteId, fretes, setValue]);
@@ -334,7 +339,15 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
           {/* KM - Visibilidade conforme status */}
           {status === 'planejada' && (
             <div className="space-y-2">
-              <Label htmlFor="km_estimado">KM Estimado (Planejamento)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="km_estimado">KM Estimado (Planejamento)</Label>
+                {freteId && freteId !== 'none' && (
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300">
+                    <Info className="h-3 w-3 mr-1" />
+                    Do frete
+                  </Badge>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Input
                   id="km_estimado"
@@ -349,7 +362,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                   type="button"
                   variant="outline"
                   onClick={calcularDistanciaAutomatica}
-                  disabled={calculandoDistancia || !watch('origem_cep') || !watch('destino_cep')}
+                  disabled={calculandoDistancia || camposDesabilitados || !watch('origem_cep') || !watch('destino_cep')}
                   className="whitespace-nowrap"
                 >
                   {calculandoDistancia ? (
@@ -366,7 +379,9 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {!watch('origem_cep') || !watch('destino_cep')
+                {camposDesabilitados 
+                  ? '✓ KM preenchido automaticamente do frete vinculado'
+                  : !watch('origem_cep') || !watch('destino_cep')
                   ? 'Preencha os CEPs de origem e destino para calcular automaticamente'
                   : 'Clique em "Calcular" ou os CEPs já preenchem automaticamente'}
               </p>

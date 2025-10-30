@@ -379,7 +379,8 @@ export function useFretesDisponiveis() {
           destino_cep,
           destino_cidade,
           destino_uf,
-          valor_frete
+          valor_frete,
+          distancia_estimada_km
         `)
         .eq('status', 'aberto')
         .order('created_at', { ascending: false });
