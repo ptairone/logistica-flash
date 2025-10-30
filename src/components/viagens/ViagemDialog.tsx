@@ -352,7 +352,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                 <Input
                   id="km_estimado"
                   type="number"
-                  step="0.01"
+                  step="any"
                   {...register('km_estimado', { valueAsNumber: true })}
                   placeholder="450"
                   disabled={calculandoDistancia}
