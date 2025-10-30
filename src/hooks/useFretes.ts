@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { FreteFormData } from '@/lib/validations-frete';
 import { useToast } from '@/hooks/use-toast';
+import { calcularCombustivelEstimado } from '@/lib/consumo-combustivel';
 
 // Helper para auto-preencher origem e destino com cidade/UF
 const prepararDadosFrete = (data: FreteFormData | Partial<FreteFormData>) => {
@@ -153,6 +154,7 @@ export function useFretes() {
       destino_cidade?: string;
       destino_uf?: string;
       numero_eixos?: number;
+      retorno_vazio?: boolean;
     }) => {
       // Calcular rota unificada (distância + pedágios) com Google Maps
       const { data: rotaData, error: rotaError } = await supabase.functions.invoke('calcular-rota-google', {
@@ -172,20 +174,26 @@ export function useFretes() {
 
       console.log('Rota calculada com Google Maps:', rotaData);
 
-      // Calcular combustível
-      const mediaConsumo = 2.5; // km/l
+      // Calcular combustível usando tabela de consumo por eixos
       const precoDiesel = 6.50; // R$/l
-      const litrosEstimados = rotaData.distancia_km / mediaConsumo;
-      const custoEstimadoCombustivel = litrosEstimados * precoDiesel;
+      const retornoVazio = params.retorno_vazio || false;
+
+      const dadosCombustivel = calcularCombustivelEstimado(
+        rotaData.distancia_km,
+        params.numero_eixos || 3,
+        retornoVazio,
+        precoDiesel
+      );
 
       return {
         distancia_km: rotaData.distancia_km,
         pedagios_estimados: rotaData.pedagios_valor || 0,
-        pracas_pedagio: [], // Google Maps não retorna lista de praças
+        pracas_pedagio: [],
         numero_pracas_pedagio: rotaData.numero_pracas_pedagio || 0,
-        combustivel_estimado_litros: Math.round(litrosEstimados),
-        combustivel_estimado_valor: custoEstimadoCombustivel,
-        custo_total_estimado: (rotaData.pedagios_valor || 0) + custoEstimadoCombustivel,
+        combustivel_estimado_litros: dadosCombustivel.litros_estimados,
+        combustivel_estimado_valor: dadosCombustivel.custo_estimado,
+        consumo_real_km_l: dadosCombustivel.consumo_km_l,
+        custo_total_estimado: (rotaData.pedagios_valor || 0) + dadosCombustivel.custo_estimado,
         tempo_estimado_horas: rotaData.tempo_estimado_horas 
           ? Math.round(rotaData.tempo_estimado_horas) 
           : null,

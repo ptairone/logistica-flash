@@ -123,6 +123,8 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
     
     try {
       // 1. CALCULAR DISTÂNCIA, PEDÁGIOS, COMBUSTÍVEL
+      const retornoVazio = watch('retorno_vazio') || false;
+      
       const resultado = await calcularCustosEstimados.mutateAsync({
         origem_cep: origemCep,
         destino_cep: destinoCep,
@@ -131,6 +133,7 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
         destino_cidade: watch('destino_cidade'),
         destino_uf: watch('destino_uf'),
         numero_eixos: numeroEixos,
+        retorno_vazio: retornoVazio,
       });
       
       setEstimativas(resultado);
@@ -606,27 +609,41 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
               
               <Separator className="my-3" />
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Custo Total Estimado</Label>
-                  <p className="text-xl font-bold text-destructive">
-                    R$ {estimativas.custo_total_estimado?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
+              <div className="space-y-3">
+                {estimativas.consumo_real_km_l && (
+                  <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-lg p-3">
+                    <Label className="text-xs text-muted-foreground">Consumo Médio</Label>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {estimativas.consumo_real_km_l.toFixed(1)} km/l
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {watch('retorno_vazio') ? 'Retorno vazio' : 'Carregado'}
+                    </p>
+                  </div>
+                )}
                 
-                <div>
-                  <Label className="text-xs text-muted-foreground">Margem Estimada</Label>
-                  <p className={cn(
-                    "text-xl font-bold",
-                    (watch('valor_frete') - estimativas.custo_total_estimado) > 0 
-                      ? "text-green-600" 
-                      : "text-destructive"
-                  )}>
-                    R$ {((watch('valor_frete') || 0) - estimativas.custo_total_estimado)?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {watch('valor_frete') > 0 ? ((((watch('valor_frete') || 0) - estimativas.custo_total_estimado) / watch('valor_frete')) * 100).toFixed(1) : '0'}% do frete
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Custo Total Estimado</Label>
+                    <p className="text-xl font-bold text-destructive">
+                      R$ {estimativas.custo_total_estimado?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Margem Estimada</Label>
+                    <p className={cn(
+                      "text-xl font-bold",
+                      (watch('valor_frete') - estimativas.custo_total_estimado) > 0 
+                        ? "text-green-600" 
+                        : "text-destructive"
+                    )}>
+                      R$ {((watch('valor_frete') || 0) - estimativas.custo_total_estimado)?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {watch('valor_frete') > 0 ? ((((watch('valor_frete') || 0) - estimativas.custo_total_estimado) / watch('valor_frete')) * 100).toFixed(1) : '0'}% do frete
+                    </p>
+                  </div>
                 </div>
               </div>
               
