@@ -136,6 +136,16 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
         retorno_vazio: retornoVazio,
       });
       
+      // Verificar se a distância foi calculada
+      if (!resultado.distancia_km || resultado.distancia_km === 0) {
+        toast.error(
+          'Não foi possível calcular a rota automaticamente. Por favor, preencha a distância manualmente.',
+          { duration: 6000 }
+        );
+        setCalculandoEstimativas(false);
+        return;
+      }
+      
       setEstimativas(resultado);
       
       // Auto-preencher campos de estimativa
@@ -162,7 +172,7 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
       setValue('valor_frete', resultadoANTT.valor_com_acrescimos);
       
       toast.success(
-        `Piso ANTT: R$ ${resultadoANTT.valor_com_acrescimos.toLocaleString('pt-BR', { 
+        `Estimativas calculadas! Piso ANTT: R$ ${resultadoANTT.valor_com_acrescimos.toLocaleString('pt-BR', { 
           minimumFractionDigits: 2 
         })}`,
         { duration: 5000 }
