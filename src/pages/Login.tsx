@@ -6,16 +6,56 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Truck } from 'lucide-react';
+import { Truck, Fingerprint } from 'lucide-react';
+import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nome, setNome] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { signIn, signUp, user, roles, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { 
+    isBiometricAvailable, 
+    isBiometricEnabled, 
+    enableBiometric, 
+    authenticateWithBiometric,
+    getSavedEmail,
+  } = useBiometricAuth();
+
+  // Tentar auto-login com biometria ao carregar
+  useEffect(() => {
+    const tryBiometricLogin = async () => {
+      if (!user && isBiometricEnabled) {
+        const credentials = await authenticateWithBiometric();
+        if (credentials) {
+          setLoading(true);
+          const { error } = await signIn(credentials.email, credentials.password);
+          setLoading(false);
+          
+          if (!error) {
+            toast.success('Login automático com biometria realizado!', {
+              icon: <Fingerprint className="h-4 w-4" />,
+            });
+          }
+        }
+      }
+    };
+
+    tryBiometricLogin();
+  }, [isBiometricEnabled]);
+
+  // Popular email salvo se existir
+  useEffect(() => {
+    const savedEmail = getSavedEmail();
+    if (savedEmail && !email) {
+      setEmail(savedEmail);
+    }
+  }, []);
 
   useEffect(() => {
     if (user && !authLoading && roles.length > 0) {
@@ -40,15 +80,26 @@ export default function Login() {
 
     setLoading(true);
     const { error } = await signIn(email, password);
-    setLoading(false);
-
+    
     if (error) {
+      setLoading(false);
       if (error.message.includes('Invalid login credentials')) {
         toast.error('Email ou senha inválidos');
       } else {
         toast.error('Erro ao fazer login: ' + error.message);
       }
     } else {
+      // Configurar biometria se "Lembrar-me" estiver marcado
+      if (rememberMe && isBiometricAvailable && !isBiometricEnabled) {
+        const success = await enableBiometric(email, password);
+        if (success) {
+          toast.success('Biometria configurada! Próximo login será automático.', {
+            icon: <Fingerprint className="h-4 w-4" />,
+          });
+        }
+      }
+      
+      setLoading(false);
       toast.success('Login realizado com sucesso!');
       // O redirecionamento será feito pelo useEffect
     }
@@ -122,6 +173,31 @@ export default function Login() {
                     required
                   />
                 </div>
+                
+                {isBiometricAvailable && !isBiometricEnabled && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    />
+                    <label
+                      htmlFor="remember"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                    >
+                      <Fingerprint className="h-4 w-4" />
+                      Lembrar-me com biometria
+                    </label>
+                  </div>
+                )}
+
+                {isBiometricEnabled && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Fingerprint className="h-4 w-4 text-primary" />
+                    <span>Login automático ativado</span>
+                  </div>
+                )}
+
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
