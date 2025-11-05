@@ -7,6 +7,8 @@ import { QuickCaptureModal } from '@/components/motorista/QuickCaptureModal';
 import { useAuth } from '@/lib/auth';
 import { useViagensMotorista } from '@/hooks/useViagensMotorista';
 import { Camera } from 'lucide-react';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
+import { PermissionsGuard } from '@/components/motorista/PermissionsGuard';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -33,35 +35,38 @@ export function MobileLayout({
   const mostrarFAB = isMotorista && viagensAtivas.length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <MobileHeader 
-        title={title} 
-        showBack={showBack}
-        rightAction={rightAction}
-      />
-      
-      <main className="flex-1 overflow-auto pb-20">
-        <SafeArea bottom={false}>
-          {children}
-        </SafeArea>
-      </main>
-      
-      {showBottomNav && <BottomNavigation />}
-
-      {/* FAB para captura rápida - apenas para motoristas com viagens ativas */}
-      {mostrarFAB && (
-        <FloatingActionButton
-          onClick={() => setShowCaptureModal(true)}
-          icon={<Camera className="h-6 w-6" />}
+    <PermissionsProvider>
+      <PermissionsGuard />
+      <div className="flex flex-col min-h-screen bg-background">
+        <MobileHeader 
+          title={title} 
+          showBack={showBack}
+          rightAction={rightAction}
         />
-      )}
+        
+        <main className="flex-1 overflow-auto pb-20">
+          <SafeArea bottom={false}>
+            {children}
+          </SafeArea>
+        </main>
+        
+        {showBottomNav && <BottomNavigation />}
 
-      {/* Modal de captura rápida */}
-      <QuickCaptureModal
-        open={showCaptureModal}
-        onOpenChange={setShowCaptureModal}
-        viagens={viagensAtivas}
-      />
-    </div>
+        {/* FAB para captura rápida - apenas para motoristas com viagens ativas */}
+        {mostrarFAB && (
+          <FloatingActionButton
+            onClick={() => setShowCaptureModal(true)}
+            icon={<Camera className="h-6 w-6" />}
+          />
+        )}
+
+        {/* Modal de captura rápida */}
+        <QuickCaptureModal
+          open={showCaptureModal}
+          onOpenChange={setShowCaptureModal}
+          viagens={viagensAtivas}
+        />
+      </div>
+    </PermissionsProvider>
   );
 }

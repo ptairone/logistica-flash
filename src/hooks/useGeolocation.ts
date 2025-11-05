@@ -13,11 +13,13 @@ export function useGeolocation() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getCurrentLocation = async (): Promise<GeolocationData | null> => {
+  const getCurrentLocation = async (showToast = false): Promise<GeolocationData | null> => {
     if (!navigator.geolocation) {
       const errorMsg = 'Geolocalização não suportada neste dispositivo';
       setError(errorMsg);
-      toast.error(errorMsg);
+      if (showToast) {
+        toast.error(errorMsg);
+      }
       return null;
     }
 
@@ -42,19 +44,27 @@ export function useGeolocation() {
           
           switch (err.code) {
             case err.PERMISSION_DENIED:
-              errorMsg = 'Permissão de localização negada. Ative nas configurações.';
+              errorMsg = 'Permissão de localização negada';
+              console.warn('GPS: Permissão negada pelo usuário');
               break;
             case err.POSITION_UNAVAILABLE:
               errorMsg = 'Localização indisponível no momento';
+              console.warn('GPS: Posição indisponível');
               break;
             case err.TIMEOUT:
               errorMsg = 'Tempo esgotado ao buscar localização';
+              console.warn('GPS: Timeout');
               break;
           }
           
           setError(errorMsg);
           setLoading(false);
-          toast.warning(errorMsg + ' - Continuando sem localização.');
+          
+          // Apenas mostrar toast se solicitado (para não irritar o usuário)
+          if (showToast) {
+            toast.warning(errorMsg + ' - Continuando sem localização.');
+          }
+          
           resolve(null);
         },
         {
