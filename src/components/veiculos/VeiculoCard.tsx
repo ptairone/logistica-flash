@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDateBR, isDateExpired, isDateExpiringSoon } from '@/lib/validations';
+import { cn } from '@/lib/utils';
 
 interface VeiculoCardProps {
   veiculo: any;
@@ -51,10 +52,13 @@ export function VeiculoCard({ veiculo, onEdit, onDelete, onViewDetails }: Veicul
   return (
     <Card 
       variant="premium" 
-      className={hasAlerts ? 'border-warning/40' : 'hover:shadow-xl'}
+      className={cn(
+        "relative",
+        hasAlerts ? 'border-warning/40' : 'hover:shadow-xl'
+      )}
     >
       {/* Header com Gradiente */}
-      <div className="bg-gradient-to-r from-primary to-cyan p-4 rounded-t-lg">
+      <div className="bg-gradient-to-r from-primary to-cyan p-4 rounded-t-lg relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 backdrop-blur-sm rounded-full p-2.5">
@@ -89,8 +93,8 @@ export function VeiculoCard({ veiculo, onEdit, onDelete, onViewDetails }: Veicul
       </div>
 
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent pointer-events-none rounded-lg" />
-      <CardContent className="space-y-3 relative pt-6">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent pointer-events-none rounded-lg z-0" />
+      <CardContent className="space-y-3 relative z-[1] pt-6">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Código:</span>
           <span className="text-sm font-medium">{veiculo.codigo_interno}</span>
