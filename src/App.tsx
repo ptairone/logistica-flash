@@ -18,6 +18,7 @@ import AcertoCompleto from "./pages/AcertoCompleto";
 import Estoque from "./pages/Estoque";
 import Relatorios from "./pages/Relatorios";
 import Mecanicos from "./pages/Mecanicos";
+import Abastecimentos from "./pages/Abastecimentos";
 import DriverForm from "./pages/DriverForm";
 import InstallApp from "./pages/InstallApp";
 import MotoristaViagens from "./pages/motorista/Viagens";
@@ -152,6 +153,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={['admin', 'operacional', 'financeiro']}>
                   <Relatorios />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/abastecimentos"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'operacional']}>
+                  <Abastecimentos />
                 </ProtectedRoute>
               }
             />

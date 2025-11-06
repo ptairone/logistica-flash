@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDadosFrota } from '@/hooks/useRelatorios';
-import { Wrench, Package } from 'lucide-react';
+import { useAbastecimentos } from '@/hooks/useAbastecimentos';
+import { Wrench, Package, Droplet, TrendingUp } from 'lucide-react';
 
 interface PainelFrotaProps {
   filtros: any;
@@ -8,6 +9,27 @@ interface PainelFrotaProps {
 
 export function PainelFrota({ filtros }: PainelFrotaProps) {
   const { data, isLoading } = useDadosFrota(filtros);
+  const { abastecimentos } = useAbastecimentos();
+
+  // Calcular estatísticas de abastecimento
+  const statsAbastecimento = abastecimentos?.reduce(
+    (acc, ab) => {
+      if (ab.status === 'validado') {
+        acc.totalLitros += ab.litros || 0;
+        acc.totalValor += ab.valor_total || 0;
+        if (ab.media_calculada) {
+          acc.somaMedias += ab.media_calculada;
+          acc.countMedias++;
+        }
+      }
+      return acc;
+    },
+    { totalLitros: 0, totalValor: 0, somaMedias: 0, countMedias: 0 }
+  ) || { totalLitros: 0, totalValor: 0, somaMedias: 0, countMedias: 0 };
+
+  const mediaGeralFrota = statsAbastecimento.countMedias > 0 
+    ? statsAbastecimento.somaMedias / statsAbastecimento.countMedias 
+    : 0;
 
   if (isLoading) {
     return <div className="text-center py-8">Carregando dados...</div>;
@@ -23,7 +45,7 @@ export function PainelFrota({ filtros }: PainelFrotaProps) {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Custo de Manutenção</CardTitle>
@@ -45,6 +67,36 @@ export function PainelFrota({ filtros }: PainelFrotaProps) {
             <div className="text-2xl font-bold">
               R$ {kpis.consumoEstoque?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-warning/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Combustível</CardTitle>
+            <Droplet className="h-4 w-4 text-warning" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {statsAbastecimento.totalLitros.toLocaleString('pt-BR', { minimumFractionDigits: 0 })} L
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              R$ {statsAbastecimento.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-success/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Média da Frota</CardTitle>
+            <TrendingUp className="h-4 w-4 text-success" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success">
+              {mediaGeralFrota.toFixed(2)} km/L
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {statsAbastecimento.countMedias} abastecimentos
+            </p>
           </CardContent>
         </Card>
       </div>

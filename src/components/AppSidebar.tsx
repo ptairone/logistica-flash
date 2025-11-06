@@ -13,6 +13,7 @@ import {
   Wrench,
   Cog,
   Download,
+  Fuel,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -91,6 +92,12 @@ export function AppSidebar() {
       title: 'Manutenções', 
       url: '/manutencoes', 
       icon: Settings,
+      roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Abastecimentos', 
+      url: '/abastecimentos', 
+      icon: Fuel,
       roles: ['admin', 'operacional']
     },
     { 
