@@ -149,14 +149,12 @@ export function DriverFormChegada({ viagemId }: DriverFormChegadaProps) {
 
       if (error) throw error;
 
-      // Atualizar veículo
+      // Atualizar status do veículo para não estar mais em viagem
+      // km_atual é atualizado automaticamente pelo trigger do banco
       if (viagem?.veiculo_id) {
         await supabase
           .from('veiculos')
-          .update({
-            em_viagem: false,
-            km_atual: data.km_final,
-          })
+          .update({ em_viagem: false })
           .eq('id', viagem.veiculo_id);
       }
     },
