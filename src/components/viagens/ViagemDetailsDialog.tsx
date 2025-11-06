@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, FileText, Trash2, Plus, DollarSign, Banknote, TrendingUp, Download, Package } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, DollarSign, Banknote, TrendingUp, Download, Package, Camera } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import { useDespesas, useComprovantesViagem } from '@/hooks/useViagens';
 import { useTransacoesViagem } from '@/hooks/useTransacoesViagem';
@@ -20,6 +20,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { gerarPDFViagem } from '@/lib/pdf-export-utils';
 import { exportarViagemComComprovantes } from '@/lib/zip-export-utils';
 import { MapaLocalizacoes } from '@/components/admin/MapaLocalizacoes';
+import { PhotoGallery } from './PhotoGallery';
+import { Badge } from '@/components/ui/badge';
 
 interface ViagemDetailsDialogProps {
   open: boolean;
@@ -42,6 +44,22 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
   const [tipoComprovante, setTipoComprovante] = useState<'adiantamento' | 'recebimento_frete' | 'despesa' | 'outros'>('outros');
   const [comprovanteData, setComprovanteData] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
+
+  // Buscar total de fotos
+  const { data: totalFotos } = useQuery({
+    queryKey: ['total-fotos', viagem?.id],
+    queryFn: async () => {
+      if (!viagem) return 0;
+      const { count } = await supabase
+        .from('documentos')
+        .select('*', { count: 'exact', head: true })
+        .eq('tipo_entidade', 'viagem')
+        .eq('entidade_id', viagem.id)
+        .eq('tipo_documento', 'foto');
+      return count || 0;
+    },
+    enabled: !!viagem,
+  });
 
   if (!viagem) return null;
 
@@ -244,11 +262,18 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
         </div>
 
         <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="info">Informações</TabsTrigger>
               <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
               <TabsTrigger value="despesas">Despesas</TabsTrigger>
               <TabsTrigger value="comprovantes">Comprovantes</TabsTrigger>
+              <TabsTrigger value="fotos" className="flex items-center gap-1">
+                <Camera className="h-3 w-3" />
+                Fotos
+                {totalFotos && totalFotos > 0 ? (
+                  <Badge variant="secondary" className="ml-1">{totalFotos}</Badge>
+                ) : null}
+              </TabsTrigger>
               <TabsTrigger value="localizacoes">Localizações</TabsTrigger>
               <TabsTrigger value="calculos">Cálculos</TabsTrigger>
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
@@ -644,6 +669,10 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            <TabsContent value="fotos" className="space-y-4 pt-4">
+              <PhotoGallery viagemId={viagem.id} />
             </TabsContent>
 
             <TabsContent value="exportar" className="space-y-4 pt-4">

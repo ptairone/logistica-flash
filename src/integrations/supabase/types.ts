@@ -717,37 +717,55 @@ export type Database = {
       }
       documentos: {
         Row: {
+          categoria: string | null
           created_at: string
           created_by: string | null
           entidade_id: string
           id: string
+          latitude: number | null
+          localizacao_timestamp: string | null
+          longitude: number | null
+          metadata: Json | null
           mime_type: string | null
           nome: string
           tamanho: number | null
+          thumbnail_url: string | null
           tipo_documento: string | null
           tipo_entidade: string
           url: string
         }
         Insert: {
+          categoria?: string | null
           created_at?: string
           created_by?: string | null
           entidade_id: string
           id?: string
+          latitude?: number | null
+          localizacao_timestamp?: string | null
+          longitude?: number | null
+          metadata?: Json | null
           mime_type?: string | null
           nome: string
           tamanho?: number | null
+          thumbnail_url?: string | null
           tipo_documento?: string | null
           tipo_entidade: string
           url: string
         }
         Update: {
+          categoria?: string | null
           created_at?: string
           created_by?: string | null
           entidade_id?: string
           id?: string
+          latitude?: number | null
+          localizacao_timestamp?: string | null
+          longitude?: number | null
+          metadata?: Json | null
           mime_type?: string | null
           nome?: string
           tamanho?: number | null
+          thumbnail_url?: string | null
           tipo_documento?: string | null
           tipo_entidade?: string
           url?: string

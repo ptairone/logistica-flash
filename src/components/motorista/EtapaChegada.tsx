@@ -6,6 +6,7 @@ import { Camera, CheckCircle, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 
 interface EtapaChegadaProps {
   viagem: any;
@@ -21,6 +22,7 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
   const [processandoKm, setProcessandoKm] = useState(false);
   const [kmDetectadoPorIA, setKmDetectadoPorIA] = useState(false);
   const { getCurrentLocation, loading: gpsLoading } = useGeolocation();
+  const { uploadPhoto } = usePhotoUpload();
 
   const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -116,6 +118,18 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
           .getPublicUrl(fileName);
 
         fotoUrl = publicUrl;
+        
+        // Salvar também em documentos com categoria
+        await uploadPhoto({
+          file: fotoChegada,
+          viagemId: viagem.id,
+          categoria: 'chegada_painel',
+          metadata: {
+            km_detectado: kmFinal,
+            confianca_ia: kmDetectadoPorIA ? 'alta' : 'manual',
+          },
+          captureLocation: false, // Já capturamos GPS acima
+        });
       }
 
       const kmPercorrido = kmFinalNum - kmInicialNum;

@@ -9,6 +9,7 @@ import { PainelFinanceiro } from '@/components/relatorios/PainelFinanceiro';
 import { PainelFrota } from '@/components/relatorios/PainelFrota';
 import { PainelMotoristas } from '@/components/relatorios/PainelMotoristas';
 import { FiltrosRelatorio } from '@/components/relatorios/FiltrosRelatorio';
+import { PhotoStats } from '@/components/viagens/PhotoStats';
 
 export default function Relatorios() {
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
@@ -60,11 +61,12 @@ export default function Relatorios() {
 
         {/* Painéis */}
         <Tabs defaultValue="operacional" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="operacional">Operacional</TabsTrigger>
             <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
             <TabsTrigger value="frota">Frota & Estoque</TabsTrigger>
             <TabsTrigger value="motoristas">Motoristas</TabsTrigger>
+            <TabsTrigger value="fotos">Fotos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="operacional" className="space-y-4">
@@ -81,6 +83,23 @@ export default function Relatorios() {
 
           <TabsContent value="motoristas" className="space-y-4">
             <PainelMotoristas filtros={filtros} />
+          </TabsContent>
+
+          <TabsContent value="fotos" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Estatísticas de Fotos</CardTitle>
+                <CardDescription>
+                  Análise de fotos registradas nas viagens
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PhotoStats 
+                  startDate={filtros.dataInicio} 
+                  endDate={filtros.dataFim} 
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
