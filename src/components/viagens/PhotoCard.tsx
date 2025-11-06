@@ -44,58 +44,71 @@ export function PhotoCard({ foto }: PhotoCardProps) {
   return (
     <>
       <Card
-        className="cursor-pointer hover:scale-105 transition-transform overflow-hidden relative group"
-        onClick={() => setLightboxOpen(true)}
+        className="cursor-pointer hover:scale-105 active:scale-95 transition-transform overflow-hidden relative group"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setLightboxOpen(true);
+        }}
       >
-        <div className="relative">
+        <div className="relative aspect-square">
           <img
             src={foto.thumbnail_url || foto.url}
             alt={foto.nome}
-            className="w-full h-32 object-cover"
+            className="w-full h-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = foto.url;
+            }}
           />
           
-          {/* Overlay com info adicional no hover */}
-          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs p-2">
-            <p className="font-semibold">{getCategoriaLabel(foto.categoria)}</p>
-            {foto.metadata?.valor && (
-              <p className="mt-1">R$ {foto.metadata.valor}</p>
-            )}
-            {foto.metadata?.km_detectado && (
-              <p className="mt-1">KM: {foto.metadata.km_detectado}</p>
-            )}
+          {/* Badge de categoria sempre visível no mobile */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2">
+            <p className="text-white text-xs font-semibold truncate">
+              {getCategoriaLabel(foto.categoria)}
+            </p>
           </div>
           
-          {/* Badge de valor (se existir) */}
-          {foto.metadata?.valor && (
-            <div className="absolute top-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs font-semibold">
-              R$ {foto.metadata.valor}
+          {/* Badge de confiança IA */}
+          {foto.metadata?.confianca_ia && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 shadow-lg">
+                IA: {foto.metadata.confianca_ia}
+              </Badge>
             </div>
           )}
           
           {/* Badge de KM (se existir) */}
           {foto.metadata?.km_detectado && (
-            <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
-              {foto.metadata.km_detectado} km
+            <div className="absolute top-2 left-2">
+              <Badge className="text-xs px-1.5 py-0.5 shadow-lg bg-primary/90">
+                {foto.metadata.km_detectado} km
+              </Badge>
             </div>
           )}
         </div>
         
-        {/* Footer com data */}
-        <div className="p-2 text-xs text-muted-foreground truncate flex items-center gap-1">
+        {/* Footer compacto com data */}
+        <div className="p-1.5 text-[10px] md:text-xs text-muted-foreground truncate flex items-center justify-center gap-1 bg-muted/50">
           <Calendar className="h-3 w-3" />
-          {formatDate(foto.created_at)}
+          <span className="hidden sm:inline">{formatDate(foto.created_at)}</span>
+          <span className="sm:hidden">{format(new Date(foto.created_at), "dd/MM HH:mm", { locale: ptBR })}</span>
         </div>
       </Card>
       
       {/* Lightbox para visualização em tela cheia */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-          <img 
-            src={foto.url} 
-            alt={foto.nome} 
-            className="w-full rounded-lg"
-          />
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
+          <div className="relative">
+            <img 
+              src={foto.url} 
+              alt={foto.nome} 
+              className="w-full rounded-lg"
+              onError={(e) => {
+                console.error('Erro ao carregar imagem:', foto.url);
+              }}
+            />
+          </div>
           
           {/* Metadata completa */}
           <div className="mt-4 space-y-3">
@@ -108,30 +121,30 @@ export function PhotoCard({ foto }: PhotoCardProps) {
               )}
             </div>
             
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Data</p>
-                <p className="font-semibold">{formatDate(foto.created_at)}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Data</p>
+                <p className="font-semibold text-sm">{formatDate(foto.created_at)}</p>
               </div>
               
               {foto.metadata?.valor && (
-                <div>
-                  <p className="text-muted-foreground">Valor</p>
-                  <p className="font-semibold">R$ {foto.metadata.valor}</p>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Valor</p>
+                  <p className="font-semibold text-sm">R$ {foto.metadata.valor}</p>
                 </div>
               )}
               
               {foto.metadata?.km_detectado && (
-                <div>
-                  <p className="text-muted-foreground">KM Detectado</p>
-                  <p className="font-semibold">{foto.metadata.km_detectado}</p>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">KM Detectado</p>
+                  <p className="font-semibold text-sm">{foto.metadata.km_detectado}</p>
                 </div>
               )}
               
               {foto.metadata?.tipo_ia && (
-                <div>
-                  <p className="text-muted-foreground">Tipo (IA)</p>
-                  <p className="font-semibold">{foto.metadata.tipo_ia}</p>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Tipo (IA)</p>
+                  <p className="font-semibold text-sm">{foto.metadata.tipo_ia}</p>
                 </div>
               )}
             </div>
