@@ -10,6 +10,7 @@ import { AbastecimentoDialog } from '@/components/abastecimentos/AbastecimentoDi
 import { useAbastecimentos } from '@/hooks/useAbastecimentos';
 import { useVeiculos } from '@/hooks/useVeiculos';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MainLayout } from '@/components/MainLayout';
 
 export default function Abastecimentos() {
   const [selectedAbastecimento, setSelectedAbastecimento] = useState<any>(null);
@@ -57,8 +58,9 @@ export default function Abastecimentos() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto p-6 space-y-6">
+    <MainLayout>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -234,6 +236,7 @@ export default function Abastecimentos() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
       {/* Dialogs */}
@@ -256,6 +259,6 @@ export default function Abastecimentos() {
         onClose={() => setCreateDialogOpen(false)}
         veiculoId={filtroVeiculo === 'todos' ? undefined : filtroVeiculo}
       />
-    </div>
+    </MainLayout>
   );
 }
