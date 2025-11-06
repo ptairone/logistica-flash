@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/lib/auth';
 import { InstallButton } from '@/components/pwa/InstallButton';
+import { APP_VERSION } from '@/lib/version';
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -185,6 +186,15 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+            
+            {/* Versão do App */}
+            {!collapsed && (
+              <div className="px-3 py-2 mt-2 border-t border-sidebar-border">
+                <p className="text-xs text-muted-foreground text-center">
+                  v{APP_VERSION}
+                </p>
+              </div>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

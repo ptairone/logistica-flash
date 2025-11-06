@@ -9,6 +9,7 @@ import { useViagensMotorista } from '@/hooks/useViagensMotorista';
 import { Camera } from 'lucide-react';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { PermissionsGuard } from '@/components/motorista/PermissionsGuard';
+import { APP_VERSION } from '@/lib/version';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -51,6 +52,13 @@ export function MobileLayout({
         </main>
         
         {showBottomNav && <BottomNavigation />}
+
+        {/* Versão do App - rodapé fixo */}
+        <div className="fixed bottom-16 left-0 right-0 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
+          <p className="text-xs text-muted-foreground text-center">
+            v{APP_VERSION}
+          </p>
+        </div>
 
         {/* FAB para captura rápida - apenas para motoristas com viagens ativas */}
         {mostrarFAB && (
