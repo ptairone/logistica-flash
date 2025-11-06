@@ -252,9 +252,9 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Detalhes da Viagem - {viagem.codigo}</DialogTitle>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
+        <DialogHeader className="pb-3">
+          <DialogTitle className="text-lg md:text-xl break-words">Detalhes da Viagem - {viagem.codigo}</DialogTitle>
         </DialogHeader>
 
         <div className="mb-4">
@@ -262,92 +262,121 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
         </div>
 
         <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid w-full grid-cols-8">
-              <TabsTrigger value="info">Informações</TabsTrigger>
-              <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
-              <TabsTrigger value="despesas">Despesas</TabsTrigger>
-              <TabsTrigger value="comprovantes">Comprovantes</TabsTrigger>
-              <TabsTrigger value="fotos" className="flex items-center gap-1">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-1">
+              <TabsTrigger value="info" className="text-xs md:text-sm">
+                <span className="hidden sm:inline">📋 Informações</span>
+                <span className="sm:hidden">Info</span>
+              </TabsTrigger>
+              <TabsTrigger value="financeiro" className="text-xs md:text-sm">
+                <span className="hidden sm:inline">💰 Financeiro</span>
+                <span className="sm:hidden">$$</span>
+              </TabsTrigger>
+              <TabsTrigger value="despesas" className="text-xs md:text-sm">
+                <span className="hidden sm:inline">🧾 Despesas</span>
+                <span className="sm:hidden">Desp.</span>
+              </TabsTrigger>
+              <TabsTrigger value="comprovantes" className="text-xs md:text-sm">
+                <span className="hidden sm:inline">📄 Comprovantes</span>
+                <span className="sm:hidden">Docs</span>
+              </TabsTrigger>
+              <TabsTrigger value="fotos" className="flex items-center gap-1 text-xs md:text-sm">
                 <Camera className="h-3 w-3" />
-                Fotos
+                <span className="hidden sm:inline">Fotos</span>
                 {totalFotos && totalFotos > 0 ? (
-                  <Badge variant="secondary" className="ml-1">{totalFotos}</Badge>
+                  <Badge variant="secondary" className="ml-1 text-xs px-1">{totalFotos}</Badge>
                 ) : null}
               </TabsTrigger>
-              <TabsTrigger value="localizacoes">Localizações</TabsTrigger>
-              <TabsTrigger value="calculos">Cálculos</TabsTrigger>
-              <TabsTrigger value="exportar">Exportar</TabsTrigger>
+              <TabsTrigger value="localizacoes" className="text-xs md:text-sm">
+                <span className="hidden sm:inline">📍 Localizações</span>
+                <span className="sm:hidden">Local</span>
+              </TabsTrigger>
+              <TabsTrigger value="calculos" className="text-xs md:text-sm">
+                <span className="hidden sm:inline">🧮 Cálculos</span>
+                <span className="sm:hidden">Calc.</span>
+              </TabsTrigger>
+              <TabsTrigger value="exportar" className="text-xs md:text-sm">
+                <span className="hidden sm:inline">⬇️ Exportar</span>
+                <span className="sm:hidden">Export</span>
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="info" className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Veículo</Label>
-                  <p className="font-medium">{viagem.veiculo?.placa} - {viagem.veiculo?.marca} {viagem.veiculo?.modelo}</p>
+            <TabsContent value="info" className="space-y-6 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <Label className="text-xs md:text-sm text-muted-foreground font-medium">Veículo</Label>
+                  <p className="text-sm md:text-base font-semibold break-words">{viagem.veiculo?.placa} - {viagem.veiculo?.marca} {viagem.veiculo?.modelo}</p>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Motorista</Label>
-                  <p className="font-medium">{viagem.motorista?.nome}</p>
+                <div className="space-y-1">
+                  <Label className="text-xs md:text-sm text-muted-foreground font-medium">Motorista</Label>
+                  <p className="text-sm md:text-base font-semibold break-words">{viagem.motorista?.nome}</p>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Origem</Label>
-                  <p className="font-medium">{viagem.origem}</p>
-                  {viagem.origem_cep && <p className="text-sm text-muted-foreground">{viagem.origem_cep}</p>}
+                <div className="space-y-1">
+                  <Label className="text-xs md:text-sm text-muted-foreground font-medium">Origem</Label>
+                  <p className="text-sm md:text-base font-semibold break-words" title={viagem.origem}>{viagem.origem}</p>
+                  {viagem.origem_cep && (
+                    <Badge variant="outline" className="text-xs mt-1">
+                      📍 {viagem.origem_cep}
+                    </Badge>
+                  )}
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Destino</Label>
-                  <p className="font-medium">{viagem.destino}</p>
-                  {viagem.destino_cep && <p className="text-sm text-muted-foreground">{viagem.destino_cep}</p>}
+                <div className="space-y-1">
+                  <Label className="text-xs md:text-sm text-muted-foreground font-medium">Destino</Label>
+                  <p className="text-sm md:text-base font-semibold break-words" title={viagem.destino}>{viagem.destino}</p>
+                  {viagem.destino_cep && (
+                    <Badge variant="outline" className="text-xs mt-1">
+                      📍 {viagem.destino_cep}
+                    </Badge>
+                  )}
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Data Saída</Label>
-                  <p className="font-medium">{formatDateBR(viagem.data_saida)}</p>
+                <div className="space-y-1">
+                  <Label className="text-xs md:text-sm text-muted-foreground font-medium">Data Saída</Label>
+                  <p className="text-sm md:text-base font-semibold">{formatDateBR(viagem.data_saida)}</p>
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Data Chegada</Label>
-                  <p className="font-medium">{formatDateBR(viagem.data_chegada)}</p>
+                <div className="space-y-1">
+                  <Label className="text-xs md:text-sm text-muted-foreground font-medium">Data Chegada</Label>
+                  <p className="text-sm md:text-base font-semibold">{formatDateBR(viagem.data_chegada)}</p>
                 </div>
                 {viagem.km_estimado && (
-                  <div>
-                    <Label className="text-muted-foreground">KM Estimado (Planejado)</Label>
-                    <p className="font-medium">{viagem.km_estimado?.toLocaleString('pt-BR')} km</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs md:text-sm text-muted-foreground font-medium">KM Estimado (Planejado)</Label>
+                    <p className="text-sm md:text-base font-semibold">{viagem.km_estimado?.toLocaleString('pt-BR')} km</p>
                   </div>
                 )}
                 {viagem.km_inicial && (
-                  <div>
-                    <Label className="text-muted-foreground">KM Inicial</Label>
-                    <p className="font-medium">{viagem.km_inicial?.toLocaleString('pt-BR')} km</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs md:text-sm text-muted-foreground font-medium">KM Inicial</Label>
+                    <p className="text-sm md:text-base font-semibold">{viagem.km_inicial?.toLocaleString('pt-BR')} km</p>
                   </div>
                 )}
                 {viagem.km_final && (
-                  <div>
-                    <Label className="text-muted-foreground">KM Final</Label>
-                    <p className="font-medium">{viagem.km_final?.toLocaleString('pt-BR')} km</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs md:text-sm text-muted-foreground font-medium">KM Final</Label>
+                    <p className="text-sm md:text-base font-semibold">{viagem.km_final?.toLocaleString('pt-BR')} km</p>
                   </div>
                 )}
                 {viagem.km_percorrido && (
-                  <div>
-                    <Label className="text-muted-foreground">KM Percorrido (Calculado)</Label>
-                    <p className="font-medium text-primary">{viagem.km_percorrido?.toLocaleString('pt-BR')} km</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs md:text-sm text-muted-foreground font-medium">KM Percorrido (Calculado)</Label>
+                    <p className="text-sm md:text-base font-bold text-primary">{viagem.km_percorrido?.toLocaleString('pt-BR')} km</p>
                   </div>
                 )}
               </div>
 
               {viagem.frete && (
-                <div className="pt-4 border-t">
-                  <h3 className="font-semibold mb-3">Frete Vinculado</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-muted-foreground">Código</Label>
-                      <p className="font-medium">{viagem.frete.codigo}</p>
+                <div className="pt-6 border-t">
+                  <h3 className="font-semibold mb-4 text-base md:text-lg">🚚 Frete Vinculado</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <Label className="text-xs md:text-sm text-muted-foreground font-medium">Código</Label>
+                      <p className="text-sm md:text-base font-semibold">{viagem.frete.codigo}</p>
                     </div>
-                    <div>
-                      <Label className="text-muted-foreground">Cliente</Label>
-                      <p className="font-medium">{viagem.frete.cliente_nome}</p>
+                    <div className="space-y-1">
+                      <Label className="text-xs md:text-sm text-muted-foreground font-medium">Cliente</Label>
+                      <p className="text-sm md:text-base font-semibold break-words leading-tight">{viagem.frete.cliente_nome}</p>
                     </div>
-                    <div>
-                      <Label className="text-muted-foreground">Valor</Label>
-                      <p className="font-medium text-primary">
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label className="text-xs md:text-sm text-muted-foreground font-medium">Valor do Frete</Label>
+                      <p className="font-bold text-lg md:text-2xl text-primary">
                         R$ {viagem.frete.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
@@ -356,9 +385,9 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
               )}
 
               {viagem.notas && (
-                <div className="pt-4 border-t">
-                  <Label className="text-muted-foreground">Notas</Label>
-                  <p className="text-sm mt-1">{viagem.notas}</p>
+                <div className="pt-6 border-t">
+                  <Label className="text-xs md:text-sm text-muted-foreground font-medium">📝 Notas</Label>
+                  <p className="text-sm md:text-base mt-2 break-words leading-relaxed">{viagem.notas}</p>
                 </div>
               )}
             </TabsContent>
