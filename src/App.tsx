@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, ProtectedRoute } from "./lib/auth";
 import { InstallPrompt } from "./components/pwa/InstallPrompt";
 import { WelcomeModal } from "./components/pwa/WelcomeModal";
+import { UpdateNotification } from "./components/pwa/UpdateNotification";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Veiculos from "./pages/Veiculos";
@@ -35,6 +36,7 @@ const App = () => (
       <Sonner />
       <InstallPrompt />
       <WelcomeModal />
+      <UpdateNotification />
       <BrowserRouter>
         <AuthProvider>
           <Routes>
