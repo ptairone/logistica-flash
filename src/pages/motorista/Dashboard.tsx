@@ -3,6 +3,7 @@ import { ViagemCard } from '@/components/motorista/ViagemCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Truck, Package, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { APP_VERSION } from '@/lib/version';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -94,6 +95,13 @@ export default function Dashboard() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Versão do App */}
+      <div className="fixed bottom-20 left-0 right-0 pb-2 bg-gradient-to-t from-background via-background to-transparent pointer-events-none">
+        <p className="text-xs text-muted-foreground text-center">
+          v{APP_VERSION}
+        </p>
+      </div>
     </div>
   );
 }

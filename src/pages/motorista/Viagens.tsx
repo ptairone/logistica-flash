@@ -59,31 +59,6 @@ export default function Viagens() {
 
       {/* Conteúdo principal */}
       <main className="flex-1 p-4 pb-6">
-        {/* Card de Ação Rápida */}
-        {viagensAtivas.length > 0 && (
-          <Card 
-            className="mb-6 max-w-4xl mx-auto overflow-hidden cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20"
-            onClick={() => setShowCaptureModal(true)}
-          >
-            <div className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Camera className="h-8 w-8 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">📸 Registrar Comprovante</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Tire foto ou envie da galeria de despesas, adiantamentos ou recebimentos
-                  </p>
-                  <Button className="w-full sm:w-auto" size="lg">
-                    Abrir Opções
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
-
         <Tabs defaultValue="em_andamento" className="w-full max-w-4xl mx-auto">
           <TabsList className="grid w-full grid-cols-3 h-auto mb-6">
             <TabsTrigger value="em_andamento" className="flex flex-col gap-1 py-3">
