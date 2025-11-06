@@ -125,22 +125,22 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>Detalhes do Motorista - {motorista.nome}</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">Detalhes - {motorista.nome}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="dados" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="dados">Dados</TabsTrigger>
-            <TabsTrigger value="documentos">Documentos</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
-            <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
-            <TabsTrigger value="config-clt">Config. CLT</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 h-auto">
+            <TabsTrigger value="dados" className="text-xs sm:text-sm px-2 py-2">Dados</TabsTrigger>
+            <TabsTrigger value="documentos" className="text-xs sm:text-sm px-2 py-2">Docs</TabsTrigger>
+            <TabsTrigger value="historico" className="text-xs sm:text-sm px-2 py-2">Histórico</TabsTrigger>
+            <TabsTrigger value="financeiro" className="text-xs sm:text-sm px-2 py-2">$$</TabsTrigger>
+            <TabsTrigger value="config-clt" className="text-xs sm:text-sm px-2 py-2">CLT</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dados" className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-muted-foreground">Nome</Label>
                 <p className="font-medium">{motorista.nome}</p>
@@ -208,35 +208,35 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t">
               <Card>
-                <CardContent className="p-4">
-                  <Label className="text-muted-foreground">Total de KM (mês)</Label>
-                  <p className="text-2xl font-bold">{kpis.totalKm.toLocaleString('pt-BR')}</p>
+                <CardContent className="p-3 sm:p-4">
+                  <Label className="text-xs sm:text-sm text-muted-foreground">Total de KM (mês)</Label>
+                  <p className="text-xl sm:text-2xl font-bold">{kpis.totalKm.toLocaleString('pt-BR')}</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
-                  <Label className="text-muted-foreground">Nº de Viagens (mês)</Label>
-                  <p className="text-2xl font-bold">{kpis.totalViagens}</p>
+                <CardContent className="p-3 sm:p-4">
+                  <Label className="text-xs sm:text-sm text-muted-foreground">Nº de Viagens (mês)</Label>
+                  <p className="text-xl sm:text-2xl font-bold">{kpis.totalViagens}</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
-                  <Label className="text-muted-foreground">Taxa de Pontualidade</Label>
-                  <p className="text-2xl font-bold">{kpis.pontualidade.toFixed(1)}%</p>
+                <CardContent className="p-3 sm:p-4">
+                  <Label className="text-xs sm:text-sm text-muted-foreground">Taxa de Pontualidade</Label>
+                  <p className="text-xl sm:text-2xl font-bold">{kpis.pontualidade.toFixed(1)}%</p>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
           <TabsContent value="documentos" className="space-y-4 pt-4">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Select value={tipoDocumento} onValueChange={setTipoDocumento}>
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Selecione o tipo de documento" />
+                  <SelectValue placeholder="Tipo de documento" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cnh">CNH</SelectItem>
@@ -301,67 +301,69 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
           </TabsContent>
 
           <TabsContent value="historico" className="space-y-4 pt-4">
-            <div className="flex gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
               <div className="flex-1">
-                <Label>Período Início</Label>
+                <Label className="text-sm">Período Início</Label>
                 <Input
                   type="date"
                   value={periodoInicio}
                   onChange={(e) => setPeriodoInicio(e.target.value)}
+                  className="text-sm"
                 />
               </div>
               <div className="flex-1">
-                <Label>Período Fim</Label>
+                <Label className="text-sm">Período Fim</Label>
                 <Input
                   type="date"
                   value={periodoFim}
                   onChange={(e) => setPeriodoFim(e.target.value)}
+                  className="text-sm"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6">
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-muted-foreground">Total KM</Label>
+                <CardContent className="p-2 sm:p-4">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <Label className="text-xs sm:text-sm text-muted-foreground">Total KM</Label>
                   </div>
-                  <p className="text-xl font-bold">{kpis.totalKm.toLocaleString('pt-BR')}</p>
+                  <p className="text-base sm:text-xl font-bold">{kpis.totalKm.toLocaleString('pt-BR')}</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-muted-foreground">Despesas</Label>
+                <CardContent className="p-2 sm:p-4">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <Label className="text-xs sm:text-sm text-muted-foreground">Despesas</Label>
                   </div>
-                  <p className="text-xl font-bold text-destructive">
+                  <p className="text-base sm:text-xl font-bold text-destructive">
                     R$ {kpis.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-muted-foreground">Custo/KM</Label>
+                <CardContent className="p-2 sm:p-4">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <Label className="text-xs sm:text-sm text-muted-foreground">Custo/KM</Label>
                   </div>
-                  <p className="text-xl font-bold">
+                  <p className="text-base sm:text-xl font-bold">
                     R$ {kpis.custoKm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <Label className="text-muted-foreground">Pontualidade</Label>
+                <CardContent className="p-2 sm:p-4">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <Label className="text-xs sm:text-sm text-muted-foreground">Pontualidade</Label>
                   </div>
-                  <p className="text-xl font-bold text-primary">{kpis.pontualidade.toFixed(1)}%</p>
+                  <p className="text-base sm:text-xl font-bold text-primary">{kpis.pontualidade.toFixed(1)}%</p>
                 </CardContent>
               </Card>
             </div>
@@ -384,21 +386,21 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                     <Card key={viagem.id}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-medium">{viagem.codigo}</p>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                           <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm sm:text-base">{viagem.codigo}</p>
+                            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-1">
                               <MapPin className="h-3 w-3" />
-                              {viagem.origem} → {viagem.destino}
+                              <span className="truncate">{viagem.origem} → {viagem.destino}</span>
                             </div>
-                            <div className="flex gap-4 text-xs text-muted-foreground mt-2">
-                              <span>Veículo: {viagem.veiculo?.placa}</span>
+                            <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-muted-foreground mt-2">
+                              <span className="truncate">Veículo: {viagem.veiculo?.placa}</span>
                               {viagem.km_percorrido && <span>KM: {viagem.km_percorrido.toLocaleString('pt-BR')}</span>}
-                              <span>Status: {viagem.status.replace('_', ' ')}</span>
+                              <span className="capitalize">{viagem.status.replace('_', ' ')}</span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-muted-foreground">Margem</p>
-                            <p className={`font-bold ${margem >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs sm:text-sm text-muted-foreground">Margem</p>
+                            <p className={`text-sm sm:text-base font-bold ${margem >= 0 ? 'text-primary' : 'text-destructive'}`}>
                               R$ {margem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                           </div>
@@ -453,10 +455,10 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="font-medium">{acerto.codigo}</p>
-                          <p className="text-sm text-muted-foreground">
+                           <p className="text-xs sm:text-sm text-muted-foreground">
                             {formatDateBR(acerto.periodo_inicio)} até {formatDateBR(acerto.periodo_fim)}
                           </p>
-                          <div className="grid grid-cols-2 gap-4 mt-3 text-xs">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-3 text-xs">
                             <div>
                               <span className="text-muted-foreground">Comissão:</span>
                               <span className="ml-1 font-medium">
@@ -503,9 +505,9 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <Label htmlFor="salario-base">Salário Base (R$)</Label>
+                    <Label htmlFor="salario-base" className="text-sm">Salário Base (R$)</Label>
                     <Input
                       id="salario-base"
                       type="number"
@@ -518,7 +520,7 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                   </div>
 
                   <div>
-                    <Label htmlFor="valor-diaria">Valor da Diária (R$)</Label>
+                    <Label htmlFor="valor-diaria" className="text-sm">Valor da Diária (R$)</Label>
                     <Input
                       id="valor-diaria"
                       type="number"
@@ -531,7 +533,7 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                   </div>
 
                   <div>
-                    <Label htmlFor="valor-hora-extra">Valor Hora Extra (R$)</Label>
+                    <Label htmlFor="valor-hora-extra" className="text-sm">Valor Hora Extra (R$)</Label>
                     <Input
                       id="valor-hora-extra"
                       type="number"
@@ -544,7 +546,7 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                   </div>
 
                   <div>
-                    <Label htmlFor="valor-hora-fds">Valor Hora Fim de Semana (R$)</Label>
+                    <Label htmlFor="valor-hora-fds" className="text-sm">Valor Hora Fim de Semana (R$)</Label>
                     <Input
                       id="valor-hora-fds"
                       type="number"
@@ -557,7 +559,7 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                   </div>
 
                   <div>
-                    <Label htmlFor="valor-hora-feriado">Valor Hora Feriado (R$)</Label>
+                    <Label htmlFor="valor-hora-feriado" className="text-sm">Valor Hora Feriado (R$)</Label>
                     <Input
                       id="valor-hora-feriado"
                       type="number"
