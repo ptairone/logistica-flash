@@ -26,73 +26,120 @@ interface UploadResult {
 }
 
 async function compressImage(file: File): Promise<Blob> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        
-        const MAX_SIZE = 1920;
-        if (width > height && width > MAX_SIZE) {
-          height = (height * MAX_SIZE) / width;
-          width = MAX_SIZE;
-        } else if (height > MAX_SIZE) {
-          width = (width * MAX_SIZE) / height;
-          height = MAX_SIZE;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        canvas.toBlob((blob) => {
-          resolve(blob || file);
-        }, 'image/jpeg', 0.85);
+  return new Promise((resolve, reject) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          const MAX_SIZE = 1920;
+          if (width > height && width > MAX_SIZE) {
+            height = (height * MAX_SIZE) / width;
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width = (width * MAX_SIZE) / height;
+            height = MAX_SIZE;
+          }
+          
+          canvas.width = Math.round(width);
+          canvas.height = Math.round(height);
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            console.error('Erro ao obter contexto do canvas');
+            resolve(file);
+            return;
+          }
+          
+          // Preencher com branco antes de desenhar
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          canvas.toBlob((blob) => {
+            resolve(blob || file);
+          }, 'image/jpeg', 0.85);
+        };
+        img.onerror = () => {
+          console.error('Erro ao carregar imagem para compressão');
+          resolve(file);
+        };
+        img.src = e.target?.result as string;
       };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      reader.onerror = () => {
+        console.error('Erro ao ler arquivo');
+        resolve(file);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Erro na compressão:', error);
+      resolve(file);
+    }
   });
 }
 
-async function generateThumbnail(file: File): Promise<Blob> {
+async function generateThumbnail(file: File): Promise<Blob | null> {
   return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const THUMB_SIZE = 200;
-        
-        let width = img.width;
-        let height = img.height;
-        
-        if (width > height) {
-          width = THUMB_SIZE;
-          height = (img.height * THUMB_SIZE) / img.width;
-        } else {
-          height = THUMB_SIZE;
-          width = (img.width * THUMB_SIZE) / img.height;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        canvas.toBlob((blob) => {
-          resolve(blob || file);
-        }, 'image/jpeg', 0.7);
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const THUMB_SIZE = 200;
+          
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            width = THUMB_SIZE;
+            height = (img.height * THUMB_SIZE) / img.width;
+          } else {
+            height = THUMB_SIZE;
+            width = (img.width * THUMB_SIZE) / img.height;
+          }
+          
+          canvas.width = Math.round(width);
+          canvas.height = Math.round(height);
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            console.error('Erro ao obter contexto do canvas para thumbnail');
+            resolve(null);
+            return;
+          }
+          
+          // Preencher com branco antes de desenhar
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              console.warn('Falha ao gerar thumbnail blob');
+            }
+            resolve(blob);
+          }, 'image/jpeg', 0.7);
+        };
+        img.onerror = () => {
+          console.error('Erro ao carregar imagem para thumbnail');
+          resolve(null);
+        };
+        img.src = e.target?.result as string;
       };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      reader.onerror = () => {
+        console.error('Erro ao ler arquivo para thumbnail');
+        resolve(null);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Erro ao gerar thumbnail:', error);
+      resolve(null);
+    }
   });
 }
 
@@ -162,13 +209,24 @@ export function usePhotoUpload() {
       
       const publicUrl = getPublicUrl(filePath);
       
-      // 5. Upload do thumbnail
-      const thumbnailPath = `${viagemId}/${pasta}/thumb_${categoria}_${timestamp}.jpg`;
-      await supabase.storage
-        .from('comprovantes')
-        .upload(thumbnailPath, thumbnailBlob);
-      
-      const thumbnailUrl = getPublicUrl(thumbnailPath);
+      // 5. Upload do thumbnail (se foi gerado com sucesso)
+      let thumbnailUrl: string | undefined;
+      if (thumbnailBlob) {
+        try {
+          const thumbnailPath = `${viagemId}/${pasta}/thumb_${categoria}_${timestamp}.jpg`;
+          const { error: thumbError } = await supabase.storage
+            .from('comprovantes')
+            .upload(thumbnailPath, thumbnailBlob);
+          
+          if (!thumbError) {
+            thumbnailUrl = getPublicUrl(thumbnailPath);
+          } else {
+            console.warn('Erro ao fazer upload do thumbnail:', thumbError);
+          }
+        } catch (thumbErr) {
+          console.warn('Falha no upload do thumbnail:', thumbErr);
+        }
+      }
       
       // 6. Salvar em documentos
       const { data: doc, error: docError } = await supabase

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MapPin, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PhotoCardProps {
   foto: {
@@ -55,10 +56,23 @@ export function PhotoCard({ foto }: PhotoCardProps) {
           <img
             src={foto.thumbnail_url || foto.url}
             alt={foto.nome}
-            className="w-full h-full object-cover"
+            className="object-cover aspect-square h-full bg-muted"
             loading="lazy"
+            crossOrigin="anonymous"
+            decoding="async"
+            onLoad={(e) => {
+              // Se a imagem carregou mas está "branca" (dimensões zeradas), tenta a original
+              if (e.currentTarget.naturalWidth === 0 || e.currentTarget.naturalHeight === 0) {
+                if (foto.thumbnail_url && e.currentTarget.src.includes('thumb_')) {
+                  e.currentTarget.src = foto.url;
+                }
+              }
+            }}
             onError={(e) => {
-              e.currentTarget.src = foto.url;
+              console.warn('Erro ao carregar foto:', e.currentTarget.src);
+              if (foto.thumbnail_url && e.currentTarget.src === foto.thumbnail_url) {
+                e.currentTarget.src = foto.url;
+              }
             }}
           />
           
@@ -98,14 +112,20 @@ export function PhotoCard({ foto }: PhotoCardProps) {
       
       {/* Lightbox para visualização em tela cheia */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-6">
-          <div className="relative">
-            <img 
-              src={foto.url} 
-              alt={foto.nome} 
-              className="w-full rounded-lg"
+        <DialogContent className="max-w-4xl p-4 md:p-6 z-[60]">
+          <DialogHeader>
+            <DialogTitle>Foto - {getCategoriaLabel(foto.categoria || 'outro')}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="relative w-full overflow-hidden rounded-lg bg-muted">
+            <img
+              src={foto.url}
+              alt={foto.nome}
+              className="w-full h-auto object-contain max-h-[80vh]"
+              crossOrigin="anonymous"
               onError={(e) => {
-                console.error('Erro ao carregar imagem:', foto.url);
+                console.error('Erro ao carregar imagem original:', foto.url);
+                toast.error('Não foi possível carregar a foto');
               }}
             />
           </div>
