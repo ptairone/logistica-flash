@@ -15,11 +15,11 @@ export default function Abastecimentos() {
   const [selectedAbastecimento, setSelectedAbastecimento] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [filtroVeiculo, setFiltroVeiculo] = useState<string>('');
+  const [filtroVeiculo, setFiltroVeiculo] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
 
   const { abastecimentos, isLoading, validarAbastecimento } = useAbastecimentos(
-    filtroVeiculo || undefined
+    filtroVeiculo === 'todos' ? undefined : filtroVeiculo
   );
   const { veiculos } = useVeiculos();
 
@@ -163,7 +163,7 @@ export default function Abastecimentos() {
                     <SelectValue placeholder="Todos os veículos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os veículos</SelectItem>
+                    <SelectItem value="todos">Todos os veículos</SelectItem>
                     {veiculos?.map((veiculo) => (
                       <SelectItem key={veiculo.id} value={veiculo.id}>
                         {veiculo.placa} - {veiculo.modelo}
@@ -254,7 +254,7 @@ export default function Abastecimentos() {
       <AbastecimentoDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        veiculoId={filtroVeiculo || undefined}
+        veiculoId={filtroVeiculo === 'todos' ? undefined : filtroVeiculo}
       />
     </div>
   );
