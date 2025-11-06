@@ -9,8 +9,10 @@ import { AbastecimentoDetailsDialog } from '@/components/abastecimentos/Abasteci
 import { AbastecimentoDialog } from '@/components/abastecimentos/AbastecimentoDialog';
 import { useAbastecimentos } from '@/hooks/useAbastecimentos';
 import { useVeiculos } from '@/hooks/useVeiculos';
+import { useViagens } from '@/hooks/useViagens';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MainLayout } from '@/components/MainLayout';
+import { Badge } from '@/components/ui/badge';
 
 export default function Abastecimentos() {
   const [selectedAbastecimento, setSelectedAbastecimento] = useState<any>(null);
@@ -18,11 +20,14 @@ export default function Abastecimentos() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [filtroVeiculo, setFiltroVeiculo] = useState<string>('todos');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [filtroViagem, setFiltroViagem] = useState<string>('todas');
 
   const { abastecimentos, isLoading, validarAbastecimento } = useAbastecimentos(
-    filtroVeiculo === 'todos' ? undefined : filtroVeiculo
+    filtroVeiculo === 'todos' ? undefined : filtroVeiculo,
+    filtroViagem === 'todas' ? undefined : filtroViagem
   );
   const { veiculos } = useVeiculos();
+  const { viagens } = useViagens();
 
   // Calcular estatísticas
   const stats = abastecimentos?.reduce(
@@ -189,13 +194,71 @@ export default function Abastecimentos() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Viagem</label>
+                <Select value={filtroViagem} onValueChange={setFiltroViagem}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as viagens" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as viagens</SelectItem>
+                    {viagens?.map((viagem) => (
+                      <SelectItem key={viagem.id} value={viagem.id}>
+                        {viagem.codigo} - {viagem.motorista?.nome} ({viagem.veiculo?.placa})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Lista de Abastecimentos */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Abastecimentos</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Abastecimentos</h2>
+            {filtroViagem !== 'todas' && (
+              <Badge variant="secondary" className="text-sm">
+                Filtrando por: {viagens?.find(v => v.id === filtroViagem)?.codigo}
+              </Badge>
+            )}
+          </div>
+
+          {/* Resumo da Viagem quando filtrada */}
+          {filtroViagem !== 'todas' && abastecimentos && abastecimentos.length > 0 && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Abastecido</p>
+                    <p className="text-2xl font-bold">
+                      {stats.totalLitros.toFixed(0)} L
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Gasto Total</p>
+                    <p className="text-2xl font-bold text-destructive">
+                      R$ {stats.totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Média da Viagem</p>
+                    <p className="text-2xl font-bold text-success">
+                      {mediaGeral > 0 ? mediaGeral.toFixed(2) : '0.00'} km/L
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Nº Abastecimentos</p>
+                    <p className="text-2xl font-bold">
+                      {abastecimentos.length}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

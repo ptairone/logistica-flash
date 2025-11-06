@@ -33,7 +33,7 @@ export function useAbastecimentos(veiculoId?: string, viagemId?: string) {
       if (error) throw error;
       return data;
     },
-    enabled: !!veiculoId || !!viagemId,
+    enabled: true, // Sempre habilitado, filtros são opcionais
   });
 
   // Criar abastecimento
