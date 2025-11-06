@@ -26,6 +26,8 @@ export function DriverFormPartida({ viagemId }: DriverFormPartidaProps) {
   const queryClient = useQueryClient();
   const [fotoPanel, setFotoPanel] = useState<File | null>(null);
   const [fotoAvaria, setFotoAvaria] = useState<File | null>(null);
+  const [processandoKm, setProcessandoKm] = useState(false);
+  const [kmDetectadoPorIA, setKmDetectadoPorIA] = useState(false);
   const { getCurrentLocation } = useGeolocation();
 
   const { data: viagem } = useQuery({
@@ -41,11 +43,61 @@ export function DriverFormPartida({ viagemId }: DriverFormPartidaProps) {
     },
   });
 
-  const { register, handleSubmit } = useForm<PartidaFormData>({
+  const { register, handleSubmit, setValue } = useForm<PartidaFormData>({
     defaultValues: {
       data_saida: new Date().toISOString().slice(0, 16),
     },
   });
+
+  const handleFotoPanelChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setFotoPanel(file);
+    
+    // Processar com IA para extrair KM
+    setProcessandoKm(true);
+    setKmDetectadoPorIA(false);
+    
+    try {
+      toast.info('🤖 Lendo hodômetro...');
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('tipo', 'odometro');
+      
+      const { data, error } = await supabase.functions.invoke('processar-comprovante', {
+        body: formData
+      });
+      
+      if (error) throw error;
+      
+      if (data?.km) {
+        setValue('km_inicial', data.km);
+        setKmDetectadoPorIA(true);
+        toast.success(`✨ KM detectado: ${data.km.toLocaleString('pt-BR')}`, {
+          description: 'Confira se está correto e ajuste se necessário'
+        });
+      } else if (data?.erro) {
+        toast.warning(data.erro, {
+          description: 'Tire uma foto mais nítida ou digite manualmente'
+        });
+      } else {
+        toast.warning('Não foi possível ler o KM. Digite manualmente.');
+      }
+    } catch (err: any) {
+      console.error('Erro ao processar KM:', err);
+      if (err.message?.includes('429')) {
+        toast.error('Muitas requisições. Aguarde um momento.');
+      } else if (err.message?.includes('402')) {
+        toast.error('Serviço temporariamente indisponível.');
+      } else {
+        toast.warning('Erro ao processar. Digite o KM manualmente.');
+      }
+    } finally {
+      setProcessandoKm(false);
+    }
+  };
 
   const registrarPartida = useMutation({
     mutationFn: async (data: PartidaFormData) => {
@@ -129,22 +181,34 @@ export function DriverFormPartida({ viagemId }: DriverFormPartidaProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Quilometragem Inicial *</Label>
-        <Input
-          type="number"
-          {...register('km_inicial', { required: true, valueAsNumber: true })}
-          disabled={jaIniciada}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Foto do Painel *</Label>
+        <Label className="flex items-center gap-2">
+          Foto do Painel *
+          {processandoKm && <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <span className="animate-spin">⚙️</span> Processando...
+          </span>}
+        </Label>
         <Input
           type="file"
           accept="image/*"
           capture="environment"
-          onChange={(e) => setFotoPanel(e.target.files?.[0] || null)}
-          disabled={jaIniciada}
+          onChange={handleFotoPanelChange}
+          disabled={jaIniciada || processandoKm}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2">
+          Quilometragem Inicial *
+          {kmDetectadoPorIA && <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">✨ IA</span>}
+        </Label>
+        <Input
+          type="number"
+          {...register('km_inicial', { required: true, valueAsNumber: true })}
+          disabled={jaIniciada || processandoKm}
+          onChange={(e) => {
+            register('km_inicial').onChange(e);
+            setKmDetectadoPorIA(false);
+          }}
         />
       </div>
 

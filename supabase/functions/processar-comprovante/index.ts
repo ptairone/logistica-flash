@@ -56,7 +56,34 @@ serve(async (req) => {
     // Definir prompt baseado no tipo
     let systemPrompt = '';
     
-    if (tipo === 'abastecimento') {
+    if (tipo === 'odometro') {
+      systemPrompt = `Você é um assistente especializado em ler hodômetros/odômetros de painéis de veículos.
+
+INSTRUÇÕES:
+- Identifique o valor do HODÔMETRO/ODÔMETRO (quilometragem total do veículo)
+- O hodômetro geralmente mostra 6-7 dígitos (ex: 123456, 85432, 250789)
+- IGNORE outros valores como velocidade, RPM, combustível, temperatura
+- Se houver Trip A/B, IGNORE - queremos apenas o hodômetro total
+- Procure por números grandes, geralmente na parte inferior do painel
+
+RETORNE APENAS JSON válido no formato:
+{
+  "km": 123456,
+  "confianca": "alta"
+}
+
+Níveis de confiança:
+- "alta": Número claramente visível e legível
+- "media": Número parcialmente visível mas identificável
+- "baixa": Foto desfocada, escura ou número ilegível
+
+Se não conseguir ler com clareza, retorne:
+{
+  "km": null,
+  "confianca": "baixa",
+  "erro": "Foto muito escura/desfocada/ilegível"
+}`;
+    } else if (tipo === 'abastecimento') {
       systemPrompt = `Você é um assistente especializado em extrair informações de comprovantes de ABASTECIMENTO de combustível.
 
 INSTRUÇÕES:
@@ -181,7 +208,13 @@ Se não conseguir identificar algum campo, use valores padrão sensatos.`;
 
     let resultado;
     
-    if (tipo === 'abastecimento') {
+    if (tipo === 'odometro') {
+      resultado = {
+        km: dadosExtraidos.km,
+        confianca: dadosExtraidos.confianca || 'media',
+        erro: dadosExtraidos.erro || null
+      };
+    } else if (tipo === 'abastecimento') {
       resultado = {
         dados: dadosExtraidos
       };

@@ -18,13 +18,63 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
   const [fotoChegada, setFotoChegada] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [processandoKm, setProcessandoKm] = useState(false);
+  const [kmDetectadoPorIA, setKmDetectadoPorIA] = useState(false);
   const { getCurrentLocation, loading: gpsLoading } = useGeolocation();
 
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
       setFotoChegada(file);
       setPreviewUrl(URL.createObjectURL(file));
+      
+      // Processar com IA para extrair KM
+      setProcessandoKm(true);
+      setKmDetectadoPorIA(false);
+      
+      try {
+        toast.info('🤖 Lendo hodômetro...');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('tipo', 'odometro');
+        
+        const { data, error } = await supabase.functions.invoke('processar-comprovante', {
+          body: formData
+        });
+        
+        if (error) throw error;
+        
+        if (data?.km) {
+          const kmInicialNum = parseFloat(viagem.km_inicial || 0);
+          if (data.km > kmInicialNum) {
+            setKmFinal(String(data.km));
+            setKmDetectadoPorIA(true);
+            toast.success(`✨ KM detectado: ${data.km.toLocaleString('pt-BR')}`, {
+              description: 'Confira se está correto e ajuste se necessário'
+            });
+          } else {
+            toast.error(`KM detectado (${data.km}) é menor que KM inicial (${kmInicialNum})`);
+          }
+        } else if (data?.erro) {
+          toast.warning(data.erro, {
+            description: 'Tire uma foto mais nítida ou digite manualmente'
+          });
+        } else {
+          toast.warning('Não foi possível ler o KM. Digite manualmente.');
+        }
+      } catch (err: any) {
+        console.error('Erro ao processar KM:', err);
+        if (err.message?.includes('429')) {
+          toast.error('Muitas requisições. Aguarde um momento.');
+        } else if (err.message?.includes('402')) {
+          toast.error('Serviço temporariamente indisponível.');
+        } else {
+          toast.warning('Erro ao processar. Digite o KM manualmente.');
+        }
+      } finally {
+        setProcessandoKm(false);
+      }
     }
   };
 
@@ -108,16 +158,28 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
 
       {/* KM Final */}
       <div className="space-y-2">
-        <Label htmlFor="km-final" className="text-lg">KM Final do Veículo</Label>
+        <Label htmlFor="km-final" className="text-lg flex items-center gap-2">
+          KM Final do Veículo
+          {kmDetectadoPorIA && <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">✨ IA</span>}
+        </Label>
         <Input
           id="km-final"
           type="number"
           inputMode="numeric"
           placeholder="Ex: 151200"
           value={kmFinal}
-          onChange={(e) => setKmFinal(e.target.value)}
+          onChange={(e) => {
+            setKmFinal(e.target.value);
+            setKmDetectadoPorIA(false);
+          }}
           className="h-14 text-lg"
+          disabled={processandoKm}
         />
+        {processandoKm && (
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <span className="animate-spin">⚙️</span> Processando foto...
+          </p>
+        )}
         {kmFinal && viagem.km_inicial && (
           <p className="text-sm text-muted-foreground">
             KM percorrido: {(parseFloat(kmFinal) - parseFloat(viagem.km_inicial)).toFixed(0)} km
