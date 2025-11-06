@@ -124,8 +124,7 @@ export function PhotoCard({ foto }: PhotoCardProps) {
               className="w-full h-auto object-contain max-h-[80vh]"
               crossOrigin="anonymous"
               onError={(e) => {
-                console.error('Erro ao carregar imagem original:', foto.url);
-                toast.error('Não foi possível carregar a foto');
+                console.warn('Erro ao carregar imagem original:', foto.url);
               }}
             />
           </div>
