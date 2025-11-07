@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { freteSchema, FreteFormData, formatCPFCNPJ } from '@/lib/validations-frete';
 import { formatCEP } from '@/lib/validations-viagem';
 import { supabase } from '@/integrations/supabase/client';
@@ -592,7 +593,22 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
                 </div>
                 
                 <div>
-                  <Label className="text-xs text-muted-foreground">Pedágios</Label>
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    Pedágios
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="text-xs">
+                            Valores calculados com API Calcular Pedágio, especializada em rodovias brasileiras. 
+                            Dados atualizados das concessionárias.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
                   <p className="text-lg font-bold text-amber-600">
                     R$ {estimativas.pedagios_estimados?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>

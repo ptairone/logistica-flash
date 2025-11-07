@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,6 +22,7 @@ interface RotaResponse {
   pedagios_valor: number;
   tempo_estimado_horas: number;
   numero_pracas_pedagio: number;
+  pracas_pedagio: any[];
   origem_coords: {
     lat: number;
     lon: number;
@@ -65,16 +67,64 @@ serve(async (req) => {
 
     console.log('Coordenadas:', { origemCoords, destinoCoords });
 
-    // Calcular rota com Google Maps Routes API
-    const resultado = await calcularRotaGoogle(
+    // Calcular rota com Google Maps Routes API (distância e tempo)
+    const rotaGoogle = await calcularRotaGoogle(
       origemCoords, 
       destinoCoords, 
       GOOGLE_MAPS_API_KEY,
       numero_eixos
     );
 
+    // Calcular pedágios com API brasileira
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    let pedagiosValor = 0;
+    let numeroPracas = 0;
+    let pracasPedagio: any[] = [];
+
+    try {
+      console.log('💰 Calculando pedágios com API brasileira...');
+      const { data: pedagiosData, error: pedagiosError } = await supabase.functions.invoke(
+        'calcular-pedagios-brasil',
+        {
+          body: {
+            origem_lat: origemCoords.lat,
+            origem_lon: origemCoords.lon,
+            destino_lat: destinoCoords.lat,
+            destino_lon: destinoCoords.lon,
+          }
+        }
+      );
+
+      if (pedagiosError) {
+        console.error('❌ Erro ao chamar calcular-pedagios-brasil:', pedagiosError);
+      } else if (pedagiosData && pedagiosData.sucesso) {
+        pedagiosValor = pedagiosData.valor_total || 0;
+        numeroPracas = pedagiosData.numero_pracas || 0;
+        pracasPedagio = pedagiosData.pracas || [];
+        console.log(`✅ Pedágios API Brasil: R$ ${pedagiosValor.toFixed(2)} (${numeroPracas} praças)`);
+      } else {
+        console.warn('⚠️ API Calcular Pedágio não retornou dados válidos');
+      }
+    } catch (error) {
+      console.error('💥 Erro ao calcular pedágios:', error);
+    }
+    
+    // Fallback: estimativa baseada em distância se API não retornar pedágios
+    if (pedagiosValor === 0 && rotaGoogle.distancia_km > 0) {
+      pedagiosValor = rotaGoogle.distancia_km * 0.20;
+      numeroPracas = Math.max(1, Math.floor(rotaGoogle.distancia_km / 120));
+      console.log(`📊 Usando estimativa fallback: R$ ${pedagiosValor.toFixed(2)} (${numeroPracas} praças estimadas)`);
+    }
+
     const resposta: RotaResponse = {
-      ...resultado,
+      distancia_km: rotaGoogle.distancia_km,
+      pedagios_valor: pedagiosValor,
+      tempo_estimado_horas: rotaGoogle.tempo_estimado_horas,
+      numero_pracas_pedagio: numeroPracas,
+      pracas_pedagio: pracasPedagio,
       origem_coords: origemCoords,
       destino_coords: destinoCoords,
     };
@@ -99,6 +149,7 @@ serve(async (req) => {
         pedagios_valor: 0,
         tempo_estimado_horas: 0,
         numero_pracas_pedagio: 0,
+        pracas_pedagio: [],
         origem_coords: { lat: 0, lon: 0 },
         destino_coords: { lat: 0, lon: 0 },
       }),
@@ -194,26 +245,12 @@ async function geocodificar(
   };
 }
 
-/**
- * NOTA SOBRE PEDÁGIOS NO BRASIL:
- * 
- * A Google Maps Routes API tem cobertura limitada de pedágios no Brasil.
- * Nem todas as rodovias têm dados de pedágio cadastrados.
- * 
- * Casos comuns onde pedágios podem vir zerados:
- * - Rodovias estaduais sem convênio com Google
- * - Trechos com pedágios recém-instalados
- * - Regiões Sul/Nordeste com cobertura menor
- * 
- * Solução atual: Retornar 0 e permitir entrada manual pelo usuário
- * Solução futura: Implementar base de dados própria de pedágios
- */
 async function calcularRotaGoogle(
   origem: Coordinates,
   destino: Coordinates,
   apiKey: string,
   numeroEixos?: number
-): Promise<Omit<RotaResponse, 'origem_coords' | 'destino_coords'>> {
+): Promise<{ distancia_km: number; tempo_estimado_horas: number }> {
   try {
     const requestBody = {
       origin: {
@@ -244,7 +281,6 @@ async function calcularRotaGoogle(
         avoidFerries: false,
         tollPasses: []
       },
-      extraComputations: ["TOLLS"],
       languageCode: "pt-BR",
       units: "METRIC"
     };
@@ -258,7 +294,7 @@ async function calcularRotaGoogle(
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': apiKey,
-          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.travelAdvisory.tollInfo,routes.travelAdvisory.tollInfo.estimatedPrice'
+          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters'
         },
         body: JSON.stringify(requestBody)
       }
@@ -268,13 +304,9 @@ async function calcularRotaGoogle(
       const errorText = await response.text();
       console.error('Erro Google Maps API:', response.status, errorText);
       
-      // Se houver erro (quota, etc), retornar valores zerados
-      console.warn('Google Maps API falhou. Retornando valores zerados.');
       return {
         distancia_km: 0,
-        pedagios_valor: 0,
         tempo_estimado_horas: 0,
-        numero_pracas_pedagio: 0
       };
     }
 
@@ -293,75 +325,23 @@ async function calcularRotaGoogle(
     // Extrair duração (em segundos com sufixo 's', converter para horas)
     const duracaoSegundos = route.duration ? parseInt(route.duration.replace('s', '')) : 0;
     const tempoHoras = duracaoSegundos / 3600;
-    
-    // Extrair informações de pedágio
-    const tollInfo = route.travelAdvisory?.tollInfo;
-    let pedagiosValor = 0;
-    let numeroPracas = 0;
-    
-    console.log('TollInfo recebido:', JSON.stringify(tollInfo));
-    
-    if (tollInfo && tollInfo.estimatedPrice) {
-      // Google retorna array de preços (pode ter múltiplas moedas)
-      const prices = tollInfo.estimatedPrice;
-      
-      if (prices && prices.length > 0) {
-        // Procurar preço em BRL
-        const brlPrice = prices.find((p: any) => p.currencyCode === 'BRL') || prices[0];
-        
-        // Converter: units (parte inteira) + nanos (parte decimal)
-        const units = parseFloat(brlPrice.units || '0');
-        const nanos = parseFloat(brlPrice.nanos || '0');
-        pedagiosValor = units + (nanos / 1000000000);
-        
-        console.log('Pedágio calculado:', {
-          units,
-          nanos,
-          total: pedagiosValor,
-          currencyCode: brlPrice.currencyCode
-        });
-      }
-    }
-    
-    // Se Google não retornar pedágios, logar aviso
-    if (!tollInfo || !tollInfo.estimatedPrice) {
-      console.warn('⚠️ Google Maps não retornou informações de pedágio para esta rota');
-      console.warn('Isso pode indicar:');
-      console.warn('1. Rota sem pedágios cadastrados');
-      console.warn('2. Cobertura incompleta no Brasil');
-      console.warn('3. API Key sem permissões corretas');
-      
-      // Estimativa: R$ 0,20 por km para caminhões (média Brasil)
-      if (distanciaKm > 0) {
-        const estimativaKm = 0.20;
-        pedagiosValor = distanciaKm * estimativaKm;
-        console.warn(`📊 Usando estimativa de pedágios: R$ ${pedagiosValor.toFixed(2)} (baseado em ${distanciaKm.toFixed(2)}km)`);
-      }
-    }
 
     console.log('Rota processada:', {
       distanciaKm,
-      tempoHoras,
-      pedagiosValor,
-      numeroPracas
+      tempoHoras
     });
 
     return {
       distancia_km: distanciaKm,
-      pedagios_valor: pedagiosValor,
       tempo_estimado_horas: tempoHoras,
-      numero_pracas_pedagio: numeroPracas
     };
 
   } catch (error: any) {
     console.error('Erro ao calcular rota com Google Maps:', error);
     
-    // Retornar valores zerados em caso de erro
     return {
       distancia_km: 0,
-      pedagios_valor: 0,
       tempo_estimado_horas: 0,
-      numero_pracas_pedagio: 0
     };
   }
 }
