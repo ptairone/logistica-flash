@@ -1,5 +1,5 @@
-import { Package, MapPin, DollarSign, Edit, Trash2, Eye, CheckCircle, AlertTriangle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, MapPin, Edit, Trash2, CheckCircle, AlertTriangle, Building2, ArrowRight, Clock, Fuel } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDateBR } from '@/lib/validations';
@@ -12,154 +12,190 @@ interface FreteCardProps {
 }
 
 export function FreteCard({ frete, onEdit, onDelete, onViewDetails }: FreteCardProps) {
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
-      aberto: 'secondary',
-      faturado: 'default',
-      cancelado: 'destructive',
+  const getStatusConfig = (status: string) => {
+    const configs: Record<string, { variant: 'default' | 'secondary' | 'destructive', label: string, icon: any, cardColor: any }> = {
+      aberto: { 
+        variant: 'secondary', 
+        label: 'Aberto', 
+        icon: AlertTriangle,
+        cardColor: { variant: 'gradient', colorScheme: 'warning' }
+      },
+      faturado: { 
+        variant: 'default', 
+        label: 'Faturado', 
+        icon: CheckCircle,
+        cardColor: { variant: 'gradient', colorScheme: 'success' }
+      },
+      cancelado: { 
+        variant: 'destructive', 
+        label: 'Cancelado', 
+        icon: null,
+        cardColor: { variant: 'default', colorScheme: 'default' }
+      },
     };
     
-    const labels: Record<string, string> = {
-      aberto: 'Aberto',
-      faturado: 'Faturado',
-      cancelado: 'Cancelado',
-    };
-
-    const icons: Record<string, any> = {
-      aberto: AlertTriangle,
-      faturado: CheckCircle,
-      cancelado: null,
-    };
-
-    const Icon = icons[status];
-
-    return (
-      <Badge variant={variants[status] || 'default'} className="gap-1">
-        {Icon && <Icon className="h-3 w-3" />}
-        {labels[status] || status}
-      </Badge>
-    );
+    return configs[status] || configs.aberto;
   };
 
+  const statusConfig = getStatusConfig(frete.status);
+  const StatusIcon = statusConfig.icon;
+  
+  // Calcula se tem margem positiva ou negativa
+  const temMargem = frete.margem_estimada !== null && frete.margem_estimada !== undefined;
+  const margemPositiva = temMargem && frete.margem_estimada > 0;
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary" />
-            <div>
-              <CardTitle className="text-lg">{frete.codigo}</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {frete.cliente_nome}
+    <Card 
+      {...statusConfig.cardColor}
+      className="hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+    >
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Package className="h-5 w-5 text-primary flex-shrink-0" />
+              <h3 className="text-xl font-bold truncate">{frete.codigo}</h3>
+            </div>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{frete.cliente_nome}</span>
+            </div>
+          </div>
+          <Badge variant={statusConfig.variant} className="gap-1 flex-shrink-0">
+            {StatusIcon && <StatusIcon className="h-3 w-3" />}
+            {statusConfig.label}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4 pt-0">
+        {/* Rota */}
+        <div className="space-y-2">
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm leading-tight">
+                {frete.origem_cidade || frete.origem}
+                {frete.origem_uf && <span className="text-muted-foreground ml-1">- {frete.origem_uf}</span>}
               </p>
             </div>
           </div>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onViewDetails(frete)}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(frete)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(frete.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center gap-2 text-sm">
-          <MapPin className="h-4 w-4 text-muted-foreground" />
-          <div className="flex-1">
-            <p className="font-medium">
-              {frete.origem_cidade || frete.origem}
-              {frete.origem_uf && ` - ${frete.origem_uf}`}
-            </p>
-            <p className="text-muted-foreground">
-              → {frete.destino_cidade || frete.destino}
-              {frete.destino_uf && ` - ${frete.destino_uf}`}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2 border-t">
-          <span className="text-sm text-muted-foreground">Status:</span>
-          {getStatusBadge(frete.status)}
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Valor:</span>
-          <span className="text-lg font-bold text-primary">
-            R$ {frete.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-          </span>
-        </div>
-
-        {frete.data_coleta && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Coleta:</span>
-            <span>{formatDateBR(frete.data_coleta)}</span>
-          </div>
-        )}
-
-        {frete.status === 'faturado' && frete.numero_fatura && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
-            <CheckCircle className="h-3 w-3 text-primary" />
-            Fatura: {frete.numero_fatura}
-          </div>
-        )}
-        
-        {(frete.distancia_estimada_km || frete.pedagios_estimados || frete.margem_estimada !== null) && (
-          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+          
+          <div className="flex items-center gap-2 pl-6">
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
             {frete.distancia_estimada_km && (
-              <Badge variant="outline" className="gap-1">
-                <MapPin className="h-3 w-3" />
+              <span className="text-xs font-medium text-primary">
                 {frete.distancia_estimada_km} km
-              </Badge>
+              </span>
             )}
-            
+          </div>
+          
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm leading-tight">
+                {frete.destino_cidade || frete.destino}
+                {frete.destino_uf && <span className="text-muted-foreground ml-1">- {frete.destino_uf}</span>}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Financeiro - Destaque */}
+        <div className="bg-card/50 backdrop-blur-sm border rounded-lg p-3 space-y-2">
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Valor do Frete</span>
+            <span className="text-2xl font-bold text-primary">
+              R$ {frete.valor_frete?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+            </span>
+          </div>
+          
+          {temMargem && (
+            <div className="flex items-center justify-between pt-2 border-t border-border/50">
+              <span className="text-xs font-medium text-muted-foreground">Margem</span>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-sm font-bold ${margemPositiva ? 'text-success' : 'text-destructive'}`}>
+                  {margemPositiva ? '+' : ''}R$ {frete.margem_estimada.toFixed(2)}
+                </span>
+                {frete.percentual_margem && (
+                  <span className={`text-xs font-medium ${margemPositiva ? 'text-success/70' : 'text-destructive/70'}`}>
+                    ({frete.percentual_margem > 0 ? '+' : ''}{frete.percentual_margem.toFixed(1)}%)
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Estimativas Compactas */}
+        {(frete.pedagios_estimados > 0 || frete.combustivel_estimado_litros || frete.tempo_estimado_horas) && (
+          <div className="flex flex-wrap gap-2">
             {frete.pedagios_estimados > 0 && (
-              <Badge variant="outline" className="gap-1 bg-amber-50 border-amber-200 text-amber-700">
-                🛣️ R$ {frete.pedagios_estimados.toFixed(2)}
+              <Badge variant="outline" className="gap-1.5 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400">
+                <span className="text-sm">🛣️</span>
+                <span className="text-xs font-semibold">R$ {frete.pedagios_estimados.toFixed(2)}</span>
               </Badge>
             )}
             
             {frete.combustivel_estimado_litros && (
-              <Badge variant="outline" className="gap-1 bg-green-50 border-green-200 text-green-700">
-                ⛽ {frete.combustivel_estimado_litros}L
+              <Badge variant="outline" className="gap-1.5 bg-success/10 border-success/20">
+                <Fuel className="h-3 w-3" />
+                <span className="text-xs font-semibold">{frete.combustivel_estimado_litros}L</span>
               </Badge>
             )}
             
-            {frete.margem_estimada !== null && frete.margem_estimada !== undefined && (
-              <Badge 
-                variant={frete.margem_estimada > 0 ? "default" : "destructive"}
-                className="gap-1"
-              >
-                💰 {frete.margem_estimada > 0 ? '+' : ''}R$ {frete.margem_estimada.toFixed(2)}
-                {frete.percentual_margem && ` (${frete.percentual_margem.toFixed(1)}%)`}
+            {frete.tempo_estimado_horas && (
+              <Badge variant="outline" className="gap-1.5">
+                <Clock className="h-3 w-3" />
+                <span className="text-xs font-semibold">{frete.tempo_estimado_horas}h</span>
               </Badge>
             )}
           </div>
         )}
 
-        <Button
-          variant="outline"
-          className="w-full mt-2"
-          onClick={() => onViewDetails(frete)}
-        >
-          Ver Detalhes
-        </Button>
+        {/* Informações Adicionais */}
+        {(frete.data_coleta || (frete.status === 'faturado' && frete.numero_fatura)) && (
+          <div className="space-y-1.5 pt-2 border-t text-xs">
+            {frete.data_coleta && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Coleta:</span>
+                <span className="font-medium">{formatDateBR(frete.data_coleta)}</span>
+              </div>
+            )}
+            
+            {frete.status === 'faturado' && frete.numero_fatura && (
+              <div className="flex items-center gap-1.5 text-success">
+                <CheckCircle className="h-3 w-3" />
+                <span>Fatura: {frete.numero_fatura}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Botões de Ação */}
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="default"
+            className="flex-1"
+            onClick={() => onViewDetails(frete)}
+          >
+            Ver Detalhes
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onEdit(frete)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onDelete(frete.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

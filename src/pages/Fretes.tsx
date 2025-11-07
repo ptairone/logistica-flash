@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Download } from 'lucide-react';
+import { Plus, Search, Download, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useFretes } from '@/hooks/useFretes';
 import { FreteDialog } from '@/components/fretes/FreteDialog';
 import { FreteCard } from '@/components/fretes/FreteCard';
@@ -83,6 +83,19 @@ export default function Fretes() {
     return matchesSearch && matchesStatus;
   });
 
+  // Estatísticas rápidas
+  const fretesAbertos = fretes.filter(f => f.status === 'aberto');
+  const valorEmAberto = fretesAbertos.reduce((sum, f) => sum + (f.valor_frete || 0), 0);
+  
+  const hoje = new Date();
+  const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const fretesFaturadosMes = fretes.filter(f => 
+    f.status === 'faturado' && 
+    f.created_at && 
+    new Date(f.created_at) >= primeiroDiaMes
+  );
+  const valorFaturadoMes = fretesFaturadosMes.reduce((sum, f) => sum + (f.valor_frete || 0), 0);
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -128,6 +141,51 @@ export default function Fretes() {
           </Select>
         </div>
 
+        {/* Estatísticas Rápidas */}
+        {fretes.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-warning/10 to-transparent border border-warning/20 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Fretes Abertos</p>
+                  <p className="text-3xl font-bold text-foreground mt-1">{fretesAbertos.length}</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-warning/20 flex items-center justify-center">
+                  <Package className="h-6 w-6 text-warning" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-destructive/10 to-transparent border border-destructive/20 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Valor em Aberto</p>
+                  <p className="text-2xl font-bold text-foreground mt-1">
+                    R$ {(valorEmAberto / 1000).toFixed(0)}k
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-destructive/20 flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-destructive" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-success/10 to-transparent border border-success/20 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Faturado no Mês</p>
+                  <p className="text-2xl font-bold text-foreground mt-1">
+                    R$ {(valorFaturadoMes / 1000).toFixed(0)}k
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-success/20 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-success" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Carregando fretes...</p>
@@ -139,7 +197,7 @@ export default function Fretes() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredFretes.map((frete) => (
               <FreteCard
                 key={frete.id}
