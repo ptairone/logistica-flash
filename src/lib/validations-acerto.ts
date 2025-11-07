@@ -51,6 +51,14 @@ export interface ViagemAcerto {
   }>;
 }
 
+// Interface para abastecimento
+export interface AbastecimentoAcerto {
+  id: string;
+  valor_total: number;
+  litros: number;
+  data_abastecimento: string;
+}
+
 // Calcular totais do acerto
 export interface AcertoCalculos {
   baseComissao: number;
@@ -59,13 +67,15 @@ export interface AcertoCalculos {
   totalPagar: number;
   receitaTotal: number;
   despesasNaoReembolsaveis: number;
+  totalCombustivel: number;
 }
 
 export function calcularAcerto(
   viagens: ViagemAcerto[],
   percentualComissao: number,
   adiantamentos: number,
-  descontos: number
+  descontos: number,
+  abastecimentos: AbastecimentoAcerto[] = []
 ): AcertoCalculos {
   let receitaTotal = 0;
   let despesasNaoReembolsaveis = 0;
@@ -87,6 +97,9 @@ export function calcularAcerto(
     });
   });
 
+  // Calcular total de combustível
+  const totalCombustivel = abastecimentos.reduce((sum, a) => sum + a.valor_total, 0);
+
   // Base de comissão = Receita - despesas não reembolsáveis
   const baseComissao = receitaTotal - despesasNaoReembolsaveis;
 
@@ -103,6 +116,7 @@ export function calcularAcerto(
     totalPagar,
     receitaTotal,
     despesasNaoReembolsaveis,
+    totalCombustivel,
   };
 }
 

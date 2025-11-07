@@ -44,6 +44,24 @@ export function useDadosOperacionais(filtros: FiltrosRelatorio) {
 
       if (error) throw error;
 
+      // Buscar abastecimentos do período
+      let abastecimentosQuery = supabase
+        .from('abastecimentos')
+        .select('valor_total, veiculo_id, viagem_id, status');
+      
+      if (filtros.dataInicio) {
+        abastecimentosQuery = abastecimentosQuery.gte('data_abastecimento', filtros.dataInicio);
+      }
+      if (filtros.dataFim) {
+        abastecimentosQuery = abastecimentosQuery.lte('data_abastecimento', filtros.dataFim);
+      }
+      if (filtros.veiculoId) {
+        abastecimentosQuery = abastecimentosQuery.eq('veiculo_id', filtros.veiculoId);
+      }
+
+      const { data: abastecimentos, error: abastecimentosError } = await abastecimentosQuery;
+      if (abastecimentosError) throw abastecimentosError;
+
       // Calcular KPIs
       const viagens = data || [];
       const viagensConcluidas = viagens.filter(v => v.status === 'concluida');
@@ -52,10 +70,17 @@ export function useDadosOperacionais(filtros: FiltrosRelatorio) {
       const kmTotal = viagensConcluidas.reduce((sum, v) => sum + (v.km_percorrido || 0), 0);
       const receitaTotal = viagensConcluidas.reduce((sum, v) => sum + (v.frete?.valor_frete || 0), 0);
       
-      const custoTotal = viagensConcluidas.reduce((sum, v) => {
+      const custoDespesas = viagensConcluidas.reduce((sum, v) => {
         const despesas = v.despesas?.reduce((s: number, d: any) => s + Number(d.valor), 0) || 0;
         return sum + despesas;
       }, 0);
+
+      // Incluir custo de combustível
+      const custoCombustivel = (abastecimentos || [])
+        .filter((a: any) => a.status === 'validado')
+        .reduce((sum: number, a: any) => sum + (a.valor_total || 0), 0);
+
+      const custoTotal = custoDespesas + custoCombustivel;
 
       const custoMedioKm = kmTotal > 0 ? custoTotal / kmTotal : 0;
       const receitaPorKm = kmTotal > 0 ? receitaTotal / kmTotal : 0;
@@ -67,6 +92,8 @@ export function useDadosOperacionais(filtros: FiltrosRelatorio) {
           totalViagens,
           kmTotal,
           custoTotal,
+          custoDespesas,
+          custoCombustivel,
           receitaTotal,
           custoMedioKm,
           receitaPorKm,
@@ -146,25 +173,37 @@ export function useDadosFrota(filtros: FiltrosRelatorio) {
           item:itens_estoque(descricao, categoria, unidade)
         `);
 
+      let queryAbastecimentos = supabase
+        .from('abastecimentos')
+        .select(`
+          *,
+          veiculo:veiculos(placa, modelo)
+        `);
+
       if (filtros.dataInicio) {
         queryManutencoes = queryManutencoes.gte('data', filtros.dataInicio);
         queryMovimentacoes = queryMovimentacoes.gte('data', filtros.dataInicio);
+        queryAbastecimentos = queryAbastecimentos.gte('data_abastecimento', filtros.dataInicio);
       }
       if (filtros.dataFim) {
         queryManutencoes = queryManutencoes.lte('data', filtros.dataFim);
         queryMovimentacoes = queryMovimentacoes.lte('data', filtros.dataFim);
+        queryAbastecimentos = queryAbastecimentos.lte('data_abastecimento', filtros.dataFim);
       }
       if (filtros.veiculoId) {
         queryManutencoes = queryManutencoes.eq('veiculo_id', filtros.veiculoId);
+        queryAbastecimentos = queryAbastecimentos.eq('veiculo_id', filtros.veiculoId);
       }
 
-      const [manutencoes, movimentacoes] = await Promise.all([
+      const [manutencoes, movimentacoes, abastecimentos] = await Promise.all([
         queryManutencoes,
         queryMovimentacoes,
+        queryAbastecimentos,
       ]);
 
       if (manutencoes.error) throw manutencoes.error;
       if (movimentacoes.error) throw movimentacoes.error;
+      if (abastecimentos.error) throw abastecimentos.error;
 
       const custoManutencao = manutencoes.data?.reduce((sum, m) => sum + (m.custo || 0), 0) || 0;
       const consumoEstoque = movimentacoes.data?.reduce((sum, m) => {
@@ -174,12 +213,19 @@ export function useDadosFrota(filtros: FiltrosRelatorio) {
         return sum;
       }, 0) || 0;
 
+      const custoCombustivel = abastecimentos.data?.reduce((sum, a) => sum + (a.valor_total || 0), 0) || 0;
+      const mediaConsumo = abastecimentos.data?.filter((a: any) => a.media_calculada).reduce((sum, a) => sum + (a.media_calculada || 0), 0) / 
+        (abastecimentos.data?.filter((a: any) => a.media_calculada).length || 1) || 0;
+
       return {
         manutencoes: manutencoes.data || [],
         movimentacoes: movimentacoes.data || [],
+        abastecimentos: abastecimentos.data || [],
         kpis: {
           custoManutencao,
           consumoEstoque,
+          custoCombustivel,
+          mediaConsumo,
         },
       };
     },

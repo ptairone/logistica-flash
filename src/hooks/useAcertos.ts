@@ -224,3 +224,33 @@ export function useComprovantesAcerto(acertoId?: string) {
     enabled: !!acertoId,
   });
 }
+
+// Hook para buscar abastecimentos do motorista no período
+export function useAbastecimentosMotorista(motoristaId?: string, periodoInicio?: string, periodoFim?: string) {
+  return useQuery({
+    queryKey: ['abastecimentos-motorista', motoristaId, periodoInicio, periodoFim],
+    queryFn: async () => {
+      let query = supabase
+        .from('abastecimentos')
+        .select(`
+          *,
+          veiculo:veiculos(placa, modelo)
+        `)
+        .eq('motorista_id', motoristaId!)
+        .eq('status', 'validado');
+
+      if (periodoInicio) {
+        query = query.gte('data_abastecimento', periodoInicio);
+      }
+      if (periodoFim) {
+        query = query.lte('data_abastecimento', periodoFim);
+      }
+
+      const { data, error } = await query.order('data_abastecimento', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!motoristaId,
+  });
+}

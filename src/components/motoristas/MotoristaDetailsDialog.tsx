@@ -16,6 +16,7 @@ import {
 } from '@/hooks/useMotoristas';
 import { useConfigCLT, useSaveConfigCLT } from '@/hooks/useAcertosCLT';
 import { calcularKPIsMotorista } from '@/lib/validations-motorista';
+import { useMotoristaConsolidado } from '@/hooks/useMotoristaConsolidado';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CriarLoginDialog } from './CriarLoginDialog';
 import { AlterarSenhaDialog } from './AlterarSenhaDialog';
@@ -56,6 +57,7 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
   
   const { data: configCLT } = useConfigCLT(motorista?.id);
   const { mutate: salvarConfig, isPending: salvandoConfig } = useSaveConfigCLT();
+  const { data: consolidado } = useMotoristaConsolidado(motorista?.id, new Date().getFullYear());
   
   // Pré-preencher valores se já existir configuração
   useState(() => {
@@ -71,6 +73,7 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
   if (!motorista) return null;
 
   const kpis = calcularKPIsMotorista(viagens);
+  const kpisConsolidado = consolidado?.kpis;
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,8 +134,9 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
         </DialogHeader>
 
         <Tabs defaultValue="dados" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-6 h-auto">
             <TabsTrigger value="dados" className="text-xs sm:text-sm px-2 py-2">Dados</TabsTrigger>
+            <TabsTrigger value="consolidado" className="text-xs sm:text-sm px-2 py-2">Resumo</TabsTrigger>
             <TabsTrigger value="documentos" className="text-xs sm:text-sm px-2 py-2">Docs</TabsTrigger>
             <TabsTrigger value="historico" className="text-xs sm:text-sm px-2 py-2">Histórico</TabsTrigger>
             <TabsTrigger value="financeiro" className="text-xs sm:text-sm px-2 py-2">$$</TabsTrigger>
@@ -230,6 +234,106 @@ export function MotoristaDetailsDialog({ open, onOpenChange, motorista }: Motori
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="consolidado" className="space-y-4 pt-4">
+            {kpisConsolidado ? (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-xs text-muted-foreground">Total Pago (Ano)</Label>
+                      <p className="text-xl font-bold text-primary">
+                        R$ {kpisConsolidado.totalPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-xs text-muted-foreground">Média Mensal</Label>
+                      <p className="text-xl font-bold">
+                        R$ {kpisConsolidado.mediaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-xs text-muted-foreground">Eficiência</Label>
+                      <p className="text-xl font-bold text-primary">
+                        {kpisConsolidado.eficiencia.toFixed(1)}%
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-xs text-muted-foreground">Débitos Ativos</Label>
+                      <p className="text-xl font-bold text-destructive">
+                        R$ {kpisConsolidado.totalDebitosAtivos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-xs text-muted-foreground">Total KM (Ano)</Label>
+                      <p className="text-lg font-bold">{kpisConsolidado.totalKm.toLocaleString('pt-BR')}</p>
+                      <p className="text-xs text-muted-foreground">{kpisConsolidado.totalViagens} viagens</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-xs text-muted-foreground">Custo/KM</Label>
+                      <p className="text-lg font-bold">
+                        R$ {kpisConsolidado.custoKm.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Média operacional</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <Label className="text-xs text-muted-foreground">Pontualidade</Label>
+                      <p className="text-lg font-bold text-primary">{kpisConsolidado.pontualidade.toFixed(1)}%</p>
+                      <p className="text-xs text-muted-foreground">Entregas no prazo</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Custos do Ano</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Despesas Operacionais</span>
+                      <span className="font-medium">
+                        R$ {kpisConsolidado.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Combustível</span>
+                      <span className="font-medium">
+                        R$ {kpisConsolidado.totalCombustivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm border-t pt-2">
+                      <span className="font-medium">Total</span>
+                      <span className="font-bold">
+                        R$ {(kpisConsolidado.totalDespesas + kpisConsolidado.totalCombustivel).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">Carregando dados consolidados...</p>
+            )}
           </TabsContent>
 
           <TabsContent value="documentos" className="space-y-4 pt-4">

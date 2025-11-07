@@ -10,6 +10,9 @@ import { formatDateBR } from '@/lib/validations';
 import { useViagensVinculadasFrete } from '@/hooks/useFretes';
 import { useFretes } from '@/hooks/useFretes';
 import { podeFaturarFrete } from '@/lib/validations-frete';
+import { FreteRentabilidadeCard } from './FreteRentabilidadeCard';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FreteDetailsDialogProps {
   open: boolean;
@@ -21,6 +24,45 @@ export function FreteDetailsDialog({ open, onOpenChange, frete }: FreteDetailsDi
   const { data: viagens = [], isLoading } = useViagensVinculadasFrete(frete?.id);
   const { updateFrete } = useFretes();
   const [numeroFatura, setNumeroFatura] = useState('');
+
+  // Buscar dados financeiros das viagens vinculadas
+  const { data: dadosFinanceiros } = useQuery({
+    queryKey: ['frete-financeiro', frete?.id],
+    queryFn: async () => {
+      if (!viagens.length) return { despesas: 0, abastecimentos: 0, comissoes: 0 };
+
+      const viagemIds = viagens.map(v => v.id);
+
+      const [despesas, abastecimentos, acertos] = await Promise.all([
+        supabase.from('despesas').select('valor').in('viagem_id', viagemIds),
+        supabase.from('abastecimentos').select('valor_total').in('viagem_id', viagemIds).eq('status', 'validado'),
+        supabase.from('viagens').select('acerto_id').in('id', viagemIds).not('acerto_id', 'is', null),
+      ]);
+
+      const totalDespesas = despesas.data?.reduce((sum, d) => sum + (d.valor || 0), 0) || 0;
+      const totalAbastecimentos = abastecimentos.data?.reduce((sum, a) => sum + (a.valor_total || 0), 0) || 0;
+      
+      // Buscar comissões dos acertos
+      const acertoIds = [...new Set(acertos.data?.map(v => v.acerto_id).filter(Boolean))];
+      let totalComissoes = 0;
+      
+      if (acertoIds.length > 0) {
+        const { data: acertosData } = await supabase
+          .from('acertos')
+          .select('valor_comissao')
+          .in('id', acertoIds);
+        
+        totalComissoes = acertosData?.reduce((sum, a) => sum + (a.valor_comissao || 0), 0) || 0;
+      }
+
+      return {
+        despesas: totalDespesas,
+        abastecimentos: totalAbastecimentos,
+        comissoes: totalComissoes,
+      };
+    },
+    enabled: !!frete?.id && viagens.length > 0,
+  });
 
   if (!frete) return null;
 
@@ -53,9 +95,10 @@ export function FreteDetailsDialog({ open, onOpenChange, frete }: FreteDetailsDi
         </DialogHeader>
 
         <Tabs defaultValue="info" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="info">Informações</TabsTrigger>
             <TabsTrigger value="viagens">Viagens</TabsTrigger>
+            <TabsTrigger value="financeiro">Análise Financeira</TabsTrigger>
             <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
           </TabsList>
 
@@ -219,6 +262,23 @@ export function FreteDetailsDialog({ open, onOpenChange, frete }: FreteDetailsDi
                   </Card>
                 ))}
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="financeiro" className="space-y-4 pt-4">
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>
+            ) : dadosFinanceiros ? (
+              <FreteRentabilidadeCard
+                valorFrete={frete.valor_frete || 0}
+                despesas={dadosFinanceiros.despesas}
+                abastecimentos={dadosFinanceiros.abastecimentos}
+                comissoes={dadosFinanceiros.comissoes}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nenhum dado financeiro disponível
+              </p>
             )}
           </TabsContent>
 
