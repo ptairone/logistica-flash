@@ -1,5 +1,8 @@
 project_id = "plfpczvnqmvqpmsbjrra"
 
+[functions.processar-comprovante-whatsapp]
+verify_jwt = false
+
 [functions.calcular-distancia]
 verify_jwt = false
 

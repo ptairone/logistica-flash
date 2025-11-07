@@ -609,6 +609,66 @@ export type Database = {
         }
         Relationships: []
       }
+      comprovantes_whatsapp: {
+        Row: {
+          confianca: string | null
+          created_at: string | null
+          dados_extraidos: Json | null
+          erro_mensagem: string | null
+          id: string
+          imagem_url: string
+          motorista_id: string | null
+          status: string | null
+          telefone: string
+          tipo_identificado: string | null
+          updated_at: string | null
+          viagem_id: string | null
+        }
+        Insert: {
+          confianca?: string | null
+          created_at?: string | null
+          dados_extraidos?: Json | null
+          erro_mensagem?: string | null
+          id?: string
+          imagem_url: string
+          motorista_id?: string | null
+          status?: string | null
+          telefone: string
+          tipo_identificado?: string | null
+          updated_at?: string | null
+          viagem_id?: string | null
+        }
+        Update: {
+          confianca?: string | null
+          created_at?: string | null
+          dados_extraidos?: Json | null
+          erro_mensagem?: string | null
+          id?: string
+          imagem_url?: string
+          motorista_id?: string | null
+          status?: string | null
+          telefone?: string
+          tipo_identificado?: string | null
+          updated_at?: string | null
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comprovantes_whatsapp_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comprovantes_whatsapp_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       despesas: {
         Row: {
           anexo_url: string | null

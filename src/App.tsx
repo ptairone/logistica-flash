@@ -26,6 +26,7 @@ import InstallApp from "./pages/InstallApp";
 import MotoristaViagens from "./pages/motorista/Viagens";
 import ViagemMotorista from "./pages/motorista/ViagemMotorista";
 import AdicionarDespesa from "./pages/motorista/AdicionarDespesa";
+import ComprovantesWhatsApp from "./pages/ComprovantesWhatsApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -173,6 +174,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={['admin', 'operacional']}>
                   <Abastecimentos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/comprovantes-whatsapp"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'operacional']}>
+                  <ComprovantesWhatsApp />
                 </ProtectedRoute>
               }
             />

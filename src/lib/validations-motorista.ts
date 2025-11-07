@@ -16,7 +16,12 @@ export const motoristaSchema = z.object({
   cpf: z.string().optional(),
   cnh: z.string().min(1, 'CNH é obrigatória').max(20),
   validade_cnh: z.string().min(1, 'Validade da CNH é obrigatória'),
-  telefone: z.string().min(1, 'Telefone é obrigatório'),
+  telefone: z.string()
+    .min(1, 'Telefone é obrigatório')
+    .refine((tel) => {
+      const limpo = tel.replace(/\D/g, '');
+      return limpo.length === 10 || limpo.length === 11;
+    }, 'Telefone deve ter 10 ou 11 dígitos'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   comissao_padrao: z.number().min(0).max(100).optional(),
   status: z.enum(['ativo', 'inativo']),
