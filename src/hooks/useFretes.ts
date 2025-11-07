@@ -185,15 +185,17 @@ export function useFretes() {
         precoDiesel
       );
 
+      const { arredondarValor } = await import('@/lib/utils');
+
       return {
-        distancia_km: rotaData.distancia_km,
-        pedagios_estimados: rotaData.pedagios_valor || 0,
-        pracas_pedagio: [],
+        distancia_km: arredondarValor(rotaData.distancia_km),
+        pedagios_estimados: arredondarValor(rotaData.pedagios_valor || 0),
+        pracas_pedagio: rotaData.pracas_pedagio || [],
         numero_pracas_pedagio: rotaData.numero_pracas_pedagio || 0,
-        combustivel_estimado_litros: dadosCombustivel.litros_estimados,
-        combustivel_estimado_valor: dadosCombustivel.custo_estimado,
-        consumo_real_km_l: dadosCombustivel.consumo_km_l,
-        custo_total_estimado: (rotaData.pedagios_valor || 0) + dadosCombustivel.custo_estimado,
+        combustivel_estimado_litros: arredondarValor(dadosCombustivel.litros_estimados),
+        combustivel_estimado_valor: arredondarValor(dadosCombustivel.custo_estimado),
+        consumo_real_km_l: arredondarValor(dadosCombustivel.consumo_km_l),
+        custo_total_estimado: arredondarValor((rotaData.pedagios_valor || 0) + dadosCombustivel.custo_estimado),
         tempo_estimado_horas: rotaData.tempo_estimado_horas 
           ? Math.round(rotaData.tempo_estimado_horas) 
           : null,

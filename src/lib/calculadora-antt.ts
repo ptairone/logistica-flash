@@ -187,7 +187,7 @@ export function calcularPisoMinimoANTT(params: ParametrosCalculoANTT): Resultado
   }
 
   // Cálculo base: Coeficiente × Valor Base/km × Distância
-  const valor_base = coeficiente * VALOR_BASE_KM * distancia_km;
+  const valor_base = Math.round(coeficiente * VALOR_BASE_KM * distancia_km * 100) / 100;
 
   // Aplicar acréscimos
   let multiplicador_total = 1;
@@ -204,7 +204,7 @@ export function calcularPisoMinimoANTT(params: ParametrosCalculoANTT): Resultado
     multiplicador_total *= ACRESCIMOS.retorno_vazio;
   }
 
-  const valor_com_acrescimos = valor_base * multiplicador_total;
+  const valor_com_acrescimos = Math.round(valor_base * multiplicador_total * 100) / 100;
 
   // Obter label do tipo de carga
   const tipo_carga_obj = TIPOS_CARGA.find(tc => tc.value === tipo_carga);

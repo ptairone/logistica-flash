@@ -114,7 +114,7 @@ serve(async (req) => {
     
     // Fallback: estimativa baseada em distância se API não retornar pedágios
     if (pedagiosValor === 0 && rotaGoogle.distancia_km > 0) {
-      pedagiosValor = rotaGoogle.distancia_km * 0.20;
+      pedagiosValor = Math.round(rotaGoogle.distancia_km * 0.20 * 100) / 100;
       numeroPracas = Math.max(1, Math.floor(rotaGoogle.distancia_km / 120));
       console.log(`📊 Usando estimativa fallback: R$ ${pedagiosValor.toFixed(2)} (${numeroPracas} praças estimadas)`);
     }
