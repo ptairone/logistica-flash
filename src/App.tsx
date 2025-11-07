@@ -8,6 +8,7 @@ import { InstallPrompt } from "./components/pwa/InstallPrompt";
 import { WelcomeModal } from "./components/pwa/WelcomeModal";
 import { UpdateNotification } from "./components/pwa/UpdateNotification";
 import Login from "./pages/Login";
+import Apresentacao from "./pages/Apresentacao";
 import Dashboard from "./pages/Dashboard";
 import Veiculos from "./pages/Veiculos";
 import Motoristas from "./pages/Motoristas";
@@ -42,6 +43,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/apresentacao" element={<Apresentacao />} />
             <Route path="/install" element={<InstallApp />} />
             
             {/* Rotas do Motorista */}
