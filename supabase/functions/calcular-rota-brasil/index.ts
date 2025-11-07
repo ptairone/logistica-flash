@@ -113,15 +113,23 @@ serve(async (req) => {
     const data = await response.json();
     console.log('✅ Resposta Rotas Brasil:', JSON.stringify(data));
 
+    // A API retorna { rotas: [...] } onde o primeiro elemento é a rota principal
+    const rota = data.rotas?.[0];
+    if (!rota) {
+      throw new Error('Nenhuma rota encontrada na resposta');
+    }
+
     // Processar resposta
     const resultado: RotaBrasilResponse = {
-      distancia_km: Math.round((data.distancia || 0) * 100) / 100,
-      tempo_estimado_horas: data.tempo ? Math.round((data.tempo / 60) * 100) / 100 : null, // Converter minutos para horas
-      pedagios_valor: Math.round((data.pedagio || 0) * 100) / 100,
-      numero_pracas_pedagio: data.quantidade_pedagios || 0,
-      pracas_pedagio: processarPracas(data.pracas || []),
-      combustivel_estimado_valor: data.combustivel ? Math.round(data.combustivel * 100) / 100 : undefined,
-      valor_frete_minimo: data.frete_minimo ? Math.round(data.frete_minimo * 100) / 100 : undefined,
+      distancia_km: Math.round((rota.distancia || 0) * 100) / 100,
+      tempo_estimado_horas: rota.duracao ? parseTempoParaHoras(rota.duracao) : null,
+      pedagios_valor: Math.round((rota.valorPedagio || 0) * 100) / 100,
+      numero_pracas_pedagio: rota.pedagios?.length || 0,
+      pracas_pedagio: processarPracas(rota.pedagios || []),
+      combustivel_estimado_valor: typeof rota.valorCombustivel === 'number' 
+        ? Math.round(rota.valorCombustivel * 100) / 100 
+        : undefined,
+      valor_frete_minimo: rota.tabelaFrete ? extrairValorFreteMinimo(rota.tabelaFrete) : undefined,
     };
 
     console.log('📊 Resultado processado:', resultado);
@@ -231,7 +239,7 @@ function formatarEstado(uf: string): string {
 }
 
 /**
- * Processa array de praças de pedágio da API
+ * Processa array de praças de pedágio da API Rotas Brasil
  */
 function processarPracas(pracas: any[]): PracaPedagio[] {
   if (!Array.isArray(pracas) || pracas.length === 0) {
@@ -239,10 +247,37 @@ function processarPracas(pracas: any[]): PracaPedagio[] {
   }
   
   return pracas.map((praca: any) => ({
-    nome: praca.nome || 'Praça não identificada',
+    nome: praca.praca || 'Praça não identificada',
     valor: Math.round((praca.valor || 0) * 100) / 100,
-    cidade: praca.cidade,
-    uf: praca.uf,
+    cidade: praca.praca, // Nome da praça geralmente é o nome da cidade
+    uf: undefined, // API não retorna UF separado
     rodovia: praca.rodovia,
   }));
+}
+
+/**
+ * Converte string de duração (ex: "16h34min") para horas decimais
+ */
+function parseTempoParaHoras(duracao: string): number {
+  const matchHoras = duracao.match(/(\d+)h/);
+  const matchMinutos = duracao.match(/(\d+)min/);
+  
+  const horas = matchHoras ? parseInt(matchHoras[1]) : 0;
+  const minutos = matchMinutos ? parseInt(matchMinutos[1]) : 0;
+  
+  return Math.round((horas + (minutos / 60)) * 100) / 100;
+}
+
+/**
+ * Extrai valor mínimo de frete da tabela ANTT retornada
+ */
+function extrairValorFreteMinimo(tabelaFrete: any): number | undefined {
+  // A API retorna diversos tipos de carga, vamos usar "geral" como padrão
+  const valorGeral = tabelaFrete.geral;
+  
+  if (typeof valorGeral === 'number' && valorGeral > 0) {
+    return Math.round(valorGeral * 100) / 100;
+  }
+  
+  return undefined;
 }
