@@ -28,12 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Setup auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserRoles(session.user.id);
+          // Defer fetchUserRoles to avoid blocking the callback
+          setTimeout(() => {
+            fetchUserRoles(session.user.id);
+          }, 0);
         } else {
           setRoles([]);
           setLoading(false);
@@ -42,12 +45,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchUserRoles(session.user.id);
+        // Defer fetchUserRoles to avoid blocking
+        setTimeout(() => {
+          fetchUserRoles(session.user.id);
+        }, 0);
       } else {
         setLoading(false);
       }

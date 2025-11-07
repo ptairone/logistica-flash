@@ -16,6 +16,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [nome, setNome] = useState('');
   const [loading, setLoading] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { signIn, signUp, user, roles, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -31,17 +32,19 @@ export default function Login() {
   useEffect(() => {
     const tryBiometricLogin = async () => {
       if (!user && isBiometricEnabled) {
-        const credentials = await authenticateWithBiometric();
-        if (credentials) {
-          setLoading(true);
-          const { error } = await signIn(credentials.email, credentials.password);
-          setLoading(false);
-          
-          if (!error) {
+        setBioLoading(true);
+        try {
+          const credentials = await authenticateWithBiometric();
+          if (credentials) {
+            await signIn(credentials.email, credentials.password);
             toast.success('Login automático com biometria realizado!', {
               icon: <Fingerprint className="h-4 w-4" />,
             });
           }
+        } catch (error) {
+          console.error('Erro no auto-login biométrico:', error);
+        } finally {
+          setBioLoading(false);
         }
       }
     };
@@ -90,29 +93,40 @@ export default function Login() {
     }
 
     setLoading(true);
-    const { error } = await signIn(email, password);
-    
-    if (error) {
-      setLoading(false);
-      if (error.message.includes('Invalid login credentials')) {
-        toast.error('Email ou senha inválidos');
-      } else {
-        toast.error('Erro ao fazer login: ' + error.message);
-      }
-    } else {
-      // Configurar biometria se "Lembrar-me" estiver marcado
-      if (rememberMe && isBiometricAvailable && !isBiometricEnabled) {
-        const success = await enableBiometric(email, password);
-        if (success) {
-          toast.success('Biometria configurada! Próximo login será automático.', {
-            icon: <Fingerprint className="h-4 w-4" />,
-          });
-        }
-      }
+    try {
+      const { error } = await signIn(email, password);
       
-      setLoading(false);
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Email ou senha inválidos');
+        } else {
+          toast.error('Erro ao fazer login: ' + error.message);
+        }
+        return;
+      }
+
       toast.success('Login realizado com sucesso!');
-      // O redirecionamento será feito pelo useEffect
+      
+      // Configurar biometria sem bloquear a UI
+      setTimeout(async () => {
+        if (rememberMe && isBiometricAvailable && !isBiometricEnabled) {
+          try {
+            const success = await enableBiometric(email, password);
+            if (success) {
+              toast.success('Biometria configurada! Próximo login será automático.', {
+                icon: <Fingerprint className="h-4 w-4" />,
+              });
+            }
+          } catch (error) {
+            console.error('Erro ao configurar biometria:', error);
+          }
+        }
+      }, 0);
+    } catch (error) {
+      toast.error('Erro ao fazer login.');
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -209,7 +223,7 @@ export default function Login() {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full" disabled={loading || authLoading}>
                   {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
               </form>
