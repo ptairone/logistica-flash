@@ -119,6 +119,7 @@ export function DashboardRentabilidade() {
               <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
                 <p>Despesas: R$ {kpis.custoDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 <p>Combustível: R$ {kpis.custoCombustivel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p>Manutenção: R$ {kpis.custoManutencao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
             </CardContent>
           </Card>

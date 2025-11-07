@@ -80,7 +80,30 @@ export function useDadosOperacionais(filtros: FiltrosRelatorio) {
         .filter((a: any) => a.status === 'validado')
         .reduce((sum: number, a: any) => sum + (a.valor_total || 0), 0);
 
-      const custoTotal = custoDespesas + custoCombustivel;
+      // Buscar manutenções do período para calcular custo
+      let manutencoesQuery = supabase
+        .from('manutencoes')
+        .select('custo, status, veiculo_id');
+      
+      if (filtros.dataInicio) {
+        manutencoesQuery = manutencoesQuery.gte('data', filtros.dataInicio);
+      }
+      if (filtros.dataFim) {
+        manutencoesQuery = manutencoesQuery.lte('data', filtros.dataFim);
+      }
+      if (filtros.veiculoId) {
+        manutencoesQuery = manutencoesQuery.eq('veiculo_id', filtros.veiculoId);
+      }
+
+      const { data: manutencoes, error: manutencoesError } = await manutencoesQuery;
+      if (manutencoesError) throw manutencoesError;
+
+      // Calcular custo de manutenções concluídas
+      const custoManutencao = (manutencoes || [])
+        .filter((m: any) => m.status === 'concluida')
+        .reduce((sum: number, m: any) => sum + (m.custo || 0), 0);
+
+      const custoTotal = custoDespesas + custoCombustivel + custoManutencao;
 
       const custoMedioKm = kmTotal > 0 ? custoTotal / kmTotal : 0;
       const receitaPorKm = kmTotal > 0 ? receitaTotal / kmTotal : 0;
@@ -94,6 +117,7 @@ export function useDadosOperacionais(filtros: FiltrosRelatorio) {
           custoTotal,
           custoDespesas,
           custoCombustivel,
+          custoManutencao,
           receitaTotal,
           custoMedioKm,
           receitaPorKm,

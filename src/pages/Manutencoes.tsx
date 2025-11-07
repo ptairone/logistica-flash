@@ -14,12 +14,15 @@ import { Plus, Search, Wrench, AlertCircle, Clock, CheckCircle2, DollarSign } fr
 import { useManutencoes, useAlertasManutencao } from "@/hooks/useManutencoes";
 import { useVeiculos } from "@/hooks/useVeiculos";
 import { useMecanicos } from "@/hooks/useMecanicos";
+import { useAlertasAtivos } from "@/hooks/useAlertasAtivos";
 import { ManutencaoCard } from "@/components/manutencoes/ManutencaoCard";
 import { ManutencaoDialog } from "@/components/manutencoes/ManutencaoDialog";
 import { ManutencaoDetailsDialog } from "@/components/manutencoes/ManutencaoDetailsDialog";
 import { AlertaManutencaoDialog } from "@/components/manutencoes/AlertaManutencaoDialog";
 import type { ManutencaoFormData, AlertaManutencaoFormData } from "@/lib/validations-manutencao";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 
 export default function Manutencoes() {
@@ -37,6 +40,7 @@ export default function Manutencoes() {
   const { alertas, createAlerta } = useAlertasManutencao();
   const { veiculos } = useVeiculos();
   const { mecanicos } = useMecanicos();
+  const { data: alertasAtivos = [] } = useAlertasAtivos();
 
   const handleCreateManutencao = async (data: ManutencaoFormData) => {
     await createManutencao.mutateAsync(data);
@@ -113,9 +117,14 @@ export default function Manutencoes() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setAlertDialogOpen(true)} variant="outline">
+            <Button onClick={() => setAlertDialogOpen(true)} variant="outline" className="relative">
               <AlertCircle className="h-4 w-4 mr-2" />
               Criar Alerta
+              {alertasAtivos.length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {alertasAtivos.length}
+                </Badge>
+              )}
             </Button>
             <Button onClick={() => {
               setEditingManutencao(null);
@@ -126,6 +135,29 @@ export default function Manutencoes() {
             </Button>
           </div>
         </div>
+
+        {/* Alertas Críticos */}
+        {alertasAtivos.length > 0 && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Alertas de Manutenção Ativados!</AlertTitle>
+            <AlertDescription>
+              <div className="mt-2 space-y-1">
+                {alertasAtivos.map((alerta: any) => (
+                  <div key={alerta.id} className="text-sm">
+                    <span className="font-medium">{alerta.veiculo?.codigo_interno}</span> - {alerta.descricao}
+                    {alerta.tipo === 'km' && alerta.km_alerta && (
+                      <span className="ml-2 text-xs">
+                        (KM atual: {alerta.veiculo?.km_atual?.toLocaleString('pt-BR')} / 
+                        Alerta: {alerta.km_alerta.toLocaleString('pt-BR')})
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* KPIs Dashboard */}
         <div className="grid gap-4 md:grid-cols-4">

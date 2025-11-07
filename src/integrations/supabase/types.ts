@@ -573,6 +573,13 @@ export type Database = {
             referencedRelation: "veiculos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_alertas_manutencao_veiculo"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categorias_estoque: {
@@ -1072,6 +1079,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_manutencoes_mecanico"
+            columns: ["mecanico_id"]
+            isOneToOne: false
+            referencedRelation: "mecanicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_manutencoes_veiculo"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "manutencoes_mecanico_id_fkey"
             columns: ["mecanico_id"]
             isOneToOne: false
@@ -1113,6 +1134,20 @@ export type Database = {
           quantidade?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_manutencoes_itens_item"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_estoque"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_manutencoes_itens_manutencao"
+            columns: ["manutencao_id"]
+            isOneToOne: false
+            referencedRelation: "manutencoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "manutencoes_itens_item_id_fkey"
             columns: ["item_id"]
