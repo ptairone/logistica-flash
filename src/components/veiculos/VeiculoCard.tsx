@@ -40,6 +40,12 @@ export function VeiculoCard({ veiculo, onEdit, onDelete, onViewDetails }: Veicul
     return labels[tipo] || tipo;
   };
 
+  const hasMaintenanceAlert = veiculo.km_atual && veiculo.proxima_manutencao_km && veiculo.km_atual >= veiculo.proxima_manutencao_km;
+  const hasMaintenanceAlertSoon = veiculo.km_atual && veiculo.proxima_manutencao_km && 
+    veiculo.km_atual >= (veiculo.proxima_manutencao_km - 1000) && veiculo.km_atual < veiculo.proxima_manutencao_km;
+  const hasDateMaintenanceAlert = veiculo.proxima_manutencao_data && 
+    (isDateExpired(veiculo.proxima_manutencao_data) || isDateExpiringSoon(veiculo.proxima_manutencao_data));
+
   const hasAlerts = 
     isDateExpired(veiculo.vencimento_ipva) ||
     isDateExpired(veiculo.vencimento_licenciamento) ||
@@ -47,7 +53,9 @@ export function VeiculoCard({ veiculo, onEdit, onDelete, onViewDetails }: Veicul
     isDateExpiringSoon(veiculo.vencimento_ipva) ||
     isDateExpiringSoon(veiculo.vencimento_licenciamento) ||
     isDateExpiringSoon(veiculo.vencimento_seguro) ||
-    (veiculo.km_atual && veiculo.proxima_manutencao_km && veiculo.km_atual >= veiculo.proxima_manutencao_km);
+    hasMaintenanceAlert ||
+    hasMaintenanceAlertSoon ||
+    hasDateMaintenanceAlert;
 
   return (
     <Card 
@@ -173,10 +181,22 @@ export function VeiculoCard({ veiculo, onEdit, onDelete, onViewDetails }: Veicul
                   <p className="text-xs font-medium text-warning">Seguro vence em breve</p>
                 </div>
               )}
-              {veiculo.km_atual && veiculo.proxima_manutencao_km && veiculo.km_atual >= veiculo.proxima_manutencao_km && (
+              {hasMaintenanceAlert && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-destructive"></div>
+                  <p className="text-xs font-medium text-destructive">Manutenção vencida ({veiculo.proxima_manutencao_km?.toLocaleString('pt-BR')} km)</p>
+                </div>
+              )}
+              {hasMaintenanceAlertSoon && (
                 <div className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-warning"></div>
-                  <p className="text-xs font-medium text-warning">Manutenção necessária</p>
+                  <p className="text-xs font-medium text-warning">Manutenção próxima ({veiculo.proxima_manutencao_km?.toLocaleString('pt-BR')} km)</p>
+                </div>
+              )}
+              {hasDateMaintenanceAlert && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-warning"></div>
+                  <p className="text-xs font-medium text-warning">Manutenção programada em {formatDateBR(veiculo.proxima_manutencao_data)}</p>
                 </div>
               )}
             </div>

@@ -99,10 +99,11 @@ export default function Manutencoes() {
 
   const custoMensal = manutencoes
     .filter((m: any) => {
-      const dataManutencao = new Date(m.data);
+      if (m.status !== 'concluida') return false;
+      const dataConclusao = m.data_conclusao ? new Date(m.data_conclusao) : new Date(m.data);
       const inicioMes = startOfMonth(today);
       const fimMes = endOfMonth(today);
-      return dataManutencao >= inicioMes && dataManutencao <= fimMes && m.custo;
+      return dataConclusao >= inicioMes && dataConclusao <= fimMes && m.custo;
     })
     .reduce((sum: number, m: any) => sum + (m.custo || 0), 0);
 

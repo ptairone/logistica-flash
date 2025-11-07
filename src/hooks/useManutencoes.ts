@@ -41,6 +41,7 @@ export function useManutencoes(veiculoId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manutencoes'] });
+      queryClient.invalidateQueries({ queryKey: ['veiculos'] });
       toast.success('Manutenção cadastrada com sucesso!');
     },
     onError: (error: Error) => {
@@ -59,6 +60,7 @@ export function useManutencoes(veiculoId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manutencoes'] });
+      queryClient.invalidateQueries({ queryKey: ['veiculos'] });
       toast.success('Manutenção atualizada com sucesso!');
     },
     onError: (error: Error) => {
@@ -77,6 +79,7 @@ export function useManutencoes(veiculoId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manutencoes'] });
+      queryClient.invalidateQueries({ queryKey: ['veiculos'] });
       toast.success('Manutenção excluída com sucesso!');
     },
     onError: (error: Error) => {

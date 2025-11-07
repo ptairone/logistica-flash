@@ -83,13 +83,16 @@ export function ManutencaoDialog({
 
   const handleSubmit = (data: ManutencaoFormData) => {
     onSubmit(data);
-    if (!isSubmitting) {
-      form.reset();
-    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog 
+      open={open} 
+      onOpenChange={(open) => {
+        if (!open) form.reset();
+        onOpenChange(open);
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
