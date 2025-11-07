@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.calcular-rota-google]
 verify_jwt = false
 
+[functions.calcular-rota-brasil]
+verify_jwt = false
+
 [functions.processar-documento-estoque]
 verify_jwt = false
 
