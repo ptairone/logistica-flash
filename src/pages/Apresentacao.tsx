@@ -1,9 +1,12 @@
 import { HeroSection } from "@/components/apresentacao/HeroSection";
 import { FeatureCard } from "@/components/apresentacao/FeatureCard";
 import { BenefitCard } from "@/components/apresentacao/BenefitCard";
+import { BeforeAfterCard } from "@/components/apresentacao/BeforeAfterCard";
 import { ScreenshotCard } from "@/components/apresentacao/ScreenshotCard";
+import { AIFeatureSection } from "@/components/apresentacao/AIFeatureSection";
+import { DayInLifeTimeline } from "@/components/apresentacao/DayInLifeTimeline";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   Truck, 
   DollarSign, 
   Users, 
@@ -18,7 +21,10 @@ import {
   TrendingUp,
   Clock,
   Eye,
-  Wallet
+  Wallet,
+  Brain,
+  Zap,
+  Target
 } from "lucide-react";
 
 export default function Apresentacao() {
@@ -27,8 +33,11 @@ export default function Apresentacao() {
       {/* Hero Section */}
       <HeroSection />
 
+      {/* IA que Trabalha por Você */}
+      <AIFeatureSection />
+
       {/* Funcionalidades Principais */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <section id="funcionalidades" className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12 animate-fade-in">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
@@ -80,18 +89,45 @@ export default function Apresentacao() {
         </div>
       </section>
 
+      {/* Um Dia na Vida */}
+      <DayInLifeTimeline />
+
       {/* Por que Logística Flash? */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary/5 to-secondary/5">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Por que Logística Flash?
+              Por que <span className="text-primary">Logística Flash?</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Diferenciais que fazem a diferença no seu dia a dia
+              Veja como transformamos tarefas complexas em simples
             </p>
           </div>
 
+          {/* Casos Antes vs Agora */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            <BeforeAfterCard
+              title="🚗 Motorista em Viagem"
+              scenario="Acabou de abastecer o caminhão"
+              before="Guardar nota fiscal e preencher planilha depois (5 minutos)"
+              after="Tirar foto → IA extrai tudo automaticamente (30 segundos)"
+            />
+            <BeforeAfterCard
+              title="⏰ Acerto CLT Mensal"
+              scenario="Calcular horas extras de 30 dias"
+              before="4 horas somando manualmente em planilhas"
+              after="Upload de PDF do rastreador → IA calcula tudo (2 minutos)"
+            />
+            <BeforeAfterCard
+              title="📦 Entrada de Estoque"
+              scenario="Registrar 50 itens da nota fiscal"
+              before="Digitar item por item manualmente (1 hora)"
+              after="Foto da NF-e → IA cadastra todos os itens (30 segundos)"
+            />
+          </div>
+
+          {/* Diferenciais */}
+          <h3 className="text-3xl font-bold text-center mb-12">Outros Diferenciais</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <div className="flex items-start gap-4 p-6 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg">
               <div className="p-3 rounded-lg bg-primary/10">
@@ -205,37 +241,45 @@ export default function Apresentacao() {
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Resultados que Importam
+              Resultados que <span className="text-primary">Importam</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Impacto real no seu negócio
+              Economia real de tempo com automação por IA
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             <BenefitCard
-              icon={TrendingUp}
-              value="30%"
-              label="Redução de Custos"
-              description="Operacionais identificados"
+              icon={Brain}
+              value="90%"
+              label="Menos Digitação"
+              description="IA extrai dados automaticamente de fotos"
+              badge="🤖 IA"
+              gradient="from-purple-500 to-blue-500"
+            />
+            <BenefitCard
+              icon={Zap}
+              value="30 seg"
+              label="Por Comprovante"
+              description="Vs 5 minutos digitando manualmente"
+              badge="⚡ Velocidade"
+              gradient="from-yellow-500 to-orange-500"
             />
             <BenefitCard
               icon={Clock}
-              value="5h"
-              label="Tempo Economizado"
-              description="Por semana em processos"
+              value="2 min"
+              label="Acerto CLT"
+              description="Vs 4 horas de cálculos manuais"
+              badge="⏰ Economia"
+              gradient="from-green-500 to-emerald-500"
             />
             <BenefitCard
-              icon={Eye}
-              value="100%"
-              label="Visibilidade"
-              description="Em tempo real da frota"
-            />
-            <BenefitCard
-              icon={Wallet}
-              value="R$"
-              label="Controle Financeiro"
-              description="Completo e preciso"
+              icon={Target}
+              value="Zero"
+              label="Erros de Digitação"
+              description="IA não erra ao extrair números"
+              badge="🎯 Precisão"
+              gradient="from-red-500 to-pink-500"
             />
           </div>
         </div>

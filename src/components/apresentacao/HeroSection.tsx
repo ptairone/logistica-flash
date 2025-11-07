@@ -15,9 +15,10 @@ export function HeroSection() {
 
       <div className="container mx-auto max-w-6xl text-center relative z-10">
         {/* Logo/Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8 animate-fade-in">
-          <Zap className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-primary">Sistema Completo de Gestão</span>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-cyan-500/10 border border-purple-500/20 mb-8 animate-fade-in">
+          <span className="text-sm font-semibold bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 bg-clip-text text-transparent">
+            🤖 Powered by AI | 📱 100% Mobile
+          </span>
         </div>
 
         {/* Main Title */}
@@ -28,8 +29,11 @@ export function HeroSection() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-xl sm:text-2xl md:text-3xl font-semibold mb-4 text-foreground/90 animate-fade-in delay-100">
-          Gestão Completa de Transportes
+        <p className="text-xl sm:text-2xl md:text-3xl font-semibold mb-4 animate-fade-in delay-100">
+          <span className="bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 bg-clip-text text-transparent">
+            IA que Trabalha por Você,
+          </span>
+          <span className="text-foreground/90"> Gestão que Funciona</span>
         </p>
 
         {/* Description */}
