@@ -57,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchUserRoles = async (userId: string) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -65,9 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!error && data) {
         setRoles(data.map(r => r.role as UserRole));
+      } else {
+        setRoles([]);
       }
     } catch (error) {
       console.error('Erro ao buscar papéis do usuário:', error);
+      setRoles([]);
     } finally {
       setLoading(false);
     }

@@ -58,17 +58,28 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    if (user && !authLoading && roles.length > 0) {
-      // Redirecionar motorista para sua página simplificada
+    let timeoutId: NodeJS.Timeout;
+    
+    if (user && !authLoading) {
       const isMotorista = roles.includes('motorista');
       const isAdmin = roles.includes('admin');
       
       if (isMotorista && !isAdmin) {
         navigate('/motorista/viagens');
-      } else {
+      } else if (roles.length > 0) {
         navigate('/dashboard');
+      } else {
+        // Timeout de 5 segundos para evitar tela travada
+        timeoutId = setTimeout(() => {
+          toast.warning('Seu usuário ainda não possui permissões configuradas. Entre em contato com o administrador.');
+          navigate('/apresentacao');
+        }, 5000);
       }
     }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [user, authLoading, roles, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
