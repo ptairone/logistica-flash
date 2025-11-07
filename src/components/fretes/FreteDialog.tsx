@@ -58,11 +58,30 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
         ...frete,
         peso: frete.peso || undefined,
         volume: frete.volume || undefined,
+        composicao_veicular: frete.composicao_veicular || false,
+        alto_desempenho: frete.alto_desempenho || false,
+        retorno_vazio: frete.retorno_vazio || false,
       });
+      
+      // Restaurar estimativas se existirem
+      if (frete.distancia_estimada_km) {
+        setEstimativas({
+          distancia_km: frete.distancia_estimada_km,
+          pedagios_estimados: frete.pedagios_estimados,
+          combustivel_estimado_litros: frete.combustivel_estimado_litros,
+          combustivel_estimado_valor: frete.combustivel_estimado_valor,
+          numero_pracas_pedagio: frete.numero_pracas_pedagio,
+          tempo_estimado_horas: frete.tempo_estimado_horas,
+        });
+      }
     } else {
       reset({
         status: 'aberto',
+        composicao_veicular: false,
+        alto_desempenho: false,
+        retorno_vazio: false,
       });
+      setEstimativas(null);
     }
   }, [frete, reset]);
 
@@ -101,21 +120,31 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
   const handleCalcularEstimativas = async () => {
     const origemCep = watch('origem_cep');
     const destinoCep = watch('destino_cep');
+    const origemCidade = watch('origem_cidade');
+    const destinoCidade = watch('destino_cidade');
     const numeroEixos = watch('numero_eixos');
     const tipoCarga = watch('tipo_carga');
     
-    if (!origemCep || !destinoCep || origemCep.replace(/\D/g, '').length !== 8 || destinoCep.replace(/\D/g, '').length !== 8) {
-      toast.error('Preencha os CEPs de origem e destino');
+    // Validações antes de calcular
+    if (!origemCep || !destinoCep || 
+        origemCep.replace(/\D/g, '').length !== 8 || 
+        destinoCep.replace(/\D/g, '').length !== 8) {
+      toast.error('Preencha os CEPs completos de origem e destino');
+      return;
+    }
+    
+    if (!origemCidade || !destinoCidade) {
+      toast.error('Os endereços de origem e destino devem ser carregados antes do cálculo');
       return;
     }
     
     if (!numeroEixos) {
-      toast.error('Selecione o número de eixos');
+      toast.error('Selecione o número de eixos do veículo');
       return;
     }
     
     if (!tipoCarga) {
-      toast.error('Selecione o tipo de carga');
+      toast.error('Selecione o tipo de carga ANTT');
       return;
     }
     
@@ -676,6 +705,17 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             </Card>
           )}
 
+          {estimativas && estimativas.pedagios_estimados === 0 && (
+            <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800">
+              <Info className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+              <AlertDescription className="text-amber-900 dark:text-amber-100">
+                <strong>Atenção:</strong> Não foram encontrados pedágios cadastrados para esta rota no Google Maps.
+                Verifique manualmente se a rota possui pedágios e preencha o campo se necessário.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Separator className="my-4" />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="data_coleta">Data de Coleta</Label>
@@ -693,9 +733,13 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
                 type="date"
                 {...register('data_entrega')}
               />
+              {errors.data_entrega && (
+                <p className="text-sm text-destructive">{errors.data_entrega.message}</p>
+              )}
             </div>
           </div>
 
+          <Separator className="my-4" />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="produto">Produto</Label>
@@ -707,15 +751,14 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tipo_carga">Tipo de Carga</Label>
+              <Label htmlFor="descricao_carga">Descrição da Carga</Label>
               <Input
-                id="tipo_carga"
-                {...register('tipo_carga')}
-                placeholder="Carga seca"
+                id="descricao_carga"
+                {...register('descricao_carga')}
+                placeholder="Ex: Produtos alimentícios, eletrônicos, etc."
               />
             </div>
           </div>
-
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="peso">Peso (kg)</Label>
@@ -740,31 +783,19 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="numero_eixos">Número de Eixos *</Label>
-              <Select
-                value={watch('numero_eixos')?.toString()}
-                onValueChange={(value) => setValue('numero_eixos', parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2">2 Eixos</SelectItem>
-                  <SelectItem value="3">3 Eixos</SelectItem>
-                  <SelectItem value="4">4 Eixos</SelectItem>
-                  <SelectItem value="5">5 Eixos</SelectItem>
-                  <SelectItem value="6">6 Eixos</SelectItem>
-                  <SelectItem value="7">7 Eixos</SelectItem>
-                  <SelectItem value="8">8 Eixos</SelectItem>
-                  <SelectItem value="9">9 Eixos</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.numero_eixos && (
-                <p className="text-sm text-destructive">{errors.numero_eixos.message}</p>
+              <Label htmlFor="valor_frete">Valor do Frete (R$) *</Label>
+              <Input
+                id="valor_frete"
+                type="number"
+                step="0.01"
+                {...register('valor_frete', { valueAsNumber: true })}
+                placeholder="5000.00"
+              />
+              {errors.valor_frete && (
+                <p className="text-sm text-destructive">{errors.valor_frete.message}</p>
               )}
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="valor_frete">Valor do Frete (R$) *</Label>

@@ -787,6 +787,7 @@ export type Database = {
           custo_total_estimado: number | null
           data_coleta: string | null
           data_entrega: string | null
+          descricao_carga: string | null
           destino: string
           destino_cep: string | null
           destino_cidade: string | null
@@ -836,6 +837,7 @@ export type Database = {
           custo_total_estimado?: number | null
           data_coleta?: string | null
           data_entrega?: string | null
+          descricao_carga?: string | null
           destino: string
           destino_cep?: string | null
           destino_cidade?: string | null
@@ -885,6 +887,7 @@ export type Database = {
           custo_total_estimado?: number | null
           data_coleta?: string | null
           data_entrega?: string | null
+          descricao_carga?: string | null
           destino?: string
           destino_cep?: string | null
           destino_cidade?: string | null

@@ -84,7 +84,8 @@ export const freteSchema = z.object({
   data_coleta: z.string().optional(),
   data_entrega: z.string().optional(),
   produto: z.string().optional(),
-  tipo_carga: z.string().min(1, 'Tipo de carga é obrigatório'),
+  tipo_carga: z.string().min(1, 'Tipo de carga ANTT é obrigatório'),
+  descricao_carga: z.string().optional(),
   peso: z.number().min(0).optional(),
   volume: z.number().min(0).optional(),
   valor_frete: z.number().min(0, 'Valor do frete deve ser maior que zero'),
@@ -99,12 +100,24 @@ export const freteSchema = z.object({
   numero_pracas_pedagio: z.number().optional(),
   pracas_pedagio: z.any().optional(),
   tempo_estimado_horas: z.number().optional(),
-  numero_eixos: z.number().min(2, 'Mínimo 2 eixos').max(9, 'Máximo 9 eixos'),
+  numero_eixos: z.number()
+    .refine(
+      (val) => [2, 3, 4, 5, 6, 7, 9].includes(val),
+      { message: 'Número de eixos inválido. Permitido: 2, 3, 4, 5, 6, 7 ou 9 eixos' }
+    ),
   // Novos campos para cálculo ANTT
   composicao_veicular: z.boolean().optional(),
   alto_desempenho: z.boolean().optional(),
   retorno_vazio: z.boolean().optional(),
   piso_minimo_antt: z.number().optional(),
+}).refine((data) => {
+  if (data.data_coleta && data.data_entrega) {
+    return new Date(data.data_coleta) <= new Date(data.data_entrega);
+  }
+  return true;
+}, {
+  message: 'Data de coleta deve ser anterior ou igual à data de entrega',
+  path: ['data_entrega'],
 });
 
 export type FreteFormData = z.infer<typeof freteSchema>;
@@ -156,25 +169,45 @@ export function exportarFretesCSV(fretes: any[]): void {
     'CPF/CNPJ',
     'Origem',
     'Destino',
+    'Distância (km)',
+    'Pedágios (R$)',
+    'Combustível (L)',
+    'Combustível (R$)',
+    'Piso ANTT (R$)',
+    'Valor Frete (R$)',
+    'Margem (R$)',
+    'Margem (%)',
     'Data Coleta',
     'Data Entrega',
-    'Valor (R$)',
     'Status',
     'Nº Fatura',
   ];
   
-  const rows = fretes.map(f => [
-    f.codigo,
-    f.cliente_nome,
-    f.cliente_cnpj_cpf,
-    f.origem,
-    f.destino,
-    f.data_coleta || '',
-    f.data_entrega || '',
-    f.valor_frete?.toFixed(2) || '0.00',
-    f.status,
-    f.numero_fatura || '',
-  ]);
+  const rows = fretes.map(f => {
+    const custoTotal = (f.pedagios_estimados || 0) + (f.combustivel_estimado_valor || 0);
+    const margem = (f.valor_frete || 0) - custoTotal;
+    const margemPercentual = f.valor_frete > 0 ? (margem / f.valor_frete * 100).toFixed(1) : '0';
+    
+    return [
+      f.codigo,
+      f.cliente_nome,
+      f.cliente_cnpj_cpf,
+      f.origem,
+      f.destino,
+      f.distancia_estimada_km?.toFixed(2) || '',
+      f.pedagios_estimados?.toFixed(2) || '',
+      f.combustivel_estimado_litros?.toFixed(2) || '',
+      f.combustivel_estimado_valor?.toFixed(2) || '',
+      f.piso_minimo_antt?.toFixed(2) || '',
+      f.valor_frete?.toFixed(2) || '0.00',
+      margem.toFixed(2),
+      margemPercentual,
+      f.data_coleta || '',
+      f.data_entrega || '',
+      f.status,
+      f.numero_fatura || '',
+    ];
+  });
   
   const csvContent = [
     headers.join(','),
