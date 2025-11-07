@@ -67,6 +67,12 @@ export default function AdicionarDespesa() {
       return;
     }
 
+    // Validação de tamanho do arquivo (máximo 10MB)
+    if (foto.size > 10 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 10MB.');
+      return;
+    }
+
     // Se for recebimento de frete, processar e abrir formulário
     if (tipo === 'recebimento_frete') {
       setProcessando(true);
@@ -144,12 +150,24 @@ export default function AdicionarDespesa() {
 
       // Criar registro automático
       if (tipo === 'adiantamento') {
+        const valor = dadosExtraidos?.valor || 0;
+        
+        // Validação de valor
+        if (valor <= 0) {
+          toast.error('Valor deve ser maior que zero');
+          return;
+        }
+        
+        if (valor > 50000) {
+          toast.warning('Valor muito alto. Confirme se está correto.');
+        }
+        
         const { error } = await supabase
           .from('transacoes_viagem')
           .insert({
             viagem_id: id,
             tipo: tipo,
-            valor: dadosExtraidos?.valor || 0,
+            valor: valor,
             data: dadosExtraidos?.data || new Date().toISOString(),
             descricao: dadosExtraidos?.descricao || 'Adiantamento via comprovante',
             forma_pagamento: null,
@@ -161,12 +179,24 @@ export default function AdicionarDespesa() {
         if (error) throw error;
         toast.success('Adiantamento adicionado com sucesso!');
       } else {
+        const valor = dadosExtraidos?.valor || 0;
+        
+        // Validação de valor
+        if (valor <= 0) {
+          toast.error('Valor deve ser maior que zero');
+          return;
+        }
+        
+        if (valor > 10000) {
+          toast.warning('Valor de despesa muito alto. Confirme se está correto.');
+        }
+        
         const { error } = await supabase
           .from('despesas')
           .insert({
             viagem_id: id,
             tipo: dadosExtraidos?.tipo || 'outros',
-            valor: dadosExtraidos?.valor || 0,
+            valor: valor,
             data: dadosExtraidos?.data || new Date().toISOString(),
             descricao: dadosExtraidos?.descricao || 'Despesa via comprovante',
             reembolsavel: dadosExtraidos?.reembolsavel ?? true,

@@ -5,7 +5,7 @@ import { SafeArea } from './SafeArea';
 import { FloatingActionButton } from './FloatingActionButton';
 import { QuickCaptureModal } from '@/components/motorista/QuickCaptureModal';
 import { useAuth } from '@/lib/auth';
-import { useViagensMotorista } from '@/hooks/useViagensMotorista';
+import { useViagensMotorista } from '@/hooks/useMotoristas';
 import { Camera } from 'lucide-react';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { PermissionsGuard } from '@/components/motorista/PermissionsGuard';

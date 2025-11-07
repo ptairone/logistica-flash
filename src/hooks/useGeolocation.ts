@@ -9,77 +9,58 @@ export interface GeolocationData {
 }
 
 export function useGeolocation() {
-  const [location, setLocation] = useState<GeolocationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getCurrentLocation = async (showToast = false): Promise<GeolocationData | null> => {
-    if (!navigator.geolocation) {
-      const errorMsg = 'Geolocalização não suportada neste dispositivo';
-      setError(errorMsg);
-      if (showToast) {
-        toast.error(errorMsg);
-      }
-      return null;
-    }
-
-    setLoading(true);
-    setError(null);
-
+  const getCurrentLocation = (): Promise<GeolocationData | null> => {
     return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        const errorMsg = 'Geolocalização não é suportada pelo navegador';
+        setError(errorMsg);
+        toast.warning(errorMsg);
+        resolve(null);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      // Timeout de 10 segundos
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+        const timeoutMsg = 'Timeout ao capturar GPS. Continuando sem localização.';
+        setError(timeoutMsg);
+        toast.warning(timeoutMsg);
+        resolve(null);
+      }, 10000);
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const data: GeolocationData = {
+          clearTimeout(timeoutId);
+          setLoading(false);
+          resolve({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             accuracy: position.coords.accuracy,
             timestamp: position.timestamp,
-          };
-          setLocation(data);
-          setLoading(false);
-          resolve(data);
+          });
         },
-        (err) => {
-          let errorMsg = 'Erro ao obter localização';
-          
-          switch (err.code) {
-            case err.PERMISSION_DENIED:
-              errorMsg = 'Permissão de localização negada';
-              console.warn('GPS: Permissão negada pelo usuário');
-              break;
-            case err.POSITION_UNAVAILABLE:
-              errorMsg = 'Localização indisponível no momento';
-              console.warn('GPS: Posição indisponível');
-              break;
-            case err.TIMEOUT:
-              errorMsg = 'Tempo esgotado ao buscar localização';
-              console.warn('GPS: Timeout');
-              break;
-          }
-          
-          setError(errorMsg);
+        (error) => {
+          clearTimeout(timeoutId);
           setLoading(false);
-          
-          // Apenas mostrar toast se solicitado (para não irritar o usuário)
-          if (showToast) {
-            toast.warning(errorMsg + ' - Continuando sem localização.');
-          }
-          
+          setError(error.message);
+          console.warn('Erro ao obter localização:', error);
+          toast.warning('Não foi possível capturar GPS. Continuando sem localização.');
           resolve(null);
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 10000, // 10 segundos
           maximumAge: 0,
         }
       );
     });
   };
 
-  return {
-    location,
-    loading,
-    error,
-    getCurrentLocation,
-  };
+  return { getCurrentLocation, loading, error };
 }

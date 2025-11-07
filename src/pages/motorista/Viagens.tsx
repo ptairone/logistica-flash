@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useViagensMotorista } from '@/hooks/useViagensMotorista';
+import { useViagensMotorista } from '@/hooks/useMotoristas';
 import { ViagemCard } from '@/components/motorista/ViagemCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Truck, Package, CheckCircle, LogOut, Camera } from 'lucide-react';

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MotoristaFormData } from '@/lib/validations-motorista';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth';
 
 export function useMotoristas() {
   const { toast } = useToast();
@@ -174,9 +175,33 @@ export function useMotoristaDetalhes(motoristaId?: string) {
 }
 
 export function useViagensMotorista(motoristaId?: string, periodoInicio?: string, periodoFim?: string) {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ['viagens-motorista', motoristaId, periodoInicio, periodoFim],
+    queryKey: ['viagens-motorista', motoristaId || user?.id, periodoInicio, periodoFim],
     queryFn: async () => {
+      const userId = motoristaId || user?.id;
+      if (!userId) return [];
+
+      // Buscar motorista pelo user_id se não foi fornecido motoristaId
+      let finalMotoristaId = motoristaId;
+      if (!motoristaId && user?.id) {
+        const { data: motorista, error: motoristaError } = await supabase
+          .from('motoristas')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (motoristaError || !motorista) {
+          console.warn('Motorista não encontrado para user_id:', user.id);
+          return [];
+        }
+        finalMotoristaId = motorista.id;
+      }
+
+      if (!finalMotoristaId) return [];
+
+      // Buscar viagens do motorista
       let query = supabase
         .from('viagens')
         .select(`
@@ -185,8 +210,8 @@ export function useViagensMotorista(motoristaId?: string, periodoInicio?: string
           frete:fretes(codigo, valor_frete, cliente_nome, data_entrega),
           despesas(tipo, valor, reembolsavel)
         `)
-        .eq('motorista_id', motoristaId!)
-        .order('data_saida', { ascending: false });
+        .eq('motorista_id', finalMotoristaId)
+        .order('created_at', { ascending: false });
 
       if (periodoInicio) {
         query = query.gte('data_saida', periodoInicio);
@@ -198,10 +223,13 @@ export function useViagensMotorista(motoristaId?: string, periodoInicio?: string
 
       const { data, error } = await query;
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Erro ao buscar viagens:', error);
+        return [];
+      }
+      return data || [];
     },
-    enabled: !!motoristaId,
+    enabled: true,
   });
 }
 

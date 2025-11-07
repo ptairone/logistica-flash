@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
+import { compressImage } from '@/lib/image-compression';
 
 interface EtapaPartidaProps {
   viagem: any;
@@ -26,8 +27,13 @@ export function EtapaPartida({ viagem, onPartidaRegistrada }: EtapaPartidaProps)
   const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
-      setFotoPartida(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      
+      // Comprimir imagem antes de processar
+      toast.info('📸 Comprimindo imagem...');
+      const compressedFile = await compressImage(file, 1024, 0.85);
+      
+      setFotoPartida(compressedFile);
+      setPreviewUrl(URL.createObjectURL(compressedFile));
       
       // Processar com IA para extrair KM
       setProcessandoKm(true);
@@ -37,7 +43,7 @@ export function EtapaPartida({ viagem, onPartidaRegistrada }: EtapaPartidaProps)
         toast.info('🤖 Lendo hodômetro...');
         
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', compressedFile);
         formData.append('tipo', 'odometro');
         
         const { data, error } = await supabase.functions.invoke('processar-comprovante', {
@@ -77,6 +83,19 @@ export function EtapaPartida({ viagem, onPartidaRegistrada }: EtapaPartidaProps)
   const handleIniciarViagem = async () => {
     if (!kmInicial) {
       toast.error('Informe o KM inicial');
+      return;
+    }
+
+    const kmInicialNum = parseFloat(kmInicial);
+    
+    // Validações de negócio
+    if (kmInicialNum <= 0) {
+      toast.error('KM inicial deve ser maior que zero');
+      return;
+    }
+
+    if (viagem.km_inicial && kmInicialNum < parseFloat(viagem.km_inicial)) {
+      toast.error('KM inicial não pode ser menor que o KM anterior da viagem');
       return;
     }
 

@@ -179,13 +179,7 @@ export function useViagens() {
 
       if (error) throw error;
 
-      // Atualizar km do veículo se km foi fornecido
-      if (kmPercorrido && result.veiculo_id) {
-        await supabase
-          .from('veiculos')
-          .update({ km_atual: kmPercorrido })
-          .eq('id', result.veiculo_id);
-      }
+      // Nota: km_atual do veículo é atualizado automaticamente pelo trigger atualizar_km_veiculo_viagem()
 
       return result;
     },

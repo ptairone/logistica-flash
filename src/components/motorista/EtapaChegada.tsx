@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
+import { compressImage } from '@/lib/image-compression';
 
 interface EtapaChegadaProps {
   viagem: any;
@@ -27,8 +28,13 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
   const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
-      setFotoChegada(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      
+      // Comprimir imagem antes de processar
+      toast.info('📸 Comprimindo imagem...');
+      const compressedFile = await compressImage(file, 1024, 0.85);
+      
+      setFotoChegada(compressedFile);
+      setPreviewUrl(URL.createObjectURL(compressedFile));
       
       // Processar com IA para extrair KM
       setProcessandoKm(true);
@@ -38,7 +44,7 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
         toast.info('🤖 Lendo hodômetro...');
         
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', compressedFile);
         formData.append('tipo', 'odometro');
         
         const { data, error } = await supabase.functions.invoke('processar-comprovante', {
@@ -89,9 +95,21 @@ export function EtapaChegada({ viagem, onChegadaRegistrada, onCancelar }: EtapaC
     const kmFinalNum = parseFloat(kmFinal);
     const kmInicialNum = parseFloat(viagem.km_inicial || 0);
 
+    // Validações de negócio
     if (kmFinalNum <= kmInicialNum) {
       toast.error('KM final deve ser maior que o KM inicial');
       return;
+    }
+
+    const kmPercorrido = kmFinalNum - kmInicialNum;
+    
+    if (kmPercorrido < 10) {
+      toast.error('KM percorrido muito baixo. Mínimo de 10 km para viagens.');
+      return;
+    }
+
+    if (viagem.km_estimado && kmPercorrido > viagem.km_estimado * 2) {
+      toast.warning('KM percorrido muito superior ao estimado. Confira se está correto.');
     }
 
     setLoading(true);

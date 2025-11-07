@@ -41,12 +41,20 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/apresentacao" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/apresentacao" element={<Apresentacao />} />
             <Route path="/install" element={<InstallApp />} />
             
             {/* Rotas do Motorista */}
+            <Route
+              path="/motorista"
+              element={
+                <ProtectedRoute requiredRoles={['motorista']}>
+                  <MotoristaViagens />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/motorista/viagens"
               element={
