@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/lib/auth';
 import { InstallButton } from '@/components/pwa/InstallButton';
+import { UpdateButton } from '@/components/pwa/UpdateButton';
 import { APP_VERSION } from '@/lib/version';
 
 export function AppSidebar() {
@@ -171,6 +172,14 @@ export function AppSidebar() {
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <UpdateButton 
+                  variant="ghost" 
+                  size="default"
+                  showLabel={!collapsed}
+                  className="w-full justify-start"
+                />
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/install">

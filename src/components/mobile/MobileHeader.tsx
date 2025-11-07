@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { UpdateButton } from '@/components/pwa/UpdateButton';
 
 interface MobileHeaderProps {
   title: string;
@@ -186,6 +187,15 @@ export function MobileHeader({ title, showBack, onMenuClick, rightAction }: Mobi
                   </NavLink>
                 );
               })}
+              
+              <div className="px-3 py-2">
+                <UpdateButton 
+                  variant="ghost" 
+                  size="default"
+                  showLabel={true}
+                  className="w-full justify-start"
+                />
+              </div>
               
               <NavLink
                 to="/install"
