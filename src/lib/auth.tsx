@@ -3,18 +3,22 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
-type UserRole = 'admin' | 'operacional' | 'motorista' | 'financeiro';
+type UserRole = 'admin' | 'operacional' | 'motorista' | 'financeiro' | 'mecanico' | 'super_admin';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   roles: UserRole[];
+  empresaId: string | null;
+  empresaNome: string | null;
+  empresaStatus: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, nome: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   hasRole: (role: UserRole) => boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +27,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<UserRole[]>([]);
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const [empresaNome, setEmpresaNome] = useState<string | null>(null);
+  const [empresaStatus, setEmpresaStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,19 +72,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserRoles = async (userId: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: rolesData, error } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('role, empresa_id')
         .eq('user_id', userId);
 
-      if (!error && data) {
-        setRoles(data.map(r => r.role as UserRole));
+      if (!error && rolesData) {
+        const userRoles = rolesData.map(r => r.role as UserRole);
+        setRoles(userRoles);
+        
+        // Se não for super admin, buscar dados da empresa
+        const empresaIdValue = rolesData[0]?.empresa_id;
+        const isSuperAdminUser = userRoles.includes('super_admin');
+        
+        if (empresaIdValue && !isSuperAdminUser) {
+          setEmpresaId(empresaIdValue);
+          
+          // Buscar dados da empresa
+          const { data: empresa } = await supabase
+            .from('empresas' as any)
+            .select('nome, status, data_fim_trial')
+            .eq('id', empresaIdValue)
+            .single();
+          
+          if (empresa) {
+            setEmpresaNome(empresa.nome);
+            
+            // Validar trial expirado
+            if (empresa.status === 'trial' && new Date() > new Date(empresa.data_fim_trial)) {
+              setEmpresaStatus('trial_expirado');
+              // Opcional: fazer signOut automaticamente
+              // await signOut();
+              // toast.error('Seu período de teste expirou. Entre em contato para renovar.');
+            } else {
+              setEmpresaStatus(empresa.status);
+            }
+          }
+        } else if (isSuperAdminUser) {
+          // Super admin não tem empresa
+          setEmpresaId(null);
+          setEmpresaNome(null);
+          setEmpresaStatus(null);
+        }
       } else {
         setRoles([]);
+        setEmpresaId(null);
+        setEmpresaNome(null);
+        setEmpresaStatus(null);
       }
     } catch (error) {
       console.error('Erro ao buscar papéis do usuário:', error);
       setRoles([]);
+      setEmpresaId(null);
+      setEmpresaNome(null);
+      setEmpresaStatus(null);
     } finally {
       setLoading(false);
     }
@@ -110,10 +158,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setRoles([]);
+    setEmpresaId(null);
+    setEmpresaNome(null);
+    setEmpresaStatus(null);
   };
 
   const hasRole = (role: UserRole) => roles.includes(role);
   const isAdmin = roles.includes('admin');
+  const isSuperAdmin = roles.includes('super_admin');
 
   return (
     <AuthContext.Provider
@@ -121,12 +173,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         roles,
+        empresaId,
+        empresaNome,
+        empresaStatus,
         loading,
         signIn,
         signUp,
         signOut,
         hasRole,
         isAdmin,
+        isSuperAdmin,
       }}
     >
       {children}

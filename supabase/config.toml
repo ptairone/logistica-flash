@@ -1,5 +1,11 @@
 project_id = "plfpczvnqmvqpmsbjrra"
 
+[functions.criar-empresa-trial]
+verify_jwt = false
+
+[functions.aprovar-empresa]
+verify_jwt = false
+
 [functions.processar-comprovante-whatsapp]
 verify_jwt = false
 
