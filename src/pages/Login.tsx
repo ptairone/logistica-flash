@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Truck, Fingerprint } from 'lucide-react';
+import { Truck, Fingerprint, Building2 } from 'lucide-react';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 
 export default function Login() {
@@ -272,6 +272,23 @@ export default function Login() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Link para registro de empresa */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          Não tem uma conta?{' '}
+          <Link 
+            to="/registro-empresa" 
+            className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+          >
+            <Building2 className="h-3 w-3" />
+            Cadastre sua empresa
+          </Link>
+        </p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Teste grátis por 7 dias
+        </p>
+      </div>
     </div>
   );
 }

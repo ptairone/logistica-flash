@@ -27,6 +27,10 @@ import MotoristaViagens from "./pages/motorista/Viagens";
 import ViagemMotorista from "./pages/motorista/ViagemMotorista";
 import AdicionarDespesa from "./pages/motorista/AdicionarDespesa";
 import ComprovantesWhatsApp from "./pages/ComprovantesWhatsApp";
+import RegistroEmpresa from "./pages/RegistroEmpresa";
+import SuperAdminDashboard from "./pages/super-admin/Dashboard";
+import Empresas from "./pages/super-admin/Empresas";
+import EmpresasPendentes from "./pages/super-admin/EmpresasPendentes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +50,33 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/apresentacao" element={<Apresentacao />} />
             <Route path="/install" element={<InstallApp />} />
+            <Route path="/registro-empresa" element={<RegistroEmpresa />} />
+            
+            {/* Rotas do Super Admin */}
+            <Route
+              path="/super-admin/dashboard"
+              element={
+                <ProtectedRoute requiredRoles={['super_admin']}>
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/empresas"
+              element={
+                <ProtectedRoute requiredRoles={['super_admin']}>
+                  <Empresas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/pendentes"
+              element={
+                <ProtectedRoute requiredRoles={['super_admin']}>
+                  <EmpresasPendentes />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Rotas do Motorista */}
             <Route

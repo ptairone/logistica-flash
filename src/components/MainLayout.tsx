@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { MobileMenu } from './MobileMenu';
+import { EmpresaHeader } from './EmpresaHeader';
 import { useDevice } from '@/hooks/useDevice';
 import { MobileLayout } from './mobile/MobileLayout';
 
@@ -45,6 +46,7 @@ export function MainLayout({
               <MobileMenu />
               <h1 className="text-lg font-semibold">Gestão de Transportes</h1>
             </div>
+            <EmpresaHeader />
           </header>
           <main className="flex-1 p-6 bg-background">
             {children}

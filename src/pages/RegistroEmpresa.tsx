@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useRegistroEmpresa } from '@/hooks/useRegistroEmpresa';
+import { useRegistroEmpresa, type RegistroEmpresaData } from '@/hooks/useRegistroEmpresa';
 
 const registroSchema = z.object({
   nome: z.string().min(3, 'Nome da empresa deve ter no mínimo 3 caracteres'),
