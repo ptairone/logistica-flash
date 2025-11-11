@@ -78,11 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('user_id', userId);
 
       if (!error && rolesData) {
-        const userRoles = rolesData.map(r => r.role as UserRole);
+        const userRoles = (rolesData as any[]).map((r: any) => r.role as UserRole);
         setRoles(userRoles);
         
         // Se não for super admin, buscar dados da empresa
-        const empresaIdValue = rolesData[0]?.empresa_id;
+        const empresaIdValue = (rolesData as any[])[0]?.empresa_id;
         const isSuperAdminUser = userRoles.includes('super_admin');
         
         if (empresaIdValue && !isSuperAdminUser) {
@@ -96,16 +96,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .single();
           
           if (empresa) {
-            setEmpresaNome(empresa.nome);
+            setEmpresaNome((empresa as any).nome);
             
             // Validar trial expirado
-            if (empresa.status === 'trial' && new Date() > new Date(empresa.data_fim_trial)) {
+            if ((empresa as any).status === 'trial' && new Date() > new Date((empresa as any).data_fim_trial)) {
               setEmpresaStatus('trial_expirado');
               // Opcional: fazer signOut automaticamente
               // await signOut();
               // toast.error('Seu período de teste expirou. Entre em contato para renovar.');
             } else {
-              setEmpresaStatus(empresa.status);
+              setEmpresaStatus((empresa as any).status);
             }
           }
         } else if (isSuperAdminUser) {

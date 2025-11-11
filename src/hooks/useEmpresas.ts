@@ -42,7 +42,7 @@ export function useEmpresas() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Empresa[];
+      return ((data || []) as unknown) as Empresa[];
     },
   });
 
@@ -56,7 +56,7 @@ export function useEmpresas() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as EmpresaPendente[];
+      return ((data || []) as unknown) as EmpresaPendente[];
     },
   });
 
