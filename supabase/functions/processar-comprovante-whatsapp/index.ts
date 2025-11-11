@@ -316,7 +316,7 @@ RETORNE JSON VÁLIDO com a estrutura:
           .from('comprovantes_whatsapp')
           .update({
             status: 'erro',
-            erro_mensagem: error.message
+            erro_mensagem: error instanceof Error ? error.message : 'Erro desconhecido'
           })
           .eq('id', comprovanteLog.id);
       }
@@ -342,7 +342,7 @@ RETORNE JSON VÁLIDO com a estrutura:
     console.error('Erro ao processar comprovante WhatsApp:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
