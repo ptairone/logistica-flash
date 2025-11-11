@@ -14,6 +14,8 @@ import {
   Cog,
   Download,
   Fuel,
+  Building2,
+  ClipboardCheck,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -46,71 +48,97 @@ export function AppSidebar() {
       title: 'Dashboard', 
       url: '/dashboard', 
       icon: LayoutDashboard,
-      roles: ['admin', 'operacional', 'motorista', 'financeiro']
+      roles: ['admin', 'operacional', 'motorista', 'financeiro', 'super_admin']
     },
     { 
       title: 'Veículos', 
       url: '/veiculos', 
       icon: Truck,
-      roles: ['admin', 'operacional']
+      roles: ['admin', 'operacional', 'super_admin']
     },
     { 
       title: 'Motoristas', 
       url: '/motoristas', 
       icon: Users,
-      roles: ['admin', 'operacional']
+      roles: ['admin', 'operacional', 'super_admin']
     },
     { 
       title: 'Viagens', 
       url: '/viagens', 
       icon: MapPin,
-      roles: ['admin', 'operacional', 'motorista']
+      roles: ['admin', 'operacional', 'motorista', 'super_admin']
     },
     { 
       title: 'Fretes', 
       url: '/fretes', 
       icon: FileText,
-      roles: ['admin', 'operacional', 'financeiro']
+      roles: ['admin', 'operacional', 'financeiro', 'super_admin']
     },
     { 
       title: 'Acertos', 
       url: '/acertos', 
       icon: Receipt,
-      roles: ['admin', 'motorista', 'financeiro']
+      roles: ['admin', 'motorista', 'financeiro', 'super_admin']
     },
     { 
       title: 'Estoque', 
       url: '/estoque', 
       icon: Package,
-      roles: ['admin', 'operacional']
+      roles: ['admin', 'operacional', 'super_admin']
     },
     { 
       title: 'Mecânicos', 
       url: '/mecanicos', 
       icon: Wrench,
-      roles: ['admin', 'operacional']
+      roles: ['admin', 'operacional', 'super_admin']
     },
     { 
       title: 'Manutenções', 
       url: '/manutencoes', 
       icon: Settings,
-      roles: ['admin', 'operacional']
+      roles: ['admin', 'operacional', 'super_admin']
     },
     { 
       title: 'Abastecimentos', 
       url: '/abastecimentos', 
       icon: Fuel,
-      roles: ['admin', 'operacional']
+      roles: ['admin', 'operacional', 'super_admin']
     },
     { 
       title: 'Relatórios', 
       url: '/relatorios',
       icon: BarChart3,
-      roles: ['admin', 'operacional', 'financeiro']
+      roles: ['admin', 'operacional', 'financeiro', 'super_admin']
+    },
+  ];
+
+  // Menu items exclusivos do Super Admin
+  const superAdminMenuItems = [
+    {
+      title: 'Painel Super Admin',
+      url: '/super-admin/dashboard',
+      icon: Cog,
+      roles: ['super_admin']
+    },
+    {
+      title: 'Empresas',
+      url: '/super-admin/empresas',
+      icon: Building2,
+      roles: ['super_admin']
+    },
+    {
+      title: 'Solicitações',
+      url: '/super-admin/empresas-pendentes',
+      icon: ClipboardCheck,
+      roles: ['super_admin']
     },
   ];
 
   const filteredMenuItems = menuItems.filter(item => 
+    item.roles.some(role => hasRole(role as any))
+  );
+
+  const filteredSuperAdminItems = superAdminMenuItems.filter(item =>
     item.roles.some(role => hasRole(role as any))
   );
 
@@ -168,6 +196,45 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Menu Super Admin */}
+        {filteredSuperAdminItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredSuperAdminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className={({ isActive }) =>
+                          `relative group transition-all ${
+                            isActive
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                              : 'hover:bg-sidebar-accent/50'
+                          }`
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {isActive && (
+                              <div className="absolute left-0 w-1 h-full bg-gradient-to-b from-primary via-cyan to-purple rounded-r" />
+                            )}
+                            <item.icon className={`h-4 w-4 transition-colors ${isActive ? 'text-primary' : 'group-hover:text-primary'}`} />
+                            {!collapsed && (
+                              <span className="transition-colors">{item.title}</span>
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
