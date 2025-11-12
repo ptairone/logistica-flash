@@ -16,6 +16,7 @@ import {
   Fuel,
   Building2,
   ClipboardCheck,
+  Circle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -96,6 +97,12 @@ export function AppSidebar() {
       title: 'Manutenções', 
       url: '/manutencoes', 
       icon: Settings,
+      roles: ['admin', 'operacional', 'super_admin']
+    },
+    { 
+      title: 'Pneus', 
+      url: '/pneus', 
+      icon: Circle,
       roles: ['admin', 'operacional', 'super_admin']
     },
     { 
