@@ -2,9 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { AbastecimentoFormData } from '@/lib/validations-abastecimento';
+import { useAuth } from '@/lib/auth';
 
 export function useAbastecimentos(veiculoId?: string, viagemId?: string) {
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   // Listar abastecimentos
   const abastecimentosQuery = useQuery({
@@ -39,6 +41,10 @@ export function useAbastecimentos(veiculoId?: string, viagemId?: string) {
   // Criar abastecimento
   const createAbastecimento = useMutation({
     mutationFn: async (data: AbastecimentoFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
       const insertData: any = {
         veiculo_id: data.veiculo_id,
         viagem_id: data.viagem_id,
@@ -55,6 +61,7 @@ export function useAbastecimentos(veiculoId?: string, viagemId?: string) {
         latitude: data.latitude,
         longitude: data.longitude,
         localizacao_timestamp: data.localizacao_timestamp,
+        empresa_id: empresaId,
       };
 
       const { data: abastecimento, error } = await supabase

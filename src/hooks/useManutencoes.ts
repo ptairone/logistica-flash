@@ -2,9 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ManutencaoFormData, AlertaManutencaoFormData, ManutencaoItemFormData } from '@/lib/validations-manutencao';
+import { useAuth } from '@/lib/auth';
 
 export function useManutencoes(veiculoId?: string) {
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const manutencoesQuery = useQuery({
     queryKey: ['manutencoes', veiculoId],
@@ -30,9 +32,18 @@ export function useManutencoes(veiculoId?: string) {
 
   const createManutencao = useMutation({
     mutationFn: async (manutencao: ManutencaoFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
+      const manutencaoComEmpresa = {
+        ...manutencao,
+        empresa_id: empresaId
+      };
+
       const { data, error } = await supabase
         .from('manutencoes' as any)
-        .insert([manutencao as any])
+        .insert([manutencaoComEmpresa as any])
         .select()
         .single();
       
@@ -98,6 +109,7 @@ export function useManutencoes(veiculoId?: string) {
 
 export function useAlertasManutencao(veiculoId?: string) {
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const alertasQuery = useQuery({
     queryKey: ['alertas-manutencao', veiculoId],

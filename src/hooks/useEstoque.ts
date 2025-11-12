@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ItemEstoqueFormData, MovimentacaoEstoqueFormData, calcularCustoMedio } from '@/lib/validations-estoque';
+import { useAuth } from '@/lib/auth';
 
 // Hook para gerenciar itens de estoque
 export function useEstoque() {
@@ -26,9 +27,18 @@ export function useEstoque() {
   // Criar item
   const createItem = useMutation({
     mutationFn: async (itemData: ItemEstoqueFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
+      const itemComEmpresa = {
+        ...itemData,
+        empresa_id: empresaId
+      };
+
       const { data, error } = await supabase
         .from('itens_estoque')
-        .insert([itemData as any])
+        .insert([itemComEmpresa as any])
         .select()
         .single();
 
@@ -119,6 +129,7 @@ export function useEstoque() {
 export function useMovimentacoesEstoque(itemId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   // Buscar movimentações
   const movimentacoesQuery = useQuery({
@@ -146,6 +157,10 @@ export function useMovimentacoesEstoque(itemId?: string) {
   // Criar movimentação
   const createMovimentacao = useMutation({
     mutationFn: async (movData: MovimentacaoEstoqueFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
       // 1. Buscar item atual
       const { data: item, error: itemError } = await supabase
         .from('itens_estoque')
@@ -196,6 +211,7 @@ export function useMovimentacoesEstoque(itemId?: string) {
         .insert([{
           ...movData,
           usuario_id: auth.user?.id,
+          empresa_id: empresaId,
           data: new Date().toISOString(),
         } as any])
         .select()

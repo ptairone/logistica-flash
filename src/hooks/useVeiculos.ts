@@ -124,6 +124,7 @@ export function useVeiculos() {
 export function useManutencoes(veiculoId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const manutencoesQuery = useQuery({
     queryKey: ['manutencoes', veiculoId],
@@ -190,6 +191,7 @@ export function useManutencoes(veiculoId?: string) {
 export function useDocumentosVeiculo(veiculoId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const documentosQuery = useQuery({
     queryKey: ['documentos-veiculo', veiculoId],

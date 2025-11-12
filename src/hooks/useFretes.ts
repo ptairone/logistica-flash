@@ -62,7 +62,6 @@ export function useFretes() {
       const dadosPreparados = prepararDadosFrete({
         ...data,
         codigo,
-        empresa_id: empresaId,
         // Garantir que campos ANTT sejam salvos
         tipo_carga: data.tipo_carga,
         numero_eixos: data.numero_eixos,
@@ -71,6 +70,9 @@ export function useFretes() {
         retorno_vazio: data.retorno_vazio || false,
         piso_minimo_antt: data.piso_minimo_antt,
       });
+
+      // Adicionar empresa_id aos dados preparados
+      (dadosPreparados as any).empresa_id = empresaId;
       
       const { data: result, error } = await supabase
         .from('fretes')
