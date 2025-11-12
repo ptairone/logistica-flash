@@ -108,9 +108,12 @@ export function useMotoristas() {
 
   const updateMotorista = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<MotoristaFormData> }) => {
+      // Remover campos que não existem na tabela
+      const { criarLogin, senha, confirmarSenha, ...motoristaData } = data;
+      
       const { data: result, error } = await supabase
         .from('motoristas')
-        .update(data as any)
+        .update(motoristaData as any)
         .eq('id', id)
         .select()
         .single();
