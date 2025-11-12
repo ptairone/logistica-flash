@@ -28,9 +28,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useEmpresas } from '@/hooks/useEmpresas';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
+import { useQueryClient } from '@tanstack/react-query';
 
 const empresaSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
@@ -42,6 +44,29 @@ const empresaSchema = z.object({
   observacoes: z.string().optional(),
   data_inicio_trial: z.string().optional(),
   data_fim_trial: z.string().optional(),
+  // Campos do administrador (apenas para criação)
+  nome_responsavel: z.string().optional(),
+  email_admin: z.string().email('Email inválido').optional(),
+  senha: z.string().optional(),
+  confirmar_senha: z.string().optional(),
+}).refine((data) => {
+  // Validação: senha e confirmar_senha devem ser iguais
+  if (data.senha && data.senha !== data.confirmar_senha) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'As senhas não coincidem',
+  path: ['confirmar_senha'],
+}).refine((data) => {
+  // Validação: senha deve ter no mínimo 8 caracteres
+  if (data.senha && data.senha.length < 8) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Senha deve ter no mínimo 8 caracteres',
+  path: ['senha'],
 });
 
 type EmpresaFormData = z.infer<typeof empresaSchema>;
@@ -67,7 +92,10 @@ interface EmpresaDialogProps {
 
 export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProps) {
   const { createEmpresa, updateEmpresa } = useEmpresas();
+  const queryClient = useQueryClient();
   const [consultandoCNPJ, setConsultandoCNPJ] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [criandoEmpresa, setCriandoEmpresa] = useState(false);
 
   const form = useForm<EmpresaFormData>({
     resolver: zodResolver(empresaSchema),
@@ -115,19 +143,65 @@ export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProp
   }, [empresa, form, open]);
 
   const onSubmit = async (formData: EmpresaFormData) => {
-    try {
-      if (empresa) {
+    if (empresa) {
+      // Modo edição - só atualiza empresa
+      try {
         await updateEmpresa.mutateAsync({
           id: empresa.id,
           data: formData,
         });
-      } else {
-        await createEmpresa.mutateAsync(formData);
+        onOpenChange(false);
+        form.reset();
+      } catch (error) {
+        console.error('Erro ao salvar empresa:', error);
       }
-      onOpenChange(false);
-      form.reset();
-    } catch (error) {
-      console.error('Erro ao salvar empresa:', error);
+    } else {
+      // Modo criação - validar campos obrigatórios do admin
+      if (!formData.nome_responsavel || !formData.email_admin || !formData.senha) {
+        toast.error('Preencha todos os dados do administrador');
+        return;
+      }
+
+      setCriandoEmpresa(true);
+      
+      try {
+        const { data: result, error } = await supabase.functions.invoke('criar-empresa-admin', {
+          body: {
+            empresa: {
+              nome: formData.nome,
+              cnpj: formData.cnpj,
+              email_contato: formData.email_contato,
+              telefone: formData.telefone,
+              status: formData.status,
+              data_inicio_trial: formData.data_inicio_trial,
+              data_fim_trial: formData.data_fim_trial,
+              observacoes: formData.observacoes,
+            },
+            admin: {
+              nome: formData.nome_responsavel,
+              email: formData.email_admin,
+              senha: formData.senha,
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        toast.success('Empresa e administrador criados com sucesso!', {
+          description: `Login: ${formData.email_admin}`,
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ['empresas'] });
+        form.reset();
+        onOpenChange(false);
+      } catch (error: any) {
+        console.error('Erro ao criar empresa:', error);
+        toast.error('Erro ao criar empresa e administrador', {
+          description: error.message,
+        });
+      } finally {
+        setCriandoEmpresa(false);
+      }
     }
   };
 
@@ -379,18 +453,113 @@ export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProp
               )}
             />
 
+            {/* Seção do Administrador - apenas ao criar */}
+            {!empresa && (
+              <>
+                <Separator className="my-6" />
+                
+                <div className="space-y-2 mb-4">
+                  <h3 className="text-lg font-semibold">Dados do Administrador</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Crie o primeiro usuário administrador desta empresa.
+                  </p>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="nome_responsavel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do Responsável *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="João Silva" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email_admin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email do Administrador *</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="admin@empresa.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="senha"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha *</FormLabel>
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              type={mostrarSenha ? "text" : "password"}
+                              placeholder="Mínimo 8 caracteres"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            onClick={() => setMostrarSenha(!mostrarSenha)}
+                          >
+                            {mostrarSenha ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="confirmar_senha"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Senha *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type={mostrarSenha ? "text" : "password"}
+                            placeholder="Repita a senha"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={createEmpresa.isPending || updateEmpresa.isPending}
+                disabled={criandoEmpresa || createEmpresa.isPending || updateEmpresa.isPending}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createEmpresa.isPending || updateEmpresa.isPending}>
-                {(createEmpresa.isPending || updateEmpresa.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {empresa ? 'Salvar Alterações' : 'Criar Empresa'}
+              <Button type="submit" disabled={criandoEmpresa || createEmpresa.isPending || updateEmpresa.isPending}>
+                {(criandoEmpresa || createEmpresa.isPending || updateEmpresa.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {empresa ? 'Salvar Alterações' : 'Criar Empresa e Admin'}
               </Button>
             </div>
           </form>
