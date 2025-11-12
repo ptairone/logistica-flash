@@ -14,13 +14,21 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Cliente para validar autenticação (usa anon key + token do usuário)
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: req.headers.get('Authorization')! }
+      }
+    });
 
-    // Verificar se o usuário é super_admin
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Cliente para operações administrativas (usa service role)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verificar se o usuário está autenticado
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
       console.error('Erro de autenticação:', userError);
@@ -31,7 +39,7 @@ serve(async (req) => {
     }
 
     // Verificar se é super_admin
-    const { data: roles } = await supabase
+    const { data: roles } = await supabaseClient
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -51,8 +59,8 @@ serve(async (req) => {
     console.log('Criando empresa:', empresa.nome);
     console.log('Criando admin:', admin.email);
 
-    // 1. Criar a empresa
-    const { data: empresaCriada, error: empresaError } = await supabase
+    // 1. Criar a empresa (usar supabaseAdmin)
+    const { data: empresaCriada, error: empresaError } = await supabaseAdmin
       .from('empresas')
       .insert({
         nome: empresa.nome,
@@ -77,8 +85,8 @@ serve(async (req) => {
     console.log('Empresa criada com ID:', empresaCriada.id);
 
     try {
-      // 2. Criar usuário admin no Auth
-      const { data: adminUser, error: adminUserError } = await supabase.auth.admin.createUser({
+      // 2. Criar usuário admin no Auth (usar supabaseAdmin)
+      const { data: adminUser, error: adminUserError } = await supabaseAdmin.auth.admin.createUser({
         email: admin.email,
         password: admin.senha,
         email_confirm: true,
@@ -95,8 +103,8 @@ serve(async (req) => {
 
       console.log('Usuário admin criado com ID:', adminUser.user.id);
 
-      // 3. Criar role admin em user_roles
-      const { error: roleError } = await supabase
+      // 3. Criar role admin em user_roles (usar supabaseAdmin)
+      const { error: roleError } = await supabaseAdmin
         .from('user_roles')
         .insert({
           user_id: adminUser.user.id,
@@ -111,8 +119,8 @@ serve(async (req) => {
 
       console.log('Role admin criada para usuário:', adminUser.user.id);
 
-      // 4. Criar perfil do admin
-      const { error: profileError } = await supabase
+      // 4. Criar perfil do admin (usar supabaseAdmin)
+      const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .insert({
           id: adminUser.user.id,
@@ -142,7 +150,7 @@ serve(async (req) => {
       // Rollback: deletar empresa se houve erro ao criar admin
       console.error('Erro ao criar admin, fazendo rollback da empresa:', error);
       
-      await supabase
+      await supabaseAdmin
         .from('empresas')
         .delete()
         .eq('id', empresaCriada.id);
@@ -153,7 +161,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Erro geral:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Erro ao criar empresa e administrador' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
