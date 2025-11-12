@@ -52,9 +52,18 @@ export function usePneus(filters?: {
 
   const createPneu = useMutation({
     mutationFn: async (data: any) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('empresa_id')
+        .eq('user_id', user.id)
+        .single();
+
       const { data: result, error } = await supabase
         .from('pneus')
-        .insert(data)
+        .insert({ ...data, empresa_id: userRoles?.empresa_id })
         .select()
         .single();
 
