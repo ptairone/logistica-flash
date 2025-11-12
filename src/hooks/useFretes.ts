@@ -51,12 +51,25 @@ export function useFretes() {
       // Gerar código automático se não foi fornecido
       let codigo = data.codigo;
       if (!codigo || codigo.trim() === '') {
-        const { count } = await supabase
+        // Buscar o último código criado (não usar count, pois pode haver gaps de deletados)
+        const { data: ultimoFrete } = await supabase
           .from('fretes')
-          .select('*', { count: 'exact', head: true });
+          .select('codigo')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        let proximoNumero = 1;
+        if (ultimoFrete?.codigo) {
+          // Extrair número do código FRT-000123 -> 123
+          const match = ultimoFrete.codigo.match(/FRT-(\d+)/);
+          if (match) {
+            proximoNumero = parseInt(match[1], 10) + 1;
+          }
+        }
         
         const { gerarCodigoFrete } = await import('@/lib/validations-frete');
-        codigo = gerarCodigoFrete((count || 0) + 1);
+        codigo = gerarCodigoFrete(proximoNumero);
       }
       
       const dadosPreparados = prepararDadosFrete({
@@ -74,13 +87,54 @@ export function useFretes() {
       // Adicionar empresa_id aos dados preparados
       (dadosPreparados as any).empresa_id = empresaId;
       
-      const { data: result, error } = await supabase
-        .from('fretes')
-        .insert([dadosPreparados as any])
-        .select()
-        .single();
+      // Retry mechanism para evitar códigos duplicados
+      let tentativas = 0;
+      const maxTentativas = 5;
+      let result;
 
-      if (error) throw error;
+      while (tentativas < maxTentativas) {
+        try {
+          const { data: insertResult, error } = await supabase
+            .from('fretes')
+            .insert([dadosPreparados as any])
+            .select()
+            .single();
+
+          if (error) {
+            // Se for erro de código duplicado, tentar novamente com novo código
+            if (error.code === '23505' && error.message.includes('fretes_codigo_key')) {
+              tentativas++;
+              
+              // Gerar novo código com timestamp para garantir unicidade
+              const timestamp = Date.now().toString().slice(-4);
+              const randomSuffix = Math.floor(Math.random() * 99).toString().padStart(2, '0');
+              codigo = `FRT-${timestamp}${randomSuffix}`;
+              
+              (dadosPreparados as any).codigo = codigo;
+              
+              console.warn(`⚠️ Código duplicado detectado. Tentativa ${tentativas}/${maxTentativas} com novo código: ${codigo}`);
+              
+              if (tentativas >= maxTentativas) {
+                throw new Error('Não foi possível gerar um código único após várias tentativas');
+              }
+              continue;
+            }
+            throw error;
+          }
+
+          result = insertResult;
+          break;
+        } catch (err) {
+          if (tentativas >= maxTentativas - 1) {
+            throw err;
+          }
+        }
+      }
+
+      if (!result) {
+        throw new Error('Falha ao criar frete');
+      }
+
       return result;
     },
     onSuccess: () => {
