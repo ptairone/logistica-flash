@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/lib/auth';
 
 export interface Categoria {
   id: string;
@@ -19,6 +20,7 @@ export interface CategoriaFormData {
 
 export function useCategorias() {
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const categoriasQuery = useQuery({
     queryKey: ['categorias-estoque'],
@@ -35,9 +37,18 @@ export function useCategorias() {
 
   const createCategoria = useMutation({
     mutationFn: async (formData: CategoriaFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
+      const categoriaComEmpresa = {
+        ...formData,
+        empresa_id: empresaId
+      };
+
       const { data, error } = await supabase
         .from('categorias_estoque')
-        .insert(formData)
+        .insert(categoriaComEmpresa)
         .select()
         .single();
 

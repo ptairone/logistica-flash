@@ -2,9 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { MecanicoFormData } from '@/lib/validations-manutencao';
+import { useAuth } from '@/lib/auth';
 
 export function useMecanicos() {
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const mecanicosQuery = useQuery({
     queryKey: ['mecanicos'],
@@ -21,9 +23,18 @@ export function useMecanicos() {
 
   const createMecanico = useMutation({
     mutationFn: async (mecanico: MecanicoFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
+      const mecanicoComEmpresa = {
+        ...mecanico,
+        empresa_id: empresaId
+      };
+
       const { data, error } = await supabase
         .from('mecanicos' as any)
-        .insert([mecanico as any])
+        .insert([mecanicoComEmpresa as any])
         .select()
         .single();
       

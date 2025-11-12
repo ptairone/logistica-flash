@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { FreteFormData } from '@/lib/validations-frete';
 import { useToast } from '@/hooks/use-toast';
 import { calcularCombustivelEstimado } from '@/lib/consumo-combustivel';
+import { useAuth } from '@/lib/auth';
 
 // Helper para auto-preencher origem e destino com cidade/UF
 const prepararDadosFrete = (data: FreteFormData | Partial<FreteFormData>) => {
@@ -26,6 +27,7 @@ const prepararDadosFrete = (data: FreteFormData | Partial<FreteFormData>) => {
 export function useFretes() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const fretesQuery = useQuery({
     queryKey: ['fretes'],
@@ -42,6 +44,10 @@ export function useFretes() {
 
   const createFrete = useMutation({
     mutationFn: async (data: FreteFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
       // Gerar código automático se não foi fornecido
       let codigo = data.codigo;
       if (!codigo || codigo.trim() === '') {
@@ -56,6 +62,7 @@ export function useFretes() {
       const dadosPreparados = prepararDadosFrete({
         ...data,
         codigo,
+        empresa_id: empresaId,
         // Garantir que campos ANTT sejam salvos
         tipo_carga: data.tipo_carga,
         numero_eixos: data.numero_eixos,

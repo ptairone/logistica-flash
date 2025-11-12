@@ -7,6 +7,7 @@ import { ItemEstoqueFormData, MovimentacaoEstoqueFormData, calcularCustoMedio } 
 export function useEstoque() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   // Buscar todos os itens
   const itensQuery = useQuery({

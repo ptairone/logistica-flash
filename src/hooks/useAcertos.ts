@@ -2,10 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AcertoFormData } from '@/lib/validations-acerto';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth';
 
 export function useAcertos() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const acertosQuery = useQuery({
     queryKey: ['acertos'],
@@ -25,9 +27,18 @@ export function useAcertos() {
 
   const createAcerto = useMutation({
     mutationFn: async (data: AcertoFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
+      const acertoComEmpresa = {
+        ...data,
+        empresa_id: empresaId
+      };
+
       const { data: result, error } = await supabase
         .from('acertos')
-        .insert([data as any])
+        .insert([acertoComEmpresa as any])
         .select()
         .single();
 

@@ -2,10 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { AcertoCLT, DiaTrabalhadoCLT, ConfigCLT } from "@/lib/validations-acerto-clt";
+import { useAuth } from '@/lib/auth';
 
 // Hook para buscar acertos CLT
 export function useAcertosCLT() {
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const { data: acertos, isLoading, error } = useQuery({
     queryKey: ["acertos-clt"],
@@ -25,10 +27,19 @@ export function useAcertosCLT() {
 
   const createAcertoCLT = useMutation({
     mutationFn: async ({ acerto, dias }: { acerto: AcertoCLT; dias: DiaTrabalhadoCLT[] }) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
+      const acertoComEmpresa = {
+        ...acerto,
+        empresa_id: empresaId
+      };
+
       // Inserir acerto
       const { data: acertoData, error: acertoError } = await supabase
         .from("acertos_clt")
-        .insert([acerto as any])
+        .insert([acertoComEmpresa as any])
         .select()
         .single();
 
