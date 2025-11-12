@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, Download, AlertTriangle, Package, FileUp, Settings } from 'lucide-react';
+import { Plus, Search, Download, AlertTriangle, Package, FileUp, Settings, Warehouse } from 'lucide-react';
 import { useEstoque } from '@/hooks/useEstoque';
 import { useCategorias } from '@/hooks/useCategorias';
 import { ItemEstoqueDialog } from '@/components/estoque/ItemEstoqueDialog';
@@ -38,6 +38,7 @@ import { ItemEstoquePneuCard } from '@/components/estoque/ItemEstoquePneuCard';
 import { ItemEstoqueDetailsDialog } from '@/components/estoque/ItemEstoqueDetailsDialog';
 import { ImportacaoDialog } from '@/components/estoque/ImportacaoDialog';
 import { CategoriasManager } from '@/components/estoque/CategoriasManager';
+import { LocaisManager } from '@/components/estoque/LocaisManager';
 import { CadastrarPneusLoteDialog } from '@/components/estoque/CadastrarPneusLoteDialog';
 import { exportarItensCSV, isItemCritico } from '@/lib/validations-estoque';
 import { useToast } from '@/hooks/use-toast';
@@ -147,6 +148,25 @@ export default function Estoque() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <Warehouse className="h-4 w-4 mr-2" />
+                  Locais
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Gerenciar Locais de Estoque</SheetTitle>
+                  <SheetDescription>
+                    Crie e organize os locais onde seus itens são armazenados
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <LocaisManager />
+                </div>
+              </SheetContent>
+            </Sheet>
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline">
