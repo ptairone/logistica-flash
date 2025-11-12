@@ -2,10 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ViagemFormData, DespesaFormData, gerarCodigoViagem } from '@/lib/validations-viagem';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/lib/auth';
 
 export function useViagens() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const viagensQuery = useQuery({
     queryKey: ['viagens'],
@@ -27,6 +29,10 @@ export function useViagens() {
 
   const createViagem = useMutation({
     mutationFn: async (data: ViagemFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
       // Gerar código automático se não foi fornecido
       let codigo = data.codigo;
       if (!codigo || codigo.trim() === '') {
@@ -37,7 +43,7 @@ export function useViagens() {
       }
 
       // Calcular km_percorrido se tiver km_inicial e km_final
-      const dadosParaSalvar = { ...data, codigo };
+      const dadosParaSalvar = { ...data, codigo, empresa_id: empresaId };
       if (dadosParaSalvar.km_inicial && dadosParaSalvar.km_final) {
         (dadosParaSalvar as any).km_percorrido = dadosParaSalvar.km_final - dadosParaSalvar.km_inicial;
       }
@@ -245,6 +251,7 @@ export function useViagens() {
 export function useDespesas(viagemId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const despesasQuery = useQuery({
     queryKey: ['despesas', viagemId],
@@ -263,9 +270,18 @@ export function useDespesas(viagemId?: string) {
 
   const createDespesa = useMutation({
     mutationFn: async (data: DespesaFormData) => {
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
+      const despesaComEmpresa = {
+        ...data,
+        empresa_id: empresaId
+      };
+
       const { data: result, error } = await supabase
         .from('despesas')
-        .insert([data as any])
+        .insert([despesaComEmpresa as any])
         .select()
         .single();
 
@@ -388,6 +404,7 @@ export function useFretesDisponiveis() {
 export function useComprovantesViagem(viagemId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const comprovantesQuery = useQuery({
     queryKey: ['comprovantes-viagem', viagemId],
@@ -420,6 +437,10 @@ export function useComprovantesViagem(viagemId?: string) {
         .from('comprovantes')
         .getPublicUrl(fileName);
 
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
       const { data, error } = await supabase
         .from('documentos')
         .insert([{
@@ -430,6 +451,7 @@ export function useComprovantesViagem(viagemId?: string) {
           url: urlData.publicUrl,
           mime_type: file.type,
           tamanho: file.size,
+          empresa_id: empresaId
         }])
         .select()
         .single();
