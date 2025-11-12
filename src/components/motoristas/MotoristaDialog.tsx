@@ -140,7 +140,7 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
                 {...register('telefone')}
                 onChange={handleTelefoneChange}
                 placeholder="5548999744956"
-                maxLength={13}
+                maxLength={16}
               />
               {errors.telefone && (
                 <p className="text-sm text-destructive">{errors.telefone.message}</p>
