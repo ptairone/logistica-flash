@@ -49,8 +49,12 @@ const empresaSchema = z.object({
   email_admin: z.string().email('Email inválido').optional(),
   senha: z.string().optional(),
   confirmar_senha: z.string().optional(),
+  // Campos para alterar credenciais (apenas edição)
+  novo_email_admin: z.string().email('Email inválido').optional().or(z.literal('')),
+  nova_senha_admin: z.string().optional().or(z.literal('')),
+  confirmar_nova_senha_admin: z.string().optional().or(z.literal('')),
 }).refine((data) => {
-  // Validação: senha e confirmar_senha devem ser iguais
+  // Validação: senha e confirmar_senha devem ser iguais (criação)
   if (data.senha && data.senha !== data.confirmar_senha) {
     return false;
   }
@@ -59,7 +63,7 @@ const empresaSchema = z.object({
   message: 'As senhas não coincidem',
   path: ['confirmar_senha'],
 }).refine((data) => {
-  // Validação: senha deve ter no mínimo 8 caracteres
+  // Validação: senha deve ter no mínimo 8 caracteres (criação)
   if (data.senha && data.senha.length < 8) {
     return false;
   }
@@ -67,6 +71,24 @@ const empresaSchema = z.object({
 }, {
   message: 'Senha deve ter no mínimo 8 caracteres',
   path: ['senha'],
+}).refine((data) => {
+  // Validação: nova senha e confirmar devem ser iguais (edição)
+  if (data.nova_senha_admin && data.nova_senha_admin !== data.confirmar_nova_senha_admin) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'As senhas não coincidem',
+  path: ['confirmar_nova_senha_admin'],
+}).refine((data) => {
+  // Validação: nova senha deve ter no mínimo 8 caracteres (edição)
+  if (data.nova_senha_admin && data.nova_senha_admin.length > 0 && data.nova_senha_admin.length < 8) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Senha deve ter no mínimo 8 caracteres',
+  path: ['nova_senha_admin'],
 });
 
 type EmpresaFormData = z.infer<typeof empresaSchema>;
@@ -144,12 +166,35 @@ export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProp
 
   const onSubmit = async (formData: EmpresaFormData) => {
     if (empresa) {
-      // Modo edição - só atualiza empresa
+      // Modo edição - atualiza empresa e credenciais se fornecidas
       try {
         await updateEmpresa.mutateAsync({
           id: empresa.id,
           data: formData,
         });
+
+        // Se forneceu novo email ou senha, chamar edge function
+        if (formData.novo_email_admin || formData.nova_senha_admin) {
+          const { error: credenciaisError } = await supabase.functions.invoke('alterar-credenciais-admin-empresa', {
+            body: {
+              empresa_id: empresa.id,
+              novo_email: formData.novo_email_admin || null,
+              nova_senha: formData.nova_senha_admin || null,
+            }
+          });
+
+          if (credenciaisError) {
+            toast.error('Empresa atualizada, mas erro ao alterar credenciais', {
+              description: credenciaisError.message,
+            });
+            return;
+          }
+
+          toast.success('Empresa e credenciais do admin atualizadas!');
+        } else {
+          toast.success('Empresa atualizada com sucesso!');
+        }
+
         onOpenChange(false);
         form.reset();
       } catch (error) {
@@ -533,6 +578,87 @@ export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProp
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Confirmar Senha *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type={mostrarSenha ? "text" : "password"}
+                            placeholder="Repita a senha"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Seção Alterar Credenciais - apenas ao editar */}
+            {empresa && (
+              <>
+                <Separator className="my-6" />
+                
+                <div className="space-y-2 mb-4">
+                  <h3 className="text-lg font-semibold">Alterar Credenciais do Admin</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Deixe em branco os campos que não deseja alterar.
+                  </p>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="novo_email_admin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Novo Email do Admin</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="novoemail@empresa.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="nova_senha_admin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nova Senha</FormLabel>
+                        <div className="relative">
+                          <FormControl>
+                            <Input
+                              type={mostrarSenha ? "text" : "password"}
+                              placeholder="Mínimo 8 caracteres"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            onClick={() => setMostrarSenha(!mostrarSenha)}
+                          >
+                            {mostrarSenha ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="confirmar_nova_senha_admin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Nova Senha</FormLabel>
                         <FormControl>
                           <Input
                             type={mostrarSenha ? "text" : "password"}
