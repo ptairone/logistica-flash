@@ -16,7 +16,9 @@ import {
   BarChart3, 
   Wrench,
   Download,
-  LogOut
+  LogOut,
+  Circle,
+  Fuel
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -87,6 +89,18 @@ export function MobileHeader({ title, showBack, onMenuClick, rightAction }: Mobi
       title: 'Manutenções', 
       url: '/manutencoes', 
       icon: Settings,
+      roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Pneus', 
+      url: '/pneus', 
+      icon: Circle,
+      roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Abastecimentos', 
+      url: '/abastecimentos', 
+      icon: Fuel,
       roles: ['admin', 'operacional']
     },
     { 
