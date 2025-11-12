@@ -65,8 +65,9 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
   }, [criarLogin, setValue]);
 
   const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatTelefone(e.target.value);
-    setValue('telefone', formatted);
+    // Remover qualquer caractere não numérico (formato WhatsApp)
+    const apenasNumeros = e.target.value.replace(/\D/g, '');
+    setValue('telefone', apenasNumeros);
   };
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,8 +139,8 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
                 id="telefone"
                 {...register('telefone')}
                 onChange={handleTelefoneChange}
-                placeholder="(11) 98765-4321"
-                maxLength={15}
+                placeholder="5548999744956"
+                maxLength={13}
               />
               {errors.telefone && (
                 <p className="text-sm text-destructive">{errors.telefone.message}</p>
