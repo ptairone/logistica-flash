@@ -168,18 +168,21 @@ export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProp
     if (empresa) {
       // Modo edição - atualiza empresa e credenciais se fornecidas
       try {
+        // Separar dados da empresa dos campos de credenciais
+        const { novo_email_admin, nova_senha_admin, confirmar_nova_senha_admin, ...empresaData } = formData;
+
         await updateEmpresa.mutateAsync({
           id: empresa.id,
-          data: formData,
+          data: empresaData,
         });
 
         // Se forneceu novo email ou senha, chamar edge function
-        if (formData.novo_email_admin || formData.nova_senha_admin) {
+        if (novo_email_admin || nova_senha_admin) {
           const { error: credenciaisError } = await supabase.functions.invoke('alterar-credenciais-admin-empresa', {
             body: {
               empresa_id: empresa.id,
-              novo_email: formData.novo_email_admin || null,
-              nova_senha: formData.nova_senha_admin || null,
+              novo_email: novo_email_admin || null,
+              nova_senha: nova_senha_admin || null,
             }
           });
 
