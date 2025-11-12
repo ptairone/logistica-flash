@@ -14,21 +14,25 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // Cliente para validar autenticação (usa anon key + token do usuário)
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: req.headers.get('Authorization')! }
-      }
-    });
-
-    // Cliente para operações administrativas (usa service role)
+    // Cliente admin para todas as operações
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verificar se o usuário está autenticado
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Extrair e validar o token JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Header Authorization ausente');
+      return new Response(
+        JSON.stringify({ error: 'Não autenticado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Validar o token e obter o usuário
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
       console.error('Erro de autenticação:', userError);
@@ -38,8 +42,10 @@ serve(async (req) => {
       );
     }
 
+    console.log('Usuário autenticado:', user.id);
+
     // Verificar se é super_admin
-    const { data: roles } = await supabaseClient
+    const { data: roles } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
