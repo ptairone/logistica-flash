@@ -2,11 +2,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export function usePneusPorItemEstoque(itemEstoqueId?: string) {
+  const pneusQuery = useQuery({
+    queryKey: ['pneus-por-item-estoque', itemEstoqueId],
+    queryFn: async () => {
+      if (!itemEstoqueId) return [];
+      
+      const { data, error } = await supabase
+        .from('pneus' as any)
+        .select('*')
+        .eq('item_estoque_id', itemEstoqueId)
+        .order('created_at', { ascending: false});
+      
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!itemEstoqueId
+  });
+  
+  return {
+    pneus: pneusQuery.data || [],
+    isLoading: pneusQuery.isLoading
+  };
+}
+
 export function usePneus(filters?: {
   status?: string;
   veiculoId?: string;
   tipo?: string;
   critico?: boolean;
+  item_estoque_id?: string;
 }) {
   const queryClient = useQueryClient();
 
@@ -212,6 +237,49 @@ export function usePneus(filters?: {
     },
   });
 
+  const createPneusLote = useMutation({
+    mutationFn: async ({ 
+      itemEstoqueId, 
+      pneus 
+    }: { 
+      itemEstoqueId: string; 
+      pneus: any[] 
+    }) => {
+      const { data: itemEstoque, error: fetchError } = await supabase
+        .from('itens_estoque' as any)
+        .select('*')
+        .eq('id', itemEstoqueId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      if (!itemEstoque) throw new Error('Item de estoque não encontrado');
+      
+      const pneusComEmpresa = pneus.map(p => ({
+        ...p,
+        item_estoque_id: itemEstoqueId,
+        empresa_id: (itemEstoque as any).empresa_id,
+        status: 'estoque'
+      }));
+      
+      const { data, error } = await supabase
+        .from('pneus' as any)
+        .insert(pneusComEmpresa)
+        .select();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pneus'] });
+      queryClient.invalidateQueries({ queryKey: ['itens-estoque'] });
+      queryClient.invalidateQueries({ queryKey: ['pneus-por-item-estoque'] });
+      toast.success('Pneus cadastrados com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao cadastrar pneus em lote');
+    }
+  });
+
   return {
     pneus: pneusQuery.data || [],
     isLoading: pneusQuery.isLoading,
@@ -221,6 +289,7 @@ export function usePneus(filters?: {
     instalarPneu,
     removerPneu,
     descartarPneu,
+    createPneusLote
   };
 }
 

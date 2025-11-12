@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, AlertTriangle, TrendingUp, Package, Truck } from 'lucide-react';
+import { Plus, Search, AlertTriangle, TrendingUp, Package, Truck, ArrowLeft } from 'lucide-react';
 import { usePneus, usePneusRelatorios } from '@/hooks/usePneus';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useEstoque } from '@/hooks/useEstoque';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -15,6 +17,10 @@ import { InstalacaoPneuDialog } from '@/components/pneus/InstalacaoPneuDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export default function Pneus() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const itemEstoqueId = searchParams.get('item_estoque_id');
+  
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [medicaoDialogOpen, setMedicaoDialogOpen] = useState(false);
@@ -25,11 +31,19 @@ export default function Pneus() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('todos');
 
-  const { pneus, isLoading, createPneu, updatePneu, deletePneu } = usePneus({
+  const { itens: itensEstoque } = useEstoque();
+  const itemEstoque = itemEstoqueId ? itensEstoque.find(i => i.id === itemEstoqueId) : null;
+
+  const filters: any = {
     status: activeTab === 'todos' ? undefined : activeTab,
     critico: activeTab === 'criticos',
-  });
+  };
+  
+  if (itemEstoqueId) {
+    filters.item_estoque_id = itemEstoqueId;
+  }
 
+  const { pneus, isLoading, createPneu, updatePneu, deletePneu } = usePneus(filters);
   const { relatorios } = usePneusRelatorios();
 
   const handleCreate = () => {
@@ -104,16 +118,40 @@ export default function Pneus() {
   return (
     <MainLayout>
       <div className="space-y-6">
+        {itemEstoque && (
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/estoque')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar ao Estoque
+            </Button>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold">{itemEstoque.descricao}</h2>
+              <p className="text-sm text-muted-foreground">
+                Código: {itemEstoque.codigo} | Estoque: {itemEstoque.estoque_atual}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Gestão de Pneus</h2>
+            <h2 className="text-3xl font-bold tracking-tight">
+              {itemEstoque ? 'Pneus do Item' : 'Gestão de Pneus'}
+            </h2>
             <p className="text-muted-foreground">
-              Controle completo do ciclo de vida dos pneus
+              {itemEstoque 
+                ? `Pneus individuais vinculados ao item ${itemEstoque.codigo}`
+                : 'Controle completo do ciclo de vida dos pneus'
+              }
             </p>
           </div>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
-            Novo Pneu
+            {itemEstoque ? 'Novo Pneu deste Item' : 'Novo Pneu'}
           </Button>
         </div>
 

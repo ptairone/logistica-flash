@@ -34,9 +34,11 @@ import { useEstoque } from '@/hooks/useEstoque';
 import { useCategorias } from '@/hooks/useCategorias';
 import { ItemEstoqueDialog } from '@/components/estoque/ItemEstoqueDialog';
 import { ItemEstoqueCard } from '@/components/estoque/ItemEstoqueCard';
+import { ItemEstoquePneuCard } from '@/components/estoque/ItemEstoquePneuCard';
 import { ItemEstoqueDetailsDialog } from '@/components/estoque/ItemEstoqueDetailsDialog';
 import { ImportacaoDialog } from '@/components/estoque/ImportacaoDialog';
 import { CategoriasManager } from '@/components/estoque/CategoriasManager';
+import { CadastrarPneusLoteDialog } from '@/components/estoque/CadastrarPneusLoteDialog';
 import { exportarItensCSV, isItemCritico } from '@/lib/validations-estoque';
 import { useToast } from '@/hooks/use-toast';
 
@@ -53,6 +55,7 @@ export default function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState<string>('todos');
   const [criticosFilter, setCriticosFilter] = useState<string>('todos');
+  const [itemParaCadastrarPneus, setItemParaCadastrarPneus] = useState<any>(null);
 
   // Filtrar itens
   const filteredItens = itens.filter(item => {
@@ -312,15 +315,32 @@ export default function Estoque() {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredItens.map((item) => (
-              <ItemEstoqueCard
-                key={item.id}
-                item={item}
-                onView={() => handleView(item)}
-                onEdit={() => handleEdit(item)}
-                onDelete={() => handleDeleteClick(item)}
-              />
-            ))}
+            {filteredItens.map((item) => {
+              const isPneu = item.categoria?.toLowerCase().includes('pneu');
+              
+              if (isPneu) {
+                return (
+                  <ItemEstoquePneuCard
+                    key={item.id}
+                    item={item}
+                    onCadastrarLote={(itemId) => {
+                      const itemSelecionado = itens.find(i => i.id === itemId);
+                      setItemParaCadastrarPneus(itemSelecionado);
+                    }}
+                  />
+                );
+              }
+              
+              return (
+                <ItemEstoqueCard
+                  key={item.id}
+                  item={item}
+                  onView={() => handleView(item)}
+                  onEdit={() => handleEdit(item)}
+                  onDelete={() => handleDeleteClick(item)}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -361,6 +381,12 @@ export default function Estoque() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CadastrarPneusLoteDialog
+        open={!!itemParaCadastrarPneus}
+        onOpenChange={(open) => !open && setItemParaCadastrarPneus(null)}
+        itemEstoque={itemParaCadastrarPneus}
+      />
     </MainLayout>
   );
 }

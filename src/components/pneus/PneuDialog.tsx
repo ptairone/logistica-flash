@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { pneuSchema, PneuFormData, tiposPneu, statusPneuOptions } from '@/lib/validations-pneu';
 import { useEstoque } from '@/hooks/useEstoque';
 import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 interface PneuDialogProps {
   open: boolean;
@@ -19,6 +20,8 @@ interface PneuDialogProps {
 }
 
 export function PneuDialog({ open, onOpenChange, onSubmit, pneu, isLoading }: PneuDialogProps) {
+  const [searchParams] = useSearchParams();
+  const itemEstoqueIdFromUrl = searchParams.get('item_estoque_id');
   const { itens: itensEstoque } = useEstoque();
   const {
     register,
@@ -58,9 +61,10 @@ export function PneuDialog({ open, onOpenChange, onSubmit, pneu, isLoading }: Pn
       reset({
         profundidade_minima_mm: 1.6,
         tipo: 'traseiro',
+        item_estoque_id: itemEstoqueIdFromUrl || undefined,
       });
     }
-  }, [pneu, reset]);
+  }, [pneu, reset, itemEstoqueIdFromUrl]);
 
   const handleFormSubmit = (data: PneuFormData) => {
     const submitData = {

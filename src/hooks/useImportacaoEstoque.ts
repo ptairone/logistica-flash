@@ -118,6 +118,18 @@ export function useImportacaoEstoque() {
       const novosIds: Record<string, string> = {};
 
       for (const item of itensNovos) {
+        // Buscar empresa_id do usuário
+        const { data: auth } = await supabase.auth.getUser();
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('empresa_id')
+          .eq('user_id', auth.user?.id)
+          .single();
+
+        if (!userRole?.empresa_id) {
+          throw new Error('Usuário sem empresa vinculada');
+        }
+
         // Gerar código único se não houver ou se já existir
         let codigoFinal = item.codigoFornecedor || `AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
@@ -145,6 +157,7 @@ export function useImportacaoEstoque() {
             estoque_atual: 0,
             estoque_minimo: 0,
             custo_medio: item.valorUnitario || 0,
+            empresa_id: userRole.empresa_id,
           }])
           .select()
           .single();

@@ -257,6 +257,54 @@ export function useMovimentacoesEstoque(itemId?: string) {
 }
 
 // Hook para relatórios de estoque
+export function useVerificarDivergenciaPneus(itemId?: string) {
+  const { data: item } = useQuery({
+    queryKey: ['item-estoque-divergencia', itemId],
+    queryFn: async () => {
+      if (!itemId) return null;
+      
+      const { data, error } = await supabase
+        .from('itens_estoque')
+        .select('*')
+        .eq('id', itemId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!itemId
+  });
+
+  const { data: pneus } = useQuery({
+    queryKey: ['pneus-estoque-divergencia', itemId],
+    queryFn: async () => {
+      if (!itemId) return [];
+      
+      const { data, error } = await supabase
+        .from('pneus')
+        .select('*')
+        .eq('item_estoque_id', itemId)
+        .eq('status', 'estoque');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!itemId
+  });
+
+  const qtdEstoque = item?.estoque_atual || 0;
+  const qtdPneusCadastrados = pneus?.length || 0;
+  const hasDivergencia = qtdEstoque !== qtdPneusCadastrados;
+  const diferenca = qtdEstoque - qtdPneusCadastrados;
+
+  return {
+    hasDivergencia,
+    diferenca,
+    qtdEstoque,
+    qtdPneusCadastrados
+  };
+}
+
 export function useRelatoriosEstoque() {
   // Relatório de consumo por período
   const getRelatorioConsumo = async (params: {

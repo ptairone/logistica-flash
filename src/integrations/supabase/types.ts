@@ -617,7 +617,7 @@ export type Database = {
           cor: string | null
           created_at: string
           descricao: string | null
-          empresa_id: string | null
+          empresa_id: string
           id: string
           nome: string
           updated_at: string
@@ -626,7 +626,7 @@ export type Database = {
           cor?: string | null
           created_at?: string
           descricao?: string | null
-          empresa_id?: string | null
+          empresa_id: string
           id?: string
           nome: string
           updated_at?: string
@@ -635,7 +635,7 @@ export type Database = {
           cor?: string | null
           created_at?: string
           descricao?: string | null
-          empresa_id?: string | null
+          empresa_id?: string
           id?: string
           nome?: string
           updated_at?: string
@@ -1171,7 +1171,7 @@ export type Database = {
           created_at: string
           custo_medio: number | null
           descricao: string
-          empresa_id: string | null
+          empresa_id: string
           estoque_atual: number | null
           estoque_minimo: number | null
           fornecedor: string | null
@@ -1187,7 +1187,7 @@ export type Database = {
           created_at?: string
           custo_medio?: number | null
           descricao: string
-          empresa_id?: string | null
+          empresa_id: string
           estoque_atual?: number | null
           estoque_minimo?: number | null
           fornecedor?: string | null
@@ -1203,7 +1203,7 @@ export type Database = {
           created_at?: string
           custo_medio?: number | null
           descricao?: string
-          empresa_id?: string | null
+          empresa_id?: string
           estoque_atual?: number | null
           estoque_minimo?: number | null
           fornecedor?: string | null
