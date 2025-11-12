@@ -14,6 +14,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useFormUnsavedWarning } from '@/hooks/useFormUnsavedWarning';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -68,8 +70,13 @@ export function ItemEstoqueDialog({
     },
   });
 
+  // Persistência e avisos
+  const { clearPersistedData } = useFormPersistence('item-estoque-form', form, open);
+  useFormUnsavedWarning(form, open);
+
   const handleSubmit = (data: ItemEstoqueFormData) => {
     onSubmit(data);
+    clearPersistedData();
     form.reset();
     onOpenChange(false);
   };

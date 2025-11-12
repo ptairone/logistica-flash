@@ -34,7 +34,16 @@ import Empresas from "./pages/super-admin/Empresas";
 import EmpresasPendentes from "./pages/super-admin/EmpresasPendentes";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // Evita reload ao focar janela
+      refetchOnMount: false, // Evita reload ao montar componente
+      staleTime: 5 * 60 * 1000, // Dados válidos por 5 minutos
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

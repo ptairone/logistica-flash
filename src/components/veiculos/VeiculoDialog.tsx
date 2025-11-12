@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useFormUnsavedWarning } from '@/hooks/useFormUnsavedWarning';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,6 +61,21 @@ export function VeiculoDialog({ open, onOpenChange, onSubmit, veiculo, isLoading
   const tipo = watch('tipo');
   const status = watch('status');
 
+  // Persistência e avisos
+  const { clearPersistedData } = useFormPersistence('veiculo-form', {
+    watch,
+    reset,
+    formState: { errors, isDirty: Object.keys(errors).length === 0 },
+  } as any, open);
+  useFormUnsavedWarning({
+    formState: { isDirty: Object.keys(errors).length === 0 },
+  } as any, open);
+
+  const handleFormSubmit = (data: VeiculoFormData) => {
+    onSubmit(data);
+    clearPersistedData();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -66,7 +83,7 @@ export function VeiculoDialog({ open, onOpenChange, onSubmit, veiculo, isLoading
           <DialogTitle>{veiculo ? 'Editar Veículo' : 'Novo Veículo'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="codigo_interno">Código Interno *</Label>

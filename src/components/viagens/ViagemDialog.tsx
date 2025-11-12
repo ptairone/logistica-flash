@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useFormUnsavedWarning } from '@/hooks/useFormUnsavedWarning';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -149,6 +151,16 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
     setValue('frete_id', value === 'none' ? undefined : value);
   };
 
+  // Persistência e avisos
+  const form = { watch, reset, formState: { errors, isDirty: true } } as any;
+  const { clearPersistedData } = useFormPersistence('viagem-form', form, open);
+  useFormUnsavedWarning(form, open);
+
+  const handleFormSubmit = (data: ViagemFormData) => {
+    onSubmit(data);
+    clearPersistedData();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -156,7 +168,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
           <DialogTitle>{viagem ? 'Editar Viagem' : 'Nova Viagem'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="codigo">Código</Label>

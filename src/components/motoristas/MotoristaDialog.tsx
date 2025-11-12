@@ -12,6 +12,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { motoristaSchema, MotoristaFormData, formatTelefone } from '@/lib/validations-motorista';
 import { formatCPFCNPJ } from '@/lib/validations-frete';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useFormUnsavedWarning } from '@/hooks/useFormUnsavedWarning';
+import { toast } from 'sonner';
 
 interface MotoristaDialogProps {
   open: boolean;
@@ -23,15 +26,10 @@ interface MotoristaDialogProps {
 
 export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoading }: MotoristaDialogProps) {
   const [criarLogin, setCriarLogin] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-    watch,
-  } = useForm<MotoristaFormData>({
+  const form = useForm<MotoristaFormData>({
     resolver: zodResolver(motoristaSchema),
     defaultValues: {
       status: 'ativo',
@@ -39,6 +37,19 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
       criarLogin: false,
     },
   });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+    watch,
+  } = form;
+
+  // Persistência e avisos
+  const { clearPersistedData } = useFormPersistence('motorista-form', form, open);
+  useFormUnsavedWarning(form, open);
 
   useEffect(() => {
     if (motorista) {
@@ -48,6 +59,8 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
         criarLogin: false,
       });
       setCriarLogin(false);
+      setPassword('');
+      setConfirmPassword('');
     } else {
       reset({
         status: 'ativo',
@@ -55,6 +68,8 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
         criarLogin: false,
       });
       setCriarLogin(false);
+      setPassword('');
+      setConfirmPassword('');
     }
   }, [motorista, reset]);
 
@@ -63,6 +78,22 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
   useEffect(() => {
     setValue('criarLogin', criarLogin);
   }, [criarLogin, setValue]);
+
+  const handleFormSubmit = async (data: MotoristaFormData) => {
+    if (!motorista && criarLogin) {
+      if (password !== confirmPassword) {
+        toast.error('As senhas não conferem');
+        return;
+      }
+      if (password.length < 6) {
+        toast.error('A senha deve ter no mínimo 6 caracteres');
+        return;
+      }
+    }
+    
+    onSubmit(data);
+    clearPersistedData();
+  };
 
   const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Remover qualquer caractere não numérico (formato WhatsApp)
@@ -82,7 +113,7 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
           <DialogTitle>{motorista ? 'Editar Motorista' : 'Novo Motorista'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="nome">Nome Completo *</Label>
             <Input
@@ -228,12 +259,10 @@ export function MotoristaDialog({ open, onOpenChange, onSubmit, motorista, isLoa
                     <Input 
                       id="senha"
                       type="password" 
-                      {...register('senha')}
-                      placeholder="Mínimo 8 caracteres"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
                     />
-                    {errors.senha && (
-                      <p className="text-sm text-destructive">{errors.senha.message}</p>
-                    )}
                   </div>
                   
                   <div className="space-y-2">

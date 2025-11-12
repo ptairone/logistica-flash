@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export default function Mecanicos() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
@@ -89,8 +91,8 @@ export default function Mecanicos() {
         toast.success('Mecânico cadastrado com sucesso!');
       }
       
-      // Recarregar lista
-      window.location.reload();
+      // Invalidar queries para atualizar a lista
+      queryClient.invalidateQueries({ queryKey: ['mecanicos'] });
     }
   };
 

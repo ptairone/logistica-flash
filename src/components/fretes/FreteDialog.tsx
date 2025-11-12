@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { freteSchema, FreteFormData, formatCPFCNPJ } from '@/lib/validations-frete';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { useFormUnsavedWarning } from '@/hooks/useFormUnsavedWarning';
 import { formatCEP } from '@/lib/validations-viagem';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -37,6 +39,13 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
   
   const { calcularCustosEstimados } = useFretes();
 
+  const form = useForm<FreteFormData>({
+    resolver: zodResolver(freteSchema),
+    defaultValues: {
+      status: 'aberto',
+    },
+  });
+
   const {
     register,
     handleSubmit,
@@ -44,12 +53,16 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
     reset,
     setValue,
     watch,
-  } = useForm<FreteFormData>({
-    resolver: zodResolver(freteSchema),
-    defaultValues: {
-      status: 'aberto',
-    },
-  });
+  } = form;
+
+  // Persistência e avisos
+  const { clearPersistedData } = useFormPersistence('frete-form', form, open);
+  useFormUnsavedWarning(form, open);
+
+  const handleFormSubmit = (data: FreteFormData) => {
+    onSubmit(data);
+    clearPersistedData();
+  };
 
   useEffect(() => {
     if (frete) {
@@ -254,7 +267,7 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-hidden flex flex-col">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex-1 overflow-hidden flex flex-col">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="cliente" className="flex items-center gap-1 text-xs">
