@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pneuSchema, PneuFormData, tiposPneu, statusPneuOptions } from '@/lib/validations-pneu';
 import { useEstoque } from '@/hooks/useEstoque';
+import { useLocaisEstoque } from '@/hooks/useLocaisEstoque';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -23,6 +24,7 @@ export function PneuDialog({ open, onOpenChange, onSubmit, pneu, isLoading }: Pn
   const [searchParams] = useSearchParams();
   const itemEstoqueIdFromUrl = searchParams.get('item_estoque_id');
   const { itens: itensEstoque } = useEstoque();
+  const { locais } = useLocaisEstoque();
   const {
     register,
     handleSubmit,
@@ -208,6 +210,29 @@ export function PneuDialog({ open, onOpenChange, onSubmit, pneu, isLoading }: Pn
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="local_id">Local de Estoque</Label>
+              <Select
+                value={watch('local_id')}
+                onValueChange={(value) => setValue('local_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o local" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locais
+                    .filter((local) => local.ativo)
+                    .map((local) => (
+                      <SelectItem key={local.id} value={local.id}>
+                        {local.codigo} - {local.nome}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="item_estoque_id">Item do Estoque</Label>
               <Select
                 value={watch('item_estoque_id')}
@@ -224,6 +249,15 @@ export function PneuDialog({ open, onOpenChange, onSubmit, pneu, isLoading }: Pn
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="local_estoque">Local (Texto Livre)</Label>
+              <Input
+                id="local_estoque"
+                {...register('local_estoque')}
+                placeholder="Ex: Prateleira A3"
+              />
             </div>
           </div>
 

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { itemEstoqueSchema, ItemEstoqueFormData } from '@/lib/validations-estoque';
 import { useCategorias, CategoriaFormData } from '@/hooks/useCategorias';
+import { useLocaisEstoque } from '@/hooks/useLocaisEstoque';
 import { CategoriaDialog } from './CategoriaDialog';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -46,6 +47,7 @@ export function ItemEstoqueDialog({
   isEdit = false,
 }: ItemEstoqueDialogProps) {
   const { categorias, createCategoria } = useCategorias();
+  const { locais } = useLocaisEstoque();
   const [categoriaDialogOpen, setCategoriaDialogOpen] = useState(false);
   
   const form = useForm<ItemEstoqueFormData>({
@@ -171,13 +173,26 @@ export function ItemEstoqueDialog({
 
               <FormField
                 control={form.control}
-                name="local"
+                name="local_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Local</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Almoxarifado A / Prateleira B3" {...field} />
-                    </FormControl>
+                    <FormLabel>Local de Estoque</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o local" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {locais
+                          .filter((local) => local.ativo)
+                          .map((local) => (
+                            <SelectItem key={local.id} value={local.id}>
+                              {local.codigo} - {local.nome}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

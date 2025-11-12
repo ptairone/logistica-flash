@@ -20,6 +20,7 @@ export const itemEstoqueSchema = z.object({
     .min(0, 'Estoque mínimo não pode ser negativo')
     .default(0),
   local: z.string().optional(),
+  local_id: z.string().uuid().optional(),
   custo_medio: z.number()
     .min(0, 'Custo não pode ser negativo')
     .default(0),

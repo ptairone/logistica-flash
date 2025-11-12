@@ -10,6 +10,8 @@ export const pneuSchema = z.object({
     required_error: 'Tipo obrigatório',
   }),
   item_estoque_id: z.string().uuid().optional(),
+  local_id: z.string().uuid().optional(),
+  local_estoque: z.string().optional(),
   data_compra: z.string().optional(),
   fornecedor: z.string().optional(),
   valor_compra: z.number().min(0).optional(),
