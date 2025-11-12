@@ -95,6 +95,7 @@ export default function AdicionarDespesa() {
 
         setDadosExtraidosRecebimento(data);
         setShowRecebimentoForm(true);
+        setProcessando(false);
       } catch (error: any) {
         console.error('Erro ao processar:', error);
         if (error.message?.includes('429')) {
@@ -104,7 +105,6 @@ export default function AdicionarDespesa() {
         } else {
           toast.error('Erro ao processar: ' + error.message);
         }
-      } finally {
         setProcessando(false);
       }
       return;
