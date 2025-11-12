@@ -1,14 +1,9 @@
 import { z } from 'zod';
 
-// Validação de telefone
+// Validação de telefone - formato WhatsApp (apenas números)
 export function formatTelefone(value: string): string {
-  const clean = value.replace(/\D/g, '');
-  if (clean.length <= 2) return clean;
-  if (clean.length <= 6) return `(${clean.slice(0, 2)}) ${clean.slice(2)}`;
-  if (clean.length <= 10) {
-    return `(${clean.slice(0, 2)}) ${clean.slice(2, 6)}-${clean.slice(6)}`;
-  }
-  return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7, 11)}`;
+  // Retornar apenas números (formato WhatsApp: 5548999744956)
+  return value.replace(/\D/g, '');
 }
 
 export const motoristaSchema = z.object({
