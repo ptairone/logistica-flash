@@ -128,7 +128,7 @@ export function AppSidebar() {
     },
     {
       title: 'Solicitações',
-      url: '/super-admin/empresas-pendentes',
+      url: '/super-admin/pendentes',
       icon: ClipboardCheck,
       roles: ['super_admin']
     },
