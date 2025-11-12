@@ -21,7 +21,7 @@ interface PneuDetailsDialogProps {
 }
 
 export function PneuDetailsDialog({ open, onOpenChange, pneu }: PneuDetailsDialogProps) {
-  const { data: historico } = usePneusHistorico(pneu?.id);
+  const { historico } = usePneusHistorico(pneu?.id);
   const { removerPneu, descartarPneu, updatePneu } = usePneus();
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [descartarDialogOpen, setDescartarDialogOpen] = useState(false);
@@ -34,7 +34,7 @@ export function PneuDetailsDialog({ open, onOpenChange, pneu }: PneuDetailsDialo
   const handleRemover = () => {
     if (pneu && kmAtual) {
       removerPneu.mutate(
-        { pneu_id: pneu.id, km_atual: parseInt(kmAtual), motivo },
+        { pneuId: pneu.id, kmVeiculo: parseInt(kmAtual) },
         {
           onSuccess: () => {
             setRemoveDialogOpen(false);
@@ -50,7 +50,7 @@ export function PneuDetailsDialog({ open, onOpenChange, pneu }: PneuDetailsDialo
   const handleDescartar = () => {
     if (pneu && motivo) {
       descartarPneu.mutate(
-        { pneu_id: pneu.id, motivo },
+        { pneuId: pneu.id, motivo },
         {
           onSuccess: () => {
             setDescartarDialogOpen(false);

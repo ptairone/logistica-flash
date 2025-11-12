@@ -6,7 +6,7 @@ export function usePneus(filters?: {
   status?: string;
   veiculoId?: string;
   tipo?: string;
-  criticos?: boolean;
+  critico?: boolean;
 }) {
   const queryClient = useQueryClient();
 
@@ -14,39 +14,23 @@ export function usePneus(filters?: {
     queryKey: ['pneus', filters],
     queryFn: async () => {
       let query = supabase
-        .from('pneus')
-        .select(`
-          *,
-          veiculo:veiculos(id, placa, codigo_interno),
-          item_estoque:itens_estoque(id, codigo, descricao)
-        `)
+        .from('pneus' as any)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (filters?.status) {
         query = query.eq('status', filters.status);
       }
-
       if (filters?.veiculoId) {
         query = query.eq('veiculo_id', filters.veiculoId);
       }
-
       if (filters?.tipo) {
         query = query.eq('tipo', filters.tipo);
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
-
-      // Filtrar pneus críticos
-      if (filters?.criticos) {
-        return data?.filter((pneu: any) => 
-          pneu.profundidade_sulco_mm && 
-          pneu.profundidade_sulco_mm <= (pneu.profundidade_minima_mm || 1.6)
-        ) || [];
-      }
-
-      return data || [];
+      return data as any[];
     },
   });
 
@@ -55,15 +39,20 @@ export function usePneus(filters?: {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      const { data: userRoles } = await supabase
-        .from('user_roles')
+      const userRolesResponse = await supabase
+        .from('user_roles' as any)
         .select('empresa_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (userRolesResponse.error) throw userRolesResponse.error;
+      if (!userRolesResponse.data) throw new Error('Usuário sem empresa vinculada');
+
+      const empresaId = (userRolesResponse.data as any).empresa_id;
 
       const { data: result, error } = await supabase
-        .from('pneus')
-        .insert({ ...data, empresa_id: userRoles?.empresa_id })
+        .from('pneus' as any)
+        .insert({ ...data, empresa_id: empresaId })
         .select()
         .single();
 
@@ -72,6 +61,7 @@ export function usePneus(filters?: {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pneus'] });
+      queryClient.invalidateQueries({ queryKey: ['itens_estoque'] });
       toast.success('Pneu cadastrado com sucesso!');
     },
     onError: (error: any) => {
@@ -80,9 +70,9 @@ export function usePneus(filters?: {
   });
 
   const updatePneu = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    mutationFn: async ({ id, ...data }: any) => {
       const { data: result, error } = await supabase
-        .from('pneus')
+        .from('pneus' as any)
         .update(data)
         .eq('id', id)
         .select()
@@ -102,7 +92,11 @@ export function usePneus(filters?: {
 
   const deletePneu = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('pneus').delete().eq('id', id);
+      const { error } = await supabase
+        .from('pneus' as any)
+        .delete()
+        .eq('id', id);
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -115,32 +109,39 @@ export function usePneus(filters?: {
   });
 
   const instalarPneu = useMutation({
-    mutationFn: async (data: {
-      pneu_id: string;
-      veiculo_id: string;
-      posicao_veiculo: string;
-      km_atual: number;
-      profundidade_sulco_mm?: number;
+    mutationFn: async ({ 
+      pneuId, 
+      veiculoId, 
+      posicao, 
+      kmVeiculo,
+      dataInstalacao 
+    }: {
+      pneuId: string;
+      veiculoId: string;
+      posicao: string;
+      kmVeiculo: number;
+      dataInstalacao?: string;
     }) => {
-      const updateData = {
-        status: 'em_uso',
-        veiculo_id: data.veiculo_id,
-        posicao_veiculo: data.posicao_veiculo,
-        km_instalacao: data.km_atual,
-        km_atual: data.km_atual,
-        data_instalacao: new Date().toISOString(),
-        ...(data.profundidade_sulco_mm && { profundidade_sulco_mm: data.profundidade_sulco_mm }),
-      };
-
-      const { error } = await supabase
-        .from('pneus')
-        .update(updateData)
-        .eq('id', data.pneu_id);
+      const { data: result, error } = await supabase
+        .from('pneus' as any)
+        .update({
+          status: 'em_uso' as any,
+          veiculo_id: veiculoId,
+          posicao_veiculo: posicao,
+          km_instalacao: kmVeiculo,
+          km_atual: kmVeiculo,
+          data_instalacao: dataInstalacao || new Date().toISOString(),
+        })
+        .eq('id', pneuId)
+        .select()
+        .single();
 
       if (error) throw error;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pneus'] });
+      queryClient.invalidateQueries({ queryKey: ['itens_estoque'] });
       toast.success('Pneu instalado com sucesso!');
     },
     onError: (error: any) => {
@@ -149,23 +150,26 @@ export function usePneus(filters?: {
   });
 
   const removerPneu = useMutation({
-    mutationFn: async (data: { pneu_id: string; km_atual: number; motivo?: string }) => {
-      const { error } = await supabase
-        .from('pneus')
+    mutationFn: async ({ pneuId, kmVeiculo }: { pneuId: string; kmVeiculo: number }) => {
+      const { data: result, error } = await supabase
+        .from('pneus' as any)
         .update({
-          status: 'estoque',
+          status: 'estoque' as any,
           veiculo_id: null,
           posicao_veiculo: null,
-          km_atual: data.km_atual,
+          km_atual: kmVeiculo,
           data_remocao: new Date().toISOString(),
-          ...(data.motivo && { observacoes: data.motivo }),
         })
-        .eq('id', data.pneu_id);
+        .eq('id', pneuId)
+        .select()
+        .single();
 
       if (error) throw error;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pneus'] });
+      queryClient.invalidateQueries({ queryKey: ['itens_estoque'] });
       toast.success('Pneu removido com sucesso!');
     },
     onError: (error: any) => {
@@ -174,18 +178,30 @@ export function usePneus(filters?: {
   });
 
   const descartarPneu = useMutation({
-    mutationFn: async (data: { pneu_id: string; motivo: string }) => {
-      const { error } = await supabase
-        .from('pneus')
+    mutationFn: async ({ 
+      pneuId, 
+      motivo,
+      kmVeiculo 
+    }: { 
+      pneuId: string; 
+      motivo: string;
+      kmVeiculo?: number;
+    }) => {
+      const { data: result, error } = await supabase
+        .from('pneus' as any)
         .update({
-          status: 'descartado',
-          motivo_descarte: data.motivo,
+          status: 'descartado' as any,
+          motivo_descarte: motivo,
+          km_atual: kmVeiculo,
           veiculo_id: null,
           posicao_veiculo: null,
         })
-        .eq('id', data.pneu_id);
+        .eq('id', pneuId)
+        .select()
+        .single();
 
       if (error) throw error;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pneus'] });
@@ -209,28 +225,27 @@ export function usePneus(filters?: {
 }
 
 export function usePneusHistorico(pneuId?: string) {
-  return useQuery({
+  const historicoQuery = useQuery({
     queryKey: ['pneus-historico', pneuId],
     queryFn: async () => {
-      let query = supabase
-        .from('pneus_historico')
-        .select(`
-          *,
-          veiculo:veiculos(id, placa, codigo_interno),
-          manutencao:manutencoes(id, tipo, descricao)
-        `)
+      if (!pneuId) return [];
+      
+      const { data, error } = await supabase
+        .from('pneus_historico' as any)
+        .select('*')
+        .eq('pneu_id', pneuId)
         .order('data_evento', { ascending: false });
 
-      if (pneuId) {
-        query = query.eq('pneu_id', pneuId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return data as any[];
     },
     enabled: !!pneuId,
   });
+
+  return {
+    historico: historicoQuery.data || [],
+    isLoading: historicoQuery.isLoading,
+  };
 }
 
 export function usePneusMedicoes(pneuId?: string) {
@@ -239,49 +254,47 @@ export function usePneusMedicoes(pneuId?: string) {
   const medicoesQuery = useQuery({
     queryKey: ['pneus-medicoes', pneuId],
     queryFn: async () => {
-      let query = supabase
-        .from('pneus_medicoes')
-        .select(`
-          *,
-          pneu:pneus(id, numero_serie, codigo_interno),
-          veiculo:veiculos(id, placa, codigo_interno)
-        `)
+      if (!pneuId) return [];
+      
+      const { data, error } = await supabase
+        .from('pneus_medicoes' as any)
+        .select('*')
+        .eq('pneu_id', pneuId)
         .order('data_medicao', { ascending: false });
 
-      if (pneuId) {
-        query = query.eq('pneu_id', pneuId);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return data as any[];
     },
     enabled: !!pneuId,
   });
 
   const createMedicao = useMutation({
-    mutationFn: async (data: any) => {
-      const { data: result, error } = await supabase
-        .from('pneus_medicoes')
-        .insert(data)
+    mutationFn: async (medicao: any) => {
+      const { data, error } = await supabase
+        .from('pneus_medicoes' as any)
+        .insert(medicao)
         .select()
         .single();
 
       if (error) throw error;
 
-      // Atualizar profundidade média no pneu
+      // Calcular média das 3 medições
       const profundidadeMedia = (
-        data.profundidade_interna_mm +
-        data.profundidade_central_mm +
-        data.profundidade_externa_mm
+        (medicao.profundidade_interna_mm || 0) +
+        (medicao.profundidade_central_mm || 0) +
+        (medicao.profundidade_externa_mm || 0)
       ) / 3;
 
+      // Atualizar profundidade no pneu
       await supabase
-        .from('pneus')
-        .update({ profundidade_sulco_mm: profundidadeMedia })
-        .eq('id', data.pneu_id);
+        .from('pneus' as any)
+        .update({ 
+          profundidade_sulco_mm: profundidadeMedia,
+          km_atual: medicao.km_veiculo 
+        })
+        .eq('id', medicao.pneu_id);
 
-      return result;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pneus-medicoes'] });
@@ -301,35 +314,31 @@ export function usePneusMedicoes(pneuId?: string) {
 }
 
 export function usePneusRelatorios() {
-  return useQuery({
+  const relatoriosQuery = useQuery({
     queryKey: ['pneus-relatorios'],
     queryFn: async () => {
       const { data: pneus, error } = await supabase
-        .from('pneus')
+        .from('pneus' as any)
         .select('*');
 
       if (error) throw error;
 
-      const total = pneus?.length || 0;
-      const emEstoque = pneus?.filter(p => p.status === 'estoque').length || 0;
-      const emUso = pneus?.filter(p => p.status === 'em_uso').length || 0;
-      const emRecapagem = pneus?.filter(p => p.status === 'recapagem').length || 0;
-      const descartados = pneus?.filter(p => p.status === 'descartado').length || 0;
-      const criticos = pneus?.filter(p => 
-        p.profundidade_sulco_mm && 
-        p.profundidade_sulco_mm <= (p.profundidade_minima_mm || 1.6)
-      ).length || 0;
+      const pneusArray = pneus as any[];
+      const totalPneus = pneusArray.length;
+      const emUso = pneusArray.filter(p => p.status === 'em_uso').length;
+      const emEstoque = pneusArray.filter(p => p.status === 'estoque').length;
+      const criticos = pneusArray.filter(p => p.status === 'em_uso' && 
+        p.profundidade_sulco_mm && p.profundidade_sulco_mm <= (p.profundidade_minima_mm || 1.6)
+      ).length;
 
-      const custoTotal = pneus?.reduce((acc, p) => acc + (p.valor_compra || 0), 0) || 0;
-      const kmTotal = pneus?.reduce((acc, p) => acc + (p.km_rodados || 0), 0) || 0;
+      const custoTotal = pneusArray.reduce((sum, p) => sum + (p.valor_compra || 0), 0);
+      const kmTotal = pneusArray.reduce((sum, p) => sum + (p.km_rodados || 0), 0);
       const custoPorKm = kmTotal > 0 ? custoTotal / kmTotal : 0;
 
       return {
-        total,
-        emEstoque,
+        totalPneus,
         emUso,
-        emRecapagem,
-        descartados,
+        emEstoque,
         criticos,
         custoTotal,
         kmTotal,
@@ -337,4 +346,9 @@ export function usePneusRelatorios() {
       };
     },
   });
+
+  return {
+    relatorios: relatoriosQuery.data,
+    isLoading: relatoriosQuery.isLoading,
+  };
 }

@@ -44,11 +44,10 @@ export function InstalacaoPneuDialog({ open, onOpenChange, pneu }: InstalacaoPne
 
   const onSubmit = (data: any) => {
     instalarPneu.mutate({
-      pneu_id: data.pneu_id,
-      veiculo_id: data.veiculo_id,
-      posicao_veiculo: data.posicao_veiculo,
-      km_atual: data.km_atual,
-      profundidade_sulco_mm: data.profundidade_sulco_mm,
+      pneuId: data.pneu_id,
+      veiculoId: data.veiculo_id,
+      posicao: data.posicao_veiculo,
+      kmVeiculo: data.km_atual,
     }, {
       onSuccess: () => {
         onOpenChange(false);

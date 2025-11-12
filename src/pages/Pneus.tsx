@@ -27,10 +27,10 @@ export default function Pneus() {
 
   const { pneus, isLoading, createPneu, updatePneu, deletePneu } = usePneus({
     status: activeTab === 'todos' ? undefined : activeTab,
-    criticos: activeTab === 'criticos',
+    critico: activeTab === 'criticos',
   });
 
-  const { data: relatorios } = usePneusRelatorios();
+  const { relatorios } = usePneusRelatorios();
 
   const handleCreate = () => {
     setSelectedPneu(null);
@@ -133,7 +133,7 @@ export default function Pneus() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{relatorios?.total || 0}</div>
+              <div className="text-2xl font-bold">{relatorios?.totalPneus || 0}</div>
               <p className="text-xs text-muted-foreground">
                 {relatorios?.emEstoque || 0} em estoque
               </p>
