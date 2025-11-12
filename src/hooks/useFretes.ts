@@ -17,10 +17,25 @@ const prepararDadosFrete = (data: FreteFormData | Partial<FreteFormData>) => {
       ? `${data.destino_cidade}/${data.destino_uf}` 
       : '');
 
+  // Normalizar datas e strings vazias para null (evita erro Postgres)
+  const normalizarData = (d?: string | null) => (d && d.trim() !== '' ? d : null);
+  const normalizarString = (s?: string | null) => (s && s.trim() !== '' ? s : null);
+
   return {
     ...data,
     origem,
     destino,
+    data_coleta: normalizarData(data.data_coleta as any),
+    data_entrega: normalizarData(data.data_entrega as any),
+    numero_fatura: normalizarString(data.numero_fatura as any),
+    condicao_pagamento: normalizarString(data.condicao_pagamento as any),
+    produto: normalizarString(data.produto as any),
+    origem_logradouro: normalizarString(data.origem_logradouro as any),
+    origem_numero: normalizarString(data.origem_numero as any),
+    origem_ponto_referencia: normalizarString(data.origem_ponto_referencia as any),
+    destino_logradouro: normalizarString(data.destino_logradouro as any),
+    destino_numero: normalizarString(data.destino_numero as any),
+    destino_ponto_referencia: normalizarString(data.destino_ponto_referencia as any),
   };
 };
 
@@ -155,9 +170,14 @@ export function useFretes() {
       });
     },
     onError: (error: any) => {
+      console.error('❌ Erro ao criar frete:', error);
+      const mensagem = error.code === '22007' 
+        ? 'Datas inválidas. Deixe em branco ou selecione uma data válida.'
+        : error.message || 'Erro ao cadastrar frete';
+      
       toast({
         title: 'Erro',
-        description: error.message || 'Erro ao cadastrar frete',
+        description: mensagem,
         variant: 'destructive',
       });
     },
@@ -185,9 +205,14 @@ export function useFretes() {
       });
     },
     onError: (error: any) => {
+      console.error('❌ Erro ao atualizar frete:', error);
+      const mensagem = error.code === '22007' 
+        ? 'Datas inválidas. Deixe em branco ou selecione uma data válida.'
+        : error.message || 'Erro ao atualizar frete';
+      
       toast({
         title: 'Erro',
-        description: error.message || 'Erro ao atualizar frete',
+        description: mensagem,
         variant: 'destructive',
       });
     },
