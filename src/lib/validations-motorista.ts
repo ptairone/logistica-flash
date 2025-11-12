@@ -15,8 +15,8 @@ export const motoristaSchema = z.object({
     .min(1, 'Telefone é obrigatório')
     .refine((tel) => {
       const limpo = tel.replace(/\D/g, '');
-      return limpo.length === 10 || limpo.length === 11;
-    }, 'Telefone deve ter 10 ou 11 dígitos'),
+      return limpo.length >= 9 && limpo.length <= 16;
+    }, 'Telefone deve ter entre 9 e 16 dígitos'),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   comissao_padrao: z.number().min(0).max(100).optional(),
   status: z.enum(['ativo', 'inativo']),
