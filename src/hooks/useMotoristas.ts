@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 export function useMotoristas() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { empresaId } = useAuth();
 
   const motoristasQuery = useQuery({
     queryKey: ['motoristas'],
@@ -50,9 +51,20 @@ export function useMotoristas() {
       // Remover campos de senha antes de inserir
       const { criarLogin, senha, confirmarSenha, ...motoristaData } = data;
 
+      // Validar empresa_id
+      if (!empresaId) {
+        throw new Error('Usuário não está vinculado a uma empresa');
+      }
+
+      // Adicionar empresa_id
+      const motoristaComEmpresa = {
+        ...motoristaData,
+        empresa_id: empresaId
+      };
+
       const { data: result, error } = await supabase
         .from('motoristas')
-        .insert([motoristaData as any])
+        .insert([motoristaComEmpresa as any])
         .select()
         .single();
 
