@@ -26,8 +26,9 @@ import {
 } from '@/components/ui/select';
 import { itemEstoqueSchema, ItemEstoqueFormData } from '@/lib/validations-estoque';
 import { useCategorias, CategoriaFormData } from '@/hooks/useCategorias';
-import { useLocaisEstoque } from '@/hooks/useLocaisEstoque';
+import { useLocaisEstoque, LocalEstoqueFormData } from '@/hooks/useLocaisEstoque';
 import { CategoriaDialog } from './CategoriaDialog';
+import { LocalDialog } from './LocalDialog';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -47,8 +48,9 @@ export function ItemEstoqueDialog({
   isEdit = false,
 }: ItemEstoqueDialogProps) {
   const { categorias, createCategoria } = useCategorias();
-  const { locais } = useLocaisEstoque();
+  const { locais, createLocal } = useLocaisEstoque();
   const [categoriaDialogOpen, setCategoriaDialogOpen] = useState(false);
+  const [localDialogOpen, setLocalDialogOpen] = useState(false);
   
   const form = useForm<ItemEstoqueFormData>({
     resolver: zodResolver(itemEstoqueSchema),
@@ -75,6 +77,11 @@ export function ItemEstoqueDialog({
   const handleCreateCategoria = async (data: CategoriaFormData) => {
     await createCategoria.mutateAsync(data);
     form.setValue('categoria', data.nome);
+  };
+
+  const handleCreateLocal = async (data: LocalEstoqueFormData) => {
+    const newLocal = await createLocal.mutateAsync(data);
+    form.setValue('local_id', newLocal.id);
   };
 
   return (
@@ -184,6 +191,13 @@ export function ItemEstoqueDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <div 
+                          className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm"
+                          onClick={() => setLocalDialogOpen(true)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>Criar novo local de estoque</span>
+                        </div>
                         {locais
                           .filter((local) => local.ativo)
                           .map((local) => (
@@ -309,6 +323,12 @@ export function ItemEstoqueDialog({
         open={categoriaDialogOpen}
         onOpenChange={setCategoriaDialogOpen}
         onSubmit={handleCreateCategoria}
+      />
+
+      <LocalDialog
+        open={localDialogOpen}
+        onOpenChange={setLocalDialogOpen}
+        onSubmit={handleCreateLocal}
       />
     </Dialog>
   );
