@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Plus, Search, LogOut } from 'lucide-react';
+import { Building2, Plus, Search, LogOut, Pencil } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,12 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { EmpresaDialog } from '@/components/super-admin/EmpresaDialog';
 
 export default function Empresas() {
   const { signOut } = useAuth();
   const { empresas } = useEmpresas();
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [busca, setBusca] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [empresaEditando, setEmpresaEditando] = useState<any>(null);
 
   const empresasFiltradas = empresas.filter(empresa => {
     const matchStatus = filtroStatus === 'todos' || empresa.status === filtroStatus;
@@ -47,7 +50,10 @@ export default function Empresas() {
             <p className="text-muted-foreground">Gerenciar empresas cadastradas</p>
           </div>
           <div className="flex gap-2">
-            <Button>
+            <Button onClick={() => {
+              setEmpresaEditando(null);
+              setDialogOpen(true);
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Nova Empresa
             </Button>
@@ -99,7 +105,7 @@ export default function Empresas() {
                 </div>
                 <CardDescription>{empresa.cnpj}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3">
                 <div className="text-sm">
                   <span className="text-muted-foreground">Email:</span>
                   <p className="font-medium">{empresa.email_contato}</p>
@@ -124,6 +130,18 @@ export default function Empresas() {
                     {new Date(empresa.created_at).toLocaleDateString()}
                   </p>
                 </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2"
+                  onClick={() => {
+                    setEmpresaEditando(empresa);
+                    setDialogOpen(true);
+                  }}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Editar
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -138,6 +156,12 @@ export default function Empresas() {
             </p>
           </div>
         )}
+
+        <EmpresaDialog 
+          open={dialogOpen} 
+          onOpenChange={setDialogOpen}
+          empresa={empresaEditando}
+        />
       </div>
     </MainLayout>
   );
