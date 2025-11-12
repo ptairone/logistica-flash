@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,6 +29,8 @@ import {
 } from '@/components/ui/select';
 import { useEmpresas } from '@/hooks/useEmpresas';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const empresaSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
@@ -65,6 +67,7 @@ interface EmpresaDialogProps {
 
 export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProps) {
   const { createEmpresa, updateEmpresa } = useEmpresas();
+  const [consultandoCNPJ, setConsultandoCNPJ] = useState(false);
 
   const form = useForm<EmpresaFormData>({
     resolver: zodResolver(empresaSchema),
@@ -150,6 +153,41 @@ export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProp
     return value;
   };
 
+  const consultarCNPJ = async (cnpj: string) => {
+    const cnpjLimpo = cnpj.replace(/\D/g, '');
+    
+    if (cnpjLimpo.length !== 14) {
+      toast.error('CNPJ deve ter 14 dígitos');
+      return;
+    }
+
+    setConsultandoCNPJ(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('consultar-cnpj', {
+        body: { cnpj: cnpjLimpo }
+      });
+
+      if (error) throw error;
+
+      form.setValue('nome', data.razao_social || data.nome_fantasia || '');
+      
+      if (data.telefone) {
+        form.setValue('telefone', data.telefone);
+      }
+      if (data.email) {
+        form.setValue('email_contato', data.email);
+      }
+
+      toast.success('Dados da empresa consultados com sucesso!');
+    } catch (error) {
+      console.error('Erro ao consultar CNPJ:', error);
+      toast.error('Erro ao consultar CNPJ. Preencha os dados manualmente.');
+    } finally {
+      setConsultandoCNPJ(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -177,24 +215,44 @@ export function EmpresaDialog({ open, onOpenChange, empresa }: EmpresaDialogProp
             />
 
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="cnpj"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CNPJ *</FormLabel>
+            <FormField
+              control={form.control}
+              name="cnpj"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CNPJ *</FormLabel>
+                  <div className="flex gap-2">
                     <FormControl>
                       <Input
                         placeholder="00.000.000/0000-00"
                         {...field}
                         onChange={(e) => field.onChange(formatCNPJ(e.target.value))}
                         maxLength={18}
+                        disabled={empresa !== null}
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    {!empresa && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => consultarCNPJ(field.value)}
+                        disabled={consultandoCNPJ || field.value.replace(/\D/g, '').length !== 14}
+                      >
+                        {consultandoCNPJ ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Consultando...
+                          </>
+                        ) : (
+                          'Buscar'
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
               <FormField
                 control={form.control}
