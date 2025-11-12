@@ -1,8 +1,12 @@
-import { Building2, Users, Clock, TrendingUp } from 'lucide-react';
+import { Building2, Users, Clock, TrendingUp, LogOut } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useEmpresas } from '@/hooks/useEmpresas';
+import { useAuth } from '@/lib/auth';
+import { MainLayout } from '@/components/MainLayout';
 
 export default function SuperAdminDashboard() {
+  const { signOut } = useAuth();
   const { empresas, empresasPendentes } = useEmpresas();
 
   const empresasAtivas = empresas.filter(e => e.status === 'ativo').length;
@@ -41,11 +45,21 @@ export default function SuperAdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-muted/50">
-      <div className="container mx-auto p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard Super Admin</h1>
-          <p className="text-muted-foreground">Visão geral do sistema multi-tenant</p>
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard Super Admin</h1>
+            <p className="text-muted-foreground">Visão geral do sistema multi-tenant</p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={signOut}
+            className="gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -122,6 +136,6 @@ export default function SuperAdminDashboard() {
           </Card>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

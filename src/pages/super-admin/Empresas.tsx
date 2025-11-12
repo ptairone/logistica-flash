@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Building2, Plus, Search } from 'lucide-react';
+import { Building2, Plus, Search, LogOut } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useEmpresas } from '@/hooks/useEmpresas';
+import { useAuth } from '@/lib/auth';
+import { MainLayout } from '@/components/MainLayout';
 import {
   Select,
   SelectContent,
@@ -14,6 +16,7 @@ import {
 } from '@/components/ui/select';
 
 export default function Empresas() {
+  const { signOut } = useAuth();
   const { empresas } = useEmpresas();
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [busca, setBusca] = useState('');
@@ -36,17 +39,23 @@ export default function Empresas() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/50">
-      <div className="container mx-auto p-6 space-y-6">
+    <MainLayout>
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Empresas</h1>
             <p className="text-muted-foreground">Gerenciar empresas cadastradas</p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Empresa
-          </Button>
+          <div className="flex gap-2">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Empresa
+            </Button>
+            <Button variant="outline" onClick={signOut} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          </div>
         </div>
 
         <div className="flex gap-4">
@@ -130,6 +139,6 @@ export default function Empresas() {
           </div>
         )}
       </div>
-    </div>
+    </MainLayout>
   );
 }

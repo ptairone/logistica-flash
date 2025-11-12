@@ -1,8 +1,10 @@
-import { Building2, CheckCircle, XCircle } from 'lucide-react';
+import { Building2, CheckCircle, XCircle, LogOut } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useEmpresas } from '@/hooks/useEmpresas';
+import { useAuth } from '@/lib/auth';
+import { MainLayout } from '@/components/MainLayout';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function EmpresasPendentes() {
+  const { signOut } = useAuth();
   const { empresasPendentes, aprovarEmpresa, rejeitarEmpresa } = useEmpresas();
 
   const handleAprovar = (id: string) => {
@@ -27,11 +30,17 @@ export default function EmpresasPendentes() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/50">
-      <div className="container mx-auto p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Empresas Pendentes</h1>
-          <p className="text-muted-foreground">Aprovar ou rejeitar solicitações de cadastro</p>
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Empresas Pendentes</h1>
+            <p className="text-muted-foreground">Aprovar ou rejeitar solicitações de cadastro</p>
+          </div>
+          <Button variant="outline" onClick={signOut} className="gap-2">
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
         </div>
 
         {empresasPendentes.length === 0 ? (
@@ -140,6 +149,6 @@ export default function EmpresasPendentes() {
           </div>
         )}
       </div>
-    </div>
+    </MainLayout>
   );
 }
