@@ -101,9 +101,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Validar trial expirado
             if ((empresa as any).status === 'trial' && new Date() > new Date((empresa as any).data_fim_trial)) {
               setEmpresaStatus('trial_expirado');
-              // Opcional: fazer signOut automaticamente
-              // await signOut();
-              // toast.error('Seu período de teste expirou. Entre em contato para renovar.');
+              
+              // Bloquear acesso se trial expirado
+              const { toast } = await import('sonner');
+              toast.error('Seu período de teste expirou. Entre em contato para renovar o acesso.');
+              setTimeout(async () => {
+                await supabase.auth.signOut();
+                setRoles([]);
+                setEmpresaId(null);
+                setEmpresaNome(null);
+                setEmpresaStatus(null);
+              }, 2000);
+            } else if ((empresa as any).status === 'trial') {
+              // Avisar se trial está perto de expirar
+              const diasRestantes = Math.floor(
+                (new Date((empresa as any).data_fim_trial).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+              );
+              
+              if (diasRestantes <= 3 && diasRestantes > 0) {
+                const { toast } = await import('sonner');
+                toast.warning(`⚠️ Seu período de teste expira em ${diasRestantes} dias! Entre em contato para ativar sua conta.`, {
+                  duration: 10000,
+                });
+              }
+              
+              setEmpresaStatus((empresa as any).status);
             } else {
               setEmpresaStatus((empresa as any).status);
             }

@@ -64,15 +64,24 @@ export default function Login() {
     let timeoutId: NodeJS.Timeout;
     
     if (user && !authLoading) {
+      const isSuperAdmin = roles.includes('super_admin');
       const isMotorista = roles.includes('motorista');
       const isAdmin = roles.includes('admin');
       
-      if (isMotorista && !isAdmin) {
+      // Super Admin vai para painel específico
+      if (isSuperAdmin) {
+        navigate('/super-admin/dashboard');
+      } 
+      // Motorista (sem ser admin) vai para área do motorista
+      else if (isMotorista && !isAdmin) {
         navigate('/motorista/viagens');
-      } else if (roles.length > 0) {
+      } 
+      // Admin, operacional, financeiro vão para dashboard
+      else if (roles.length > 0) {
         navigate('/dashboard');
-      } else {
-        // Timeout de 5 segundos para evitar tela travada
+      } 
+      // Usuário sem roles
+      else {
         timeoutId = setTimeout(() => {
           toast.warning('Seu usuário ainda não possui permissões configuradas. Entre em contato com o administrador.');
           navigate('/apresentacao');
