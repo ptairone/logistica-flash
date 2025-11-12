@@ -27,7 +27,8 @@ const prepararDadosFrete = (data: FreteFormData | Partial<FreteFormData>) => {
 export function useFretes() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { empresaId } = useAuth();
+  const { empresaId, hasRole } = useAuth();
+  const isSuperAdmin = hasRole('super_admin');
 
   const fretesQuery = useQuery({
     queryKey: ['fretes'],
@@ -44,9 +45,16 @@ export function useFretes() {
 
   const createFrete = useMutation({
     mutationFn: async (data: FreteFormData) => {
-      if (!empresaId) {
+      // Super admin pode criar sem empresa_id, outros usuários precisam
+      if (!isSuperAdmin && !empresaId) {
         throw new Error('Usuário não está vinculado a uma empresa');
       }
+
+      console.log('🚛 Criando frete:', { 
+        empresaId, 
+        isSuperAdmin,
+        usuario: 'auth.uid()' 
+      });
 
       // Gerar código automático se não foi fornecido
       let codigo = data.codigo;
@@ -84,8 +92,8 @@ export function useFretes() {
         piso_minimo_antt: data.piso_minimo_antt,
       });
 
-      // Adicionar empresa_id aos dados preparados
-      (dadosPreparados as any).empresa_id = empresaId;
+      // Adicionar empresa_id aos dados preparados (pode ser null para super_admin)
+      (dadosPreparados as any).empresa_id = empresaId || null;
       
       // Retry mechanism para evitar códigos duplicados
       let tentativas = 0;
@@ -123,8 +131,10 @@ export function useFretes() {
           }
 
           result = insertResult;
+          console.log('✅ Frete criado com sucesso:', insertResult.id);
           break;
         } catch (err) {
+          console.error('❌ Erro ao criar frete:', err);
           if (tentativas >= maxTentativas - 1) {
             throw err;
           }
