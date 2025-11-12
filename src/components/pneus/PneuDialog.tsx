@@ -35,7 +35,7 @@ export function PneuDialog({ open, onOpenChange, onSubmit, pneu, isLoading }: Pn
     },
   });
 
-  const selectedStatus = watch('status');
+  
 
   useEffect(() => {
     if (pneu) {
