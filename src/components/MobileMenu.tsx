@@ -10,6 +10,11 @@ import {
   Package,
   FileText,
   LogOut,
+  Wrench,
+  Settings,
+  Circle,
+  Fuel,
+  BarChart3,
 } from 'lucide-react';
 import {
   Drawer,
@@ -69,6 +74,36 @@ export function MobileMenu() {
       url: '/estoque', 
       icon: Package,
       roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Mecânicos', 
+      url: '/mecanicos', 
+      icon: Wrench,
+      roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Manutenções', 
+      url: '/manutencoes', 
+      icon: Settings,
+      roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Pneus', 
+      url: '/pneus', 
+      icon: Circle,
+      roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Abastecimentos', 
+      url: '/abastecimentos', 
+      icon: Fuel,
+      roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Relatórios', 
+      url: '/relatorios',
+      icon: BarChart3,
+      roles: ['admin', 'operacional', 'financeiro']
     },
   ];
 
