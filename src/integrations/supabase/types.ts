@@ -966,6 +966,7 @@ export type Database = {
           motivo_rejeicao: string | null
           nome: string
           nome_responsavel: string
+          senha_hash: string | null
           status: string
           telefone: string | null
         }
@@ -979,6 +980,7 @@ export type Database = {
           motivo_rejeicao?: string | null
           nome: string
           nome_responsavel: string
+          senha_hash?: string | null
           status?: string
           telefone?: string | null
         }
@@ -992,6 +994,7 @@ export type Database = {
           motivo_rejeicao?: string | null
           nome?: string
           nome_responsavel?: string
+          senha_hash?: string | null
           status?: string
           telefone?: string | null
         }
