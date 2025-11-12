@@ -966,6 +966,7 @@ export type Database = {
           motivo_rejeicao: string | null
           nome: string
           nome_responsavel: string
+          senha_hash: string | null
           status: string
           telefone: string | null
         }
@@ -979,6 +980,7 @@ export type Database = {
           motivo_rejeicao?: string | null
           nome: string
           nome_responsavel: string
+          senha_hash?: string | null
           status?: string
           telefone?: string | null
         }
@@ -992,6 +994,7 @@ export type Database = {
           motivo_rejeicao?: string | null
           nome?: string
           nome_responsavel?: string
+          senha_hash?: string | null
           status?: string
           telefone?: string | null
         }
@@ -1633,6 +1636,282 @@ export type Database = {
             columns: ["referencia_viagem_id"]
             isOneToOne: false
             referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pneus: {
+        Row: {
+          codigo_interno: string
+          created_at: string | null
+          data_compra: string | null
+          data_instalacao: string | null
+          data_remocao: string | null
+          empresa_id: string | null
+          fornecedor: string | null
+          id: string
+          item_estoque_id: string | null
+          km_atual: number | null
+          km_instalacao: number | null
+          km_rodados: number | null
+          marca: string
+          medida: string
+          modelo: string
+          motivo_descarte: string | null
+          numero_recapagens: number | null
+          numero_serie: string
+          observacoes: string | null
+          posicao_veiculo: string | null
+          profundidade_minima_mm: number | null
+          profundidade_sulco_mm: number | null
+          proxima_calibragem: string | null
+          status: string
+          tipo: string
+          updated_at: string | null
+          valor_compra: number | null
+          veiculo_id: string | null
+        }
+        Insert: {
+          codigo_interno: string
+          created_at?: string | null
+          data_compra?: string | null
+          data_instalacao?: string | null
+          data_remocao?: string | null
+          empresa_id?: string | null
+          fornecedor?: string | null
+          id?: string
+          item_estoque_id?: string | null
+          km_atual?: number | null
+          km_instalacao?: number | null
+          km_rodados?: number | null
+          marca: string
+          medida: string
+          modelo: string
+          motivo_descarte?: string | null
+          numero_recapagens?: number | null
+          numero_serie: string
+          observacoes?: string | null
+          posicao_veiculo?: string | null
+          profundidade_minima_mm?: number | null
+          profundidade_sulco_mm?: number | null
+          proxima_calibragem?: string | null
+          status?: string
+          tipo: string
+          updated_at?: string | null
+          valor_compra?: number | null
+          veiculo_id?: string | null
+        }
+        Update: {
+          codigo_interno?: string
+          created_at?: string | null
+          data_compra?: string | null
+          data_instalacao?: string | null
+          data_remocao?: string | null
+          empresa_id?: string | null
+          fornecedor?: string | null
+          id?: string
+          item_estoque_id?: string | null
+          km_atual?: number | null
+          km_instalacao?: number | null
+          km_rodados?: number | null
+          marca?: string
+          medida?: string
+          modelo?: string
+          motivo_descarte?: string | null
+          numero_recapagens?: number | null
+          numero_serie?: string
+          observacoes?: string | null
+          posicao_veiculo?: string | null
+          profundidade_minima_mm?: number | null
+          profundidade_sulco_mm?: number | null
+          proxima_calibragem?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string | null
+          valor_compra?: number | null
+          veiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pneus_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pneus_item_estoque_id_fkey"
+            columns: ["item_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "itens_estoque"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pneus_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pneus_historico: {
+        Row: {
+          created_at: string | null
+          custo: number | null
+          data_evento: string | null
+          id: string
+          km_veiculo: number | null
+          manutencao_id: string | null
+          observacoes: string | null
+          pneu_id: string | null
+          posicao_anterior: string | null
+          posicao_nova: string | null
+          pressao_psi: number | null
+          profundidade_sulco_mm: number | null
+          tipo_evento: string
+          usuario_id: string | null
+          veiculo_id: string | null
+          viagem_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          custo?: number | null
+          data_evento?: string | null
+          id?: string
+          km_veiculo?: number | null
+          manutencao_id?: string | null
+          observacoes?: string | null
+          pneu_id?: string | null
+          posicao_anterior?: string | null
+          posicao_nova?: string | null
+          pressao_psi?: number | null
+          profundidade_sulco_mm?: number | null
+          tipo_evento: string
+          usuario_id?: string | null
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          custo?: number | null
+          data_evento?: string | null
+          id?: string
+          km_veiculo?: number | null
+          manutencao_id?: string | null
+          observacoes?: string | null
+          pneu_id?: string | null
+          posicao_anterior?: string | null
+          posicao_nova?: string | null
+          pressao_psi?: number | null
+          profundidade_sulco_mm?: number | null
+          tipo_evento?: string
+          usuario_id?: string | null
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pneus_historico_manutencao_id_fkey"
+            columns: ["manutencao_id"]
+            isOneToOne: false
+            referencedRelation: "manutencoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pneus_historico_pneu_id_fkey"
+            columns: ["pneu_id"]
+            isOneToOne: false
+            referencedRelation: "pneus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pneus_historico_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pneus_historico_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pneus_medicoes: {
+        Row: {
+          created_at: string | null
+          danos_visiveis: boolean | null
+          data_medicao: string | null
+          desgaste_irregular: boolean | null
+          fotos_urls: Json | null
+          id: string
+          km_veiculo: number | null
+          necessita_atencao: boolean | null
+          observacoes: string | null
+          pneu_id: string | null
+          pressao_psi: number | null
+          profundidade_central_mm: number | null
+          profundidade_externa_mm: number | null
+          profundidade_interna_mm: number | null
+          temperatura_celsius: number | null
+          usuario_id: string | null
+          veiculo_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          danos_visiveis?: boolean | null
+          data_medicao?: string | null
+          desgaste_irregular?: boolean | null
+          fotos_urls?: Json | null
+          id?: string
+          km_veiculo?: number | null
+          necessita_atencao?: boolean | null
+          observacoes?: string | null
+          pneu_id?: string | null
+          pressao_psi?: number | null
+          profundidade_central_mm?: number | null
+          profundidade_externa_mm?: number | null
+          profundidade_interna_mm?: number | null
+          temperatura_celsius?: number | null
+          usuario_id?: string | null
+          veiculo_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          danos_visiveis?: boolean | null
+          data_medicao?: string | null
+          desgaste_irregular?: boolean | null
+          fotos_urls?: Json | null
+          id?: string
+          km_veiculo?: number | null
+          necessita_atencao?: boolean | null
+          observacoes?: string | null
+          pneu_id?: string | null
+          pressao_psi?: number | null
+          profundidade_central_mm?: number | null
+          profundidade_externa_mm?: number | null
+          profundidade_interna_mm?: number | null
+          temperatura_celsius?: number | null
+          usuario_id?: string | null
+          veiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pneus_medicoes_pneu_id_fkey"
+            columns: ["pneu_id"]
+            isOneToOne: false
+            referencedRelation: "pneus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pneus_medicoes_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
             referencedColumns: ["id"]
           },
         ]
