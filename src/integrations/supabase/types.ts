@@ -1177,6 +1177,7 @@ export type Database = {
           fornecedor: string | null
           id: string
           local: string | null
+          local_id: string | null
           observacoes: string | null
           unidade: string
           updated_at: string
@@ -1193,6 +1194,7 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           local?: string | null
+          local_id?: string | null
           observacoes?: string | null
           unidade: string
           updated_at?: string
@@ -1209,6 +1211,7 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           local?: string | null
+          local_id?: string | null
           observacoes?: string | null
           unidade?: string
           updated_at?: string
@@ -1216,6 +1219,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "itens_estoque_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_estoque_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locais_estoque: {
+        Row: {
+          ativo: boolean | null
+          capacidade_m3: number | null
+          codigo: string
+          created_at: string | null
+          descricao: string | null
+          empresa_id: string
+          endereco: string | null
+          id: string
+          nome: string
+          responsavel: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          capacidade_m3?: number | null
+          codigo: string
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id: string
+          endereco?: string | null
+          id?: string
+          nome: string
+          responsavel?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          capacidade_m3?: number | null
+          codigo?: string
+          created_at?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          endereco?: string | null
+          id?: string
+          nome?: string
+          responsavel?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locais_estoque_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
@@ -1654,6 +1714,8 @@ export type Database = {
           km_atual: number | null
           km_instalacao: number | null
           km_rodados: number | null
+          local_estoque: string | null
+          local_id: string | null
           marca: string
           medida: string
           modelo: string
@@ -1684,6 +1746,8 @@ export type Database = {
           km_atual?: number | null
           km_instalacao?: number | null
           km_rodados?: number | null
+          local_estoque?: string | null
+          local_id?: string | null
           marca: string
           medida: string
           modelo: string
@@ -1714,6 +1778,8 @@ export type Database = {
           km_atual?: number | null
           km_instalacao?: number | null
           km_rodados?: number | null
+          local_estoque?: string | null
+          local_id?: string | null
           marca?: string
           medida?: string
           modelo?: string
@@ -1744,6 +1810,13 @@ export type Database = {
             columns: ["item_estoque_id"]
             isOneToOne: false
             referencedRelation: "itens_estoque"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pneus_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
             referencedColumns: ["id"]
           },
           {
