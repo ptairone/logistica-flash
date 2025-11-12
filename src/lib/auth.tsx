@@ -228,7 +228,7 @@ export function ProtectedRoute({ children, requiredRoles }: { children: ReactNod
     if (!loading) {
       if (!user) {
         navigate('/login');
-      } else if (requiredRoles && !requiredRoles.some(role => roles.includes(role))) {
+      } else if (requiredRoles && !requiredRoles.some(role => roles.includes(role)) && !roles.includes('super_admin')) {
         navigate('/');
       }
     }
@@ -242,7 +242,7 @@ export function ProtectedRoute({ children, requiredRoles }: { children: ReactNod
     );
   }
 
-  if (!user || (requiredRoles && !requiredRoles.some(role => roles.includes(role)))) {
+  if (!user || (requiredRoles && !requiredRoles.some(role => roles.includes(role)) && !roles.includes('super_admin'))) {
     return null;
   }
 
