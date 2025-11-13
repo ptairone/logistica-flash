@@ -15,9 +15,12 @@ import { useAcertos, useVincularViagens } from "@/hooks/useAcertos";
 import { useAcertosCLT } from "@/hooks/useAcertosCLT";
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { supabase } from '@/integrations/supabase/client';
+import { AcertoAjuste } from '@/hooks/useAcertoAjustes';
+import { useToast } from '@/hooks/use-toast';
 export default function Acertos() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { acertos, isLoading, createAcerto, updateAcerto, deleteAcerto } = useAcertos();
   const vincularViagens = useVincularViagens();
   const { acertos: acertosCLT, isLoading: isLoadingCLT, createAcertoCLT, updateAcertoCLT, deleteAcertoCLT } = useAcertosCLT();
@@ -69,16 +72,85 @@ export default function Acertos() {
     setDetailsDialogOpen(true);
   };
 
-  const handleSubmit = async (data: any, viagemIds: string[]) => {
+  const handleSubmit = async (
+    data: any, 
+    viagemIds: string[], 
+    ajustes: AcertoAjuste[], 
+    debitosDescontados: any[], 
+    validacoes: any[]
+  ) => {
     if (selectedAcerto) {
-      updateAcerto.mutate({ id: selectedAcerto.id, data }, { onSuccess: () => setDialogOpen(false) });
+      updateAcerto.mutate({ id: selectedAcerto.id, data }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+        },
+      });
     } else {
       createAcerto.mutate(data, {
-        onSuccess: (acerto) => {
-          if (viagemIds.length > 0) {
-            vincularViagens.mutate({ viagemIds, acertoId: acerto.id });
+        onSuccess: async (acerto) => {
+          try {
+            // 1. Vincular viagens
+            if (viagemIds.length > 0) {
+              await vincularViagens.mutateAsync({ 
+                viagemIds, 
+                acertoId: acerto.id 
+              });
+            }
+
+            // 2. Salvar ajustes administrativos
+            for (const ajuste of ajustes) {
+              await supabase
+                .from('acerto_ajustes')
+                .insert({
+                  acerto_id: acerto.id,
+                  tipo: ajuste.tipo,
+                  categoria: ajuste.categoria,
+                  descricao: ajuste.descricao,
+                  valor: ajuste.valor,
+                  justificativa: ajuste.justificativa,
+                  comprovante_url: ajuste.comprovante_url,
+                });
+            }
+
+            // 3. Salvar validações de despesas
+            for (const validacao of validacoes) {
+              await supabase
+                .from('despesas_validacao')
+                .insert({
+                  acerto_id: acerto.id,
+                  despesa_id: validacao.despesa_id,
+                  status: validacao.status,
+                  valor_original: validacao.valor_original,
+                  valor_aprovado: validacao.valor_aprovado,
+                  justificativa: validacao.justificativa,
+                  observacoes: validacao.observacoes,
+                });
+            }
+
+            // 4. Atualizar débitos descontados
+            for (const debito of debitosDescontados) {
+              await supabase
+                .from('acerto_debitos')
+                .update({
+                  acerto_id: acerto.id,
+                  valor_pago: debito.valorDescontar,
+                  saldo: debito.saldoRestante,
+                })
+                .eq('id', debito.id);
+            }
+
+            toast({
+              title: 'Sucesso',
+              description: 'Acerto criado com todas as informações vinculadas',
+            });
+            setDialogOpen(false);
+          } catch (error: any) {
+            toast({
+              title: 'Erro ao vincular dados',
+              description: error.message,
+              variant: 'destructive',
+            });
           }
-          setDialogOpen(false);
         },
       });
     }
