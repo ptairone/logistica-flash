@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [empresaNome, setEmpresaNome] = useState<string | null>(null);
   const [empresaStatus, setEmpresaStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const empresaToastShownRef = useRef(false);
 
   useEffect(() => {
     // Setup auth state listener
@@ -39,12 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Defer fetchUserRoles to avoid blocking the callback
+        if (session?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+          // Defer fetchUserRoles only on sign-in or user update (avoid TOKEN_REFRESHED loops)
           setTimeout(() => {
             fetchUserRoles(session.user.id);
           }, 0);
-        } else {
+        } else if (!session?.user) {
           setRoles([]);
           setLoading(false);
         }
@@ -88,6 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (empresaIdValue && !isSuperAdminUser) {
           setEmpresaId(empresaIdValue);
           
+        if (empresaIdValue && !isSuperAdminUser) {
+          setEmpresaId(empresaIdValue);
+          
           // Buscar dados da empresa
           const { data: empresa, error: empresaError } = await supabase
             .from('empresas' as any)
@@ -98,8 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (empresaError) {
             console.error('❌ Erro ao buscar empresa:', empresaError);
             setEmpresaStatus('empresa_nao_encontrada');
-            const { toast } = await import('sonner');
-            toast.warning('Empresa não encontrada. Entre em contato com o suporte.');
+            if (!empresaToastShownRef.current) {
+              const { toast } = await import('sonner');
+              toast.warning('Empresa não encontrada. Entre em contato com o suporte.');
+              empresaToastShownRef.current = true;
+            }
           } else if (empresa) {
             setEmpresaNome((empresa as any).nome);
             
@@ -137,8 +144,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else {
             console.warn('⚠️ Empresa não encontrada:', empresaIdValue);
             setEmpresaStatus('empresa_nao_encontrada');
-            const { toast } = await import('sonner');
-            toast.warning('Empresa não encontrada. Entre em contato com o suporte.');
+            if (!empresaToastShownRef.current) {
+              const { toast } = await import('sonner');
+              toast.warning('Empresa não encontrada. Entre em contato com o suporte.');
+              empresaToastShownRef.current = true;
+            }
           }
         } else if (isSuperAdminUser) {
           // Super admin não tem empresa
