@@ -30,6 +30,7 @@ interface FreteDialogProps {
 }
 
 export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: FreteDialogProps) {
+  const TAB_ORDER = ['cliente', 'rota', 'veiculo', 'valores', 'extras'];
   const [activeTab, setActiveTab] = useState('cliente');
   const [buscandoCNPJ, setBuscandoCNPJ] = useState(false);
   const [buscandoCEPOrigem, setBuscandoCEPOrigem] = useState(false);
@@ -62,6 +63,20 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
   const handleFormSubmit = (data: FreteFormData) => {
     onSubmit(data);
     clearPersistedData();
+  };
+
+  const handleProximaAba = () => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    if (currentIndex < TAB_ORDER.length - 1) {
+      setActiveTab(TAB_ORDER[currentIndex + 1]);
+    }
+  };
+
+  const handleVoltarAba = () => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(TAB_ORDER[currentIndex - 1]);
+    }
   };
 
   useEffect(() => {
@@ -355,14 +370,32 @@ export function FreteDialog({ open, onOpenChange, onSubmit, frete, isLoading }: 
             </div>
           </Tabs>
 
-          <DialogFooter className="mt-4 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {frete ? 'Atualizar Frete' : 'Criar Frete'}
-            </Button>
+          <DialogFooter className="mt-4 pt-4 border-t flex justify-between">
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              {activeTab !== 'cliente' && (
+                <Button type="button" variant="ghost" onClick={handleVoltarAba}>
+                  Voltar
+                </Button>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              {['cliente', 'rota', 'veiculo'].includes(activeTab) && (
+                <Button type="button" onClick={handleProximaAba}>
+                  Próximo
+                </Button>
+              )}
+              
+              {['valores', 'extras'].includes(activeTab) && (
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {frete ? 'Atualizar Frete' : 'Criar Frete'}
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
