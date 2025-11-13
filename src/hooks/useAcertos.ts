@@ -27,14 +27,12 @@ export function useAcertos() {
 
   const createAcerto = useMutation({
     mutationFn: async (data: AcertoFormData) => {
-      if (!empresaId) {
-        throw new Error('Usuário não está vinculado a uma empresa');
-      }
-
       const acertoComEmpresa = {
         ...data,
-        empresa_id: empresaId
+        empresa_id: empresaId || null
       };
+
+      console.log('🧾 Criando acerto:', { empresaId, data: acertoComEmpresa });
 
       const { data: result, error } = await supabase
         .from('acertos')
@@ -42,7 +40,12 @@ export function useAcertos() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao criar acerto:', error);
+        throw error;
+      }
+      
+      console.log('✅ Acerto criado:', result);
       return result;
     },
     onSuccess: () => {
@@ -53,9 +56,19 @@ export function useAcertos() {
       });
     },
     onError: (error: any) => {
+      console.error('❌ Erro ao criar acerto:', error);
+      
+      let mensagem = error.message || 'Erro ao criar acerto';
+      
+      if (error.message?.includes('row-level security')) {
+        mensagem = 'Você não tem permissão para criar acertos. Verifique seu vínculo com a empresa.';
+      } else if (error.message?.includes('empresa_id')) {
+        mensagem = 'Empresa não vinculada. Entre em contato com o administrador.';
+      }
+
       toast({
         title: 'Erro',
-        description: error.message || 'Erro ao criar acerto',
+        description: mensagem,
         variant: 'destructive',
       });
     },
