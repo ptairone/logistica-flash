@@ -253,7 +253,7 @@ export function ProtectedRoute({ children, requiredRoles }: { children: ReactNod
     }
   }, [user, roles, loading, navigate, requiredRoles]);
 
-  if (loading) {
+  if (loading && !user) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-lg">Carregando...</div>
@@ -261,7 +261,11 @@ export function ProtectedRoute({ children, requiredRoles }: { children: ReactNod
     );
   }
 
-  if (!user || (requiredRoles && !requiredRoles.some(role => roles.includes(role)) && !roles.includes('super_admin'))) {
+  if (!user) {
+    return null;
+  }
+
+  if (requiredRoles && !loading && !requiredRoles.some(role => roles.includes(role)) && !roles.includes('super_admin')) {
     return null;
   }
 
