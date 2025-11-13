@@ -89,13 +89,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setEmpresaId(empresaIdValue);
           
           // Buscar dados da empresa
-          const { data: empresa } = await supabase
+          const { data: empresa, error: empresaError } = await supabase
             .from('empresas' as any)
             .select('nome, status, data_fim_trial')
             .eq('id', empresaIdValue)
-            .single();
+            .maybeSingle();
           
-          if (empresa) {
+          if (empresaError) {
+            console.error('❌ Erro ao buscar empresa:', empresaError);
+            setEmpresaStatus('empresa_nao_encontrada');
+            const { toast } = await import('sonner');
+            toast.warning('Empresa não encontrada. Entre em contato com o suporte.');
+          } else if (empresa) {
             setEmpresaNome((empresa as any).nome);
             
             // Validar trial expirado
@@ -129,6 +134,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
               setEmpresaStatus((empresa as any).status);
             }
+          } else {
+            console.warn('⚠️ Empresa não encontrada:', empresaIdValue);
+            setEmpresaStatus('empresa_nao_encontrada');
+            const { toast } = await import('sonner');
+            toast.warning('Empresa não encontrada. Entre em contato com o suporte.');
           }
         } else if (isSuperAdminUser) {
           // Super admin não tem empresa
@@ -149,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setEmpresaNome(null);
       setEmpresaStatus(null);
     } finally {
+      // ✅ SEMPRE desbloquear a interface, mesmo com erro
       setLoading(false);
     }
   };
