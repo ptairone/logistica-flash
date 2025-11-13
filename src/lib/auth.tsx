@@ -89,9 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (empresaIdValue && !isSuperAdminUser) {
           setEmpresaId(empresaIdValue);
           
-        if (empresaIdValue && !isSuperAdminUser) {
-          setEmpresaId(empresaIdValue);
-          
           // Buscar dados da empresa
           const { data: empresa, error: empresaError } = await supabase
             .from('empresas' as any)
@@ -204,6 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setEmpresaId(null);
     setEmpresaNome(null);
     setEmpresaStatus(null);
+    empresaToastShownRef.current = false;
   };
 
   const hasRole = (role: UserRole) => roles.includes(role);
