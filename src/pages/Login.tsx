@@ -168,135 +168,137 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
-            <Truck className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <CardTitle className="text-2xl font-bold">Logística Flash</CardTitle>
-          <CardDescription>Sistema de Gestão de Transportes</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
-            </TabsList>
+      <div className="w-full max-w-md space-y-4">
+        <Card className="shadow-lg">
+          <CardHeader className="space-y-1 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary">
+              <Truck className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Logística Flash</CardTitle>
+            <CardDescription>Sistema de Gestão de Transportes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login">Entrar</TabsTrigger>
+                <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="login">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                {isBiometricAvailable && !isBiometricEnabled && (
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="remember"
-                      checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              <TabsContent value="login">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
                     />
-                    <label
-                      htmlFor="remember"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                    >
-                      <Fingerprint className="h-4 w-4" />
-                      Lembrar-me com biometria
-                    </label>
                   </div>
-                )}
-
-                {isBiometricEnabled && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Fingerprint className="h-4 w-4 text-primary" />
-                    <span>Login automático ativado</span>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
                   </div>
-                )}
+                  
+                  {isBiometricAvailable && !isBiometricEnabled && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                      />
+                      <label
+                        htmlFor="remember"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                      >
+                        <Fingerprint className="h-4 w-4" />
+                        Lembrar-me com biometria
+                      </label>
+                    </div>
+                  )}
 
-                <Button type="submit" className="w-full" disabled={loading || authLoading}>
-                  {loading ? 'Entrando...' : 'Entrar'}
-                </Button>
-              </form>
-            </TabsContent>
+                  {isBiometricEnabled && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Fingerprint className="h-4 w-4 text-primary" />
+                      <span>Login automático ativado</span>
+                    </div>
+                  )}
 
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-nome">Nome completo</Label>
-                  <Input
-                    id="signup-nome"
-                    type="text"
-                    placeholder="Seu nome"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Criando conta...' : 'Criar conta'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                  <Button type="submit" className="w-full" disabled={loading || authLoading}>
+                    {loading ? 'Entrando...' : 'Entrar'}
+                  </Button>
+                </form>
+              </TabsContent>
 
-      {/* Link para registro de empresa */}
-      <div className="mt-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          Não tem uma conta?{' '}
-          <Link 
-            to="/registro-empresa" 
-            className="text-primary hover:underline font-medium inline-flex items-center gap-1"
-          >
-            <Building2 className="h-3 w-3" />
-            Cadastre sua empresa
-          </Link>
-        </p>
-        <p className="text-xs text-muted-foreground mt-2">
-          Teste grátis por 7 dias
-        </p>
+              <TabsContent value="signup">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-nome">Nome completo</Label>
+                    <Input
+                      id="signup-nome"
+                      type="text"
+                      placeholder="Seu nome"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Senha</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Criando conta...' : 'Criar conta'}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+
+            {/* Link para registro de empresa - dentro do Card */}
+            <div className="mt-6 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Não tem uma conta?{' '}
+                <Link 
+                  to="/registro-empresa" 
+                  className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                >
+                  <Building2 className="h-3 w-3" />
+                  Cadastre sua empresa
+                </Link>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Teste grátis por 7 dias
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
