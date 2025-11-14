@@ -1,10 +1,12 @@
-import { Truck, AlertTriangle, Calendar, Wrench, FileText, Edit, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Truck, AlertTriangle, Calendar, Wrench, FileText, Edit, Trash2, Network } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDateBR, isDateExpired, isDateExpiringSoon } from '@/lib/validations';
 import { cn } from '@/lib/utils';
 import { VeiculoReboquesInfo } from './VeiculoReboquesInfo';
+import { VeiculoComposicaoSheet } from './VeiculoComposicaoSheet';
 
 interface VeiculoCardProps {
   veiculo: any;
@@ -14,6 +16,7 @@ interface VeiculoCardProps {
 }
 
 export function VeiculoCard({ veiculo, onEdit, onDelete, onViewDetails }: VeiculoCardProps) {
+  const [showComposicao, setShowComposicao] = useState(false);
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
       ativo: 'default',
@@ -212,15 +215,29 @@ export function VeiculoCard({ veiculo, onEdit, onDelete, onViewDetails }: Veicul
           </div>
         )}
 
-        <Button
-          variant="outline"
-          className="w-full mt-2"
-          onClick={() => onViewDetails(veiculo)}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Ver Detalhes
-        </Button>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowComposicao(true)}
+          >
+            <Network className="h-4 w-4 mr-2" />
+            Composição
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onViewDetails(veiculo)}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Detalhes
+          </Button>
+        </div>
       </CardContent>
+
+      <VeiculoComposicaoSheet 
+        veiculo={veiculo} 
+        open={showComposicao} 
+        onOpenChange={setShowComposicao} 
+      />
     </Card>
   );
 }
