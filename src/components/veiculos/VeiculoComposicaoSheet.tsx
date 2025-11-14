@@ -4,7 +4,9 @@ import { useDevice } from '@/hooks/useDevice';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VeiculoComposicaoInterativa } from './VeiculoComposicaoInterativa';
+import { ComposicaoPneusManager } from './ComposicaoPneusManager';
 
 interface VeiculoComposicaoSheetProps {
   veiculo: any;
@@ -43,7 +45,20 @@ export function VeiculoComposicaoSheet({ veiculo, open, onOpenChange }: VeiculoC
             </div>
           </DrawerHeader>
           <div className="flex-1 overflow-auto p-4">
-            <VeiculoComposicaoInterativa veiculo={veiculo} />
+            <Tabs defaultValue="composicao" className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="composicao" className="flex-1">Composição</TabsTrigger>
+                <TabsTrigger value="pneus" className="flex-1">Pneus</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="composicao" className="mt-4">
+                <VeiculoComposicaoInterativa veiculo={veiculo} />
+              </TabsContent>
+              
+              <TabsContent value="pneus" className="mt-4">
+                <ComposicaoPneusManager veiculo={veiculo} />
+              </TabsContent>
+            </Tabs>
           </div>
         </DrawerContent>
       </Drawer>
@@ -63,7 +78,20 @@ export function VeiculoComposicaoSheet({ veiculo, open, onOpenChange }: VeiculoC
           </div>
         </SheetHeader>
         <div className="mt-6 overflow-auto h-[calc(100vh-8rem)]">
-          <VeiculoComposicaoInterativa veiculo={veiculo} />
+          <Tabs defaultValue="composicao" className="w-full">
+            <TabsList>
+              <TabsTrigger value="composicao">Composição</TabsTrigger>
+              <TabsTrigger value="pneus">Gestão de Pneus</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="composicao" className="mt-6">
+              <VeiculoComposicaoInterativa veiculo={veiculo} />
+            </TabsContent>
+            
+            <TabsContent value="pneus" className="mt-6">
+              <ComposicaoPneusManager veiculo={veiculo} />
+            </TabsContent>
+          </Tabs>
         </div>
       </SheetContent>
     </Sheet>
