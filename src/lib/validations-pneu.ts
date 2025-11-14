@@ -107,18 +107,21 @@ export function estimarKmRestante(
 }
 
 // Funções para Posições Dinâmicas por Número de Eixos
-export function gerarPosicoesPneu(numeroEixos: number): { value: string; label: string }[] {
+// Gerar posições dinamicamente baseado no número de eixos e tipo de veículo
+export function gerarPosicoesPneu(numeroEixos: number, tipo: 'cavalo' | 'reboque' = 'cavalo'): { value: string; label: string }[] {
   const posicoes = [];
   
   for (let eixo = 1; eixo <= numeroEixos; eixo++) {
-    if (eixo === 1) {
-      // Eixo dianteiro: 1 pneu por lado (direção)
+    // Para reboques, TODOS os eixos têm pneus duplos (2 de cada lado)
+    // Para cavalos, apenas o eixo 1 é simples (direção)
+    if (tipo === 'cavalo' && eixo === 1) {
+      // Eixo dianteiro do cavalo: 1 pneu por lado (direção)
       posicoes.push(
         { value: `eixo_${eixo}_esquerda`, label: `Eixo ${eixo} - Esquerda` },
         { value: `eixo_${eixo}_direita`, label: `Eixo ${eixo} - Direita` }
       );
     } else {
-      // Eixos traseiros: 2 pneus por lado (interno/externo)
+      // Todos os eixos de reboque OU eixos 2+ do cavalo: 2 pneus por lado (interno/externo)
       posicoes.push(
         { value: `eixo_${eixo}_esquerda_externa`, label: `Eixo ${eixo} - Esquerda Externa` },
         { value: `eixo_${eixo}_esquerda_interna`, label: `Eixo ${eixo} - Esquerda Interna` },
@@ -133,12 +136,17 @@ export function gerarPosicoesPneu(numeroEixos: number): { value: string; label: 
   return posicoes;
 }
 
-// Calcular total de posições de pneus baseado no número de eixos
-export function calcularTotalPneus(numeroEixos: number): number {
+// Calcular total de posições de pneus baseado no número de eixos e tipo
+export function calcularTotalPneus(numeroEixos: number, tipo: 'cavalo' | 'reboque' = 'cavalo'): number {
   if (numeroEixos === 0) return 0;
-  // Eixo 1: 2 pneus (dianteiro simples)
-  // Eixos 2+: 4 pneus cada (traseiro duplo)
-  return 2 + ((numeroEixos - 1) * 4);
+  
+  if (tipo === 'reboque') {
+    // Reboques: todos os eixos têm 4 pneus (duplo)
+    return numeroEixos * 4;
+  } else {
+    // Cavalo: eixo 1 tem 2 pneus (simples), eixos 2+ têm 4 pneus cada (duplo)
+    return 2 + ((numeroEixos - 1) * 4);
+  }
 }
 
 // Labels e Opções
