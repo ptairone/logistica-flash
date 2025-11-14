@@ -103,11 +103,24 @@ export function useVeiculoComposicao(veiculoId: string | undefined) {
     return eixosReboques;
   }, [composicao.data]);
 
+  const quantidadeReboques = composicao.data?.length || 0;
+  
+  const reboquesResumido = useMemo(() => {
+    if (!composicao.data) return [];
+    return composicao.data.map((comp: any) => ({
+      placa: comp.reboques?.placa,
+      tipo: comp.reboques?.tipo,
+      eixos: comp.reboques?.numero_eixos || 0,
+    }));
+  }, [composicao.data]);
+
   return {
     composicao: composicao.data || [],
     isLoading: composicao.isLoading,
     acoplarReboque,
     desacoplarReboque,
     totalEixos,
+    quantidadeReboques,
+    reboquesResumido,
   };
 }

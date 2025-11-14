@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDateBR, isDateExpired, isDateExpiringSoon } from '@/lib/validations';
 import { cn } from '@/lib/utils';
+import { VeiculoReboquesInfo } from './VeiculoReboquesInfo';
 
 interface VeiculoCardProps {
   veiculo: any;
@@ -135,6 +136,14 @@ export function VeiculoCard({ veiculo, onEdit, onDelete, onViewDetails }: Veicul
             <span className="text-sm font-medium">{veiculo.km_atual.toLocaleString('pt-BR')}</span>
           </div>
         )}
+
+        {/* Informações de Reboques */}
+        <div className="pt-3 border-t">
+          <VeiculoReboquesInfo 
+            veiculoId={veiculo.id} 
+            numeroEixosCavalo={veiculo.numero_eixos}
+          />
+        </div>
 
         {hasAlerts && (
           <div className="pt-3 border-t border-warning/20 mt-3">

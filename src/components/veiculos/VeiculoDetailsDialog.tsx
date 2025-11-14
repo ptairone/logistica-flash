@@ -8,6 +8,8 @@ import { Upload, FileText, Wrench, Calendar } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import { useManutencoes, useDocumentosVeiculo } from '@/hooks/useVeiculos';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { VeiculoComposicaoTab } from './VeiculoComposicaoTab';
+import { VeiculoComposicaoVisual } from './VeiculoComposicaoVisual';
 
 interface VeiculoDetailsDialogProps {
   open: boolean;
@@ -51,8 +53,10 @@ export function VeiculoDetailsDialog({ open, onOpenChange, veiculo }: VeiculoDet
         </DialogHeader>
 
         <Tabs defaultValue="info" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="info">Informações</TabsTrigger>
+            <TabsTrigger value="composicao-visual">Composição</TabsTrigger>
+            <TabsTrigger value="reboques">Reboques</TabsTrigger>
             <TabsTrigger value="documentos">Documentos</TabsTrigger>
             <TabsTrigger value="manutencoes">Manutenções</TabsTrigger>
           </TabsList>
@@ -112,6 +116,14 @@ export function VeiculoDetailsDialog({ open, onOpenChange, veiculo }: VeiculoDet
                 <p className="text-sm mt-1">{veiculo.observacoes}</p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="composicao-visual" className="space-y-4 pt-4">
+            <VeiculoComposicaoVisual veiculo={veiculo} />
+          </TabsContent>
+
+          <TabsContent value="reboques" className="space-y-4 pt-4">
+            <VeiculoComposicaoTab veiculoId={veiculo.id} />
           </TabsContent>
 
           <TabsContent value="documentos" className="space-y-4 pt-4">
