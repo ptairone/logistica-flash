@@ -555,6 +555,28 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
                               {despesa.descricao && (
                                 <p className="text-sm mt-2">{despesa.descricao}</p>
                               )}
+                              
+                              {/* Mostrar anexo se existir */}
+                              {despesa.anexo_url && (
+                                <div className="mt-3 border-t pt-3">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Camera className="h-4 w-4 text-muted-foreground" />
+                                    <p className="text-xs text-muted-foreground">Comprovante anexado</p>
+                                  </div>
+                                  <a 
+                                    href={despesa.anexo_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="block"
+                                  >
+                                    <img 
+                                      src={despesa.anexo_url}
+                                      alt="Comprovante da despesa"
+                                      className="w-full max-w-xs rounded-lg border hover:opacity-80 transition-opacity cursor-pointer"
+                                    />
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <Button
