@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Apresentacao from "./pages/Apresentacao";
 import Dashboard from "./pages/Dashboard";
 import Veiculos from "./pages/Veiculos";
+import Reboques from "./pages/Reboques";
 import Motoristas from "./pages/Motoristas";
 import Viagens from "./pages/Viagens";
 import Fretes from "./pages/Fretes";
@@ -135,6 +136,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={['admin', 'operacional']}>
                   <Veiculos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reboques"
+              element={
+                <ProtectedRoute requiredRoles={['admin', 'operacional']}>
+                  <Reboques />
                 </ProtectedRoute>
               }
             />
