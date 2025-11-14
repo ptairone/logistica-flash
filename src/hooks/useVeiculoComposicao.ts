@@ -1,7 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tantml:function_calls>
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useMemo } from 'react';
+
+type VeiculoComposicao = {
+  id: string;
+  veiculo_id: string;
+  reboque_id: string;
+  ordem: number;
+  data_acoplamento: string;
+  data_desacoplamento: string | null;
+  ativo: boolean;
+  created_at: string;
+  reboques?: any;
+};
 
 export function useVeiculoComposicao(veiculoId: string | undefined) {
   const queryClient = useQueryClient();
