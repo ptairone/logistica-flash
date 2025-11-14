@@ -55,9 +55,23 @@ export function useReboques() {
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '')
         .single();
 
+      // Converter strings vazias em null para campos opcionais
+      const cleanedData = {
+        ...newReboque,
+        empresa_id: userRole?.empresa_id,
+        vencimento_licenciamento: newReboque.vencimento_licenciamento || null,
+        vencimento_seguro: newReboque.vencimento_seguro || null,
+        chassi: newReboque.chassi || null,
+        renavam: newReboque.renavam || null,
+        observacoes: newReboque.observacoes || null,
+        ano: newReboque.ano || null,
+        capacidade_kg: newReboque.capacidade_kg || null,
+        capacidade_m3: newReboque.capacidade_m3 || null,
+      };
+
       const { data, error } = await supabase
         .from('reboques')
-        .insert([{ ...newReboque, empresa_id: userRole?.empresa_id }])
+        .insert([cleanedData])
         .select()
         .single();
 
@@ -80,9 +94,22 @@ export function useReboques() {
 
   const updateReboque = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // Converter strings vazias em null para campos opcionais
+      const cleanedData = {
+        ...data,
+        vencimento_licenciamento: data.vencimento_licenciamento || null,
+        vencimento_seguro: data.vencimento_seguro || null,
+        chassi: data.chassi || null,
+        renavam: data.renavam || null,
+        observacoes: data.observacoes || null,
+        ano: data.ano || null,
+        capacidade_kg: data.capacidade_kg || null,
+        capacidade_m3: data.capacidade_m3 || null,
+      };
+
       const { data: updated, error } = await supabase
         .from('reboques')
-        .update(data)
+        .update(cleanedData)
         .eq('id', id)
         .select()
         .single();
