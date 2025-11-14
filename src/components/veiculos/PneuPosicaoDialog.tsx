@@ -132,7 +132,7 @@ export function PneuPosicaoDialog({ open, onOpenChange, veiculoId, posicao, pneu
                   variant="outline"
                   onClick={() => {
                     setShowDetalhes(true);
-                    onOpenChange(false);
+                    setTimeout(() => onOpenChange(false), 50);
                   }}
                 >
                   <FileText className="h-4 w-4 mr-2" />
@@ -142,7 +142,7 @@ export function PneuPosicaoDialog({ open, onOpenChange, veiculoId, posicao, pneu
                   variant="outline"
                   onClick={() => {
                     setShowMedicao(true);
-                    onOpenChange(false);
+                    setTimeout(() => onOpenChange(false), 50);
                   }}
                 >
                   <Gauge className="h-4 w-4 mr-2" />
@@ -169,7 +169,7 @@ export function PneuPosicaoDialog({ open, onOpenChange, veiculoId, posicao, pneu
                 <Button
                   onClick={() => {
                     setShowInstalar(true);
-                    onOpenChange(false);
+                    setTimeout(() => onOpenChange(false), 50);
                   }}
                 >
                   Instalar Pneu
