@@ -17,6 +17,7 @@ import {
   Building2,
   ClipboardCheck,
   Circle,
+  Combine,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -55,6 +56,12 @@ export function AppSidebar() {
       title: 'Veículos', 
       url: '/veiculos', 
       icon: Truck,
+      roles: ['admin', 'operacional', 'super_admin']
+    },
+    { 
+      title: 'Reboques', 
+      url: '/reboques', 
+      icon: Combine,
       roles: ['admin', 'operacional', 'super_admin']
     },
     { 
