@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useViagensMotorista } from '@/hooks/useMotoristas';
 import { ViagemCard } from '@/components/motorista/ViagemCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,12 +8,41 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { QuickCaptureModal } from '@/components/motorista/QuickCaptureModal';
+import { useViagensRealtime } from '@/hooks/useViagensRealtime';
+import { supabase } from '@/integrations/supabase/client';
+import { RealtimeIndicator } from '@/components/motorista/RealtimeIndicator';
 
 export default function Viagens() {
   const { user, signOut } = useAuth();
   const { data: viagens, isLoading } = useViagensMotorista();
+  const [motoristaId, setMotoristaId] = useState<string>();
   const navigate = useNavigate();
   const [showCaptureModal, setShowCaptureModal] = useState(false);
+
+  // Buscar motorista_id do usuário logado
+  useEffect(() => {
+    const fetchMotoristaId = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from('motoristas')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data) {
+        setMotoristaId(data.id);
+      }
+    };
+
+    fetchMotoristaId();
+  }, [user?.id]);
+
+  // Habilitar realtime para viagens do motorista
+  useViagensRealtime({
+    motoristaId,
+    showNotifications: true,
+  });
 
   const viagensEmAndamento = viagens?.filter(v => v.status === 'em_andamento') || [];
   const viagensPlanejadas = viagens?.filter(v => v.status === 'planejada') || [];
@@ -42,7 +71,10 @@ export default function Viagens() {
             <Truck className="h-6 w-6" />
             <div>
               <h1 className="text-xl font-bold">Minhas Viagens</h1>
-              <p className="text-sm opacity-90">Bem-vindo!</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm opacity-90">Bem-vindo!</p>
+                <RealtimeIndicator />
+              </div>
             </div>
           </div>
           <Button
