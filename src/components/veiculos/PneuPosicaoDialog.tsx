@@ -18,12 +18,21 @@ interface PneuPosicaoDialogProps {
   veiculoId: string;
   posicao: string;
   pneu?: any;
+  onInstalarClick?: () => void;
+  onMedicaoClick?: () => void;
+  onDetalhesClick?: () => void;
 }
 
-export function PneuPosicaoDialog({ open, onOpenChange, veiculoId, posicao, pneu }: PneuPosicaoDialogProps) {
-  const [showInstalar, setShowInstalar] = useState(false);
-  const [showMedicao, setShowMedicao] = useState(false);
-  const [showDetalhes, setShowDetalhes] = useState(false);
+export function PneuPosicaoDialog({ 
+  open, 
+  onOpenChange, 
+  veiculoId, 
+  posicao, 
+  pneu,
+  onInstalarClick,
+  onMedicaoClick,
+  onDetalhesClick
+}: PneuPosicaoDialogProps) {
   const { removerPneu } = usePneus();
   
   const handleRemover = () => {
@@ -131,8 +140,8 @@ export function PneuPosicaoDialog({ open, onOpenChange, veiculoId, posicao, pneu
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setShowDetalhes(true);
-                    setTimeout(() => onOpenChange(false), 50);
+                    onDetalhesClick?.();
+                    onOpenChange(false);
                   }}
                 >
                   <FileText className="h-4 w-4 mr-2" />
@@ -141,8 +150,8 @@ export function PneuPosicaoDialog({ open, onOpenChange, veiculoId, posicao, pneu
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setShowMedicao(true);
-                    setTimeout(() => onOpenChange(false), 50);
+                    onMedicaoClick?.();
+                    onOpenChange(false);
                   }}
                 >
                   <Gauge className="h-4 w-4 mr-2" />
@@ -168,8 +177,8 @@ export function PneuPosicaoDialog({ open, onOpenChange, veiculoId, posicao, pneu
                 </p>
                 <Button
                   onClick={() => {
-                    setShowInstalar(true);
-                    setTimeout(() => onOpenChange(false), 50);
+                    onInstalarClick?.();
+                    onOpenChange(false);
                   }}
                 >
                   Instalar Pneu
@@ -179,33 +188,6 @@ export function PneuPosicaoDialog({ open, onOpenChange, veiculoId, posicao, pneu
           )}
         </DialogContent>
       </Dialog>
-      
-      {/* Dialogs de Ações */}
-      {showInstalar && (
-        <InstalacaoPneuDialog
-          open={showInstalar}
-          onOpenChange={setShowInstalar}
-          pneu={null}
-          veiculoIdProp={veiculoId}
-          posicaoProp={posicao}
-        />
-      )}
-      
-      {showMedicao && pneu && (
-        <MedicaoDialog
-          open={showMedicao}
-          onOpenChange={setShowMedicao}
-          pneu={pneu}
-        />
-      )}
-      
-      {showDetalhes && pneu && (
-        <PneuDetailsDialog
-          open={showDetalhes}
-          onOpenChange={setShowDetalhes}
-          pneu={pneu}
-        />
-      )}
     </>
   );
 }
