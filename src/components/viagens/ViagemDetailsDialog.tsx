@@ -5,10 +5,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, FileText, Trash2, Plus, DollarSign, Banknote, TrendingUp, Download, Package, Camera } from 'lucide-react';
+import { Upload, FileText, Trash2, Plus, DollarSign, Banknote, TrendingUp, Download, Package, Camera, Phone, ImageIcon, Calendar } from 'lucide-react';
 import { formatDateBR } from '@/lib/validations';
 import { useDespesas, useComprovantesViagem } from '@/hooks/useViagens';
 import { useTransacoesViagem } from '@/hooks/useTransacoesViagem';
+import { useComprovantesWhatsApp } from '@/hooks/useComprovantesWhatsApp';
+import { format } from 'date-fns';
+import { Separator } from '@/components/ui/separator';
 import { DespesaDialog } from './DespesaDialog';
 import { TransacaoDialog } from './TransacaoDialog';
 import { calcularTotaisViagem } from '@/lib/validations-viagem';
@@ -34,6 +37,7 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
   const { despesas, createDespesa, deleteDespesa } = useDespesas(viagem?.id);
   const { comprovantes, uploadComprovante } = useComprovantesViagem(viagem?.id);
   const { transacoes, createTransacao, deleteTransacao, totais: totaisTransacoes } = useTransacoesViagem(viagem?.id);
+  const { comprovantes: comprovantesWhatsApp, isLoading: isLoadingWhatsApp } = useComprovantesWhatsApp(undefined, viagem?.id);
   const [despesaDialogOpen, setDespesaDialogOpen] = useState(false);
   const [transacaoDialogOpen, setTransacaoDialogOpen] = useState(false);
   const [deleteDespesaDialogOpen, setDeleteDespesaDialogOpen] = useState(false);
@@ -68,6 +72,42 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
     viagem.km_percorrido,
     viagem.frete?.valor_frete
   );
+
+  const getTipoLabel = (tipo: string | null) => {
+    if (!tipo) return 'Desconhecido';
+    const labels: Record<string, string> = {
+      'HODOMETRO': 'Hodômetro',
+      'ABASTECIMENTO': 'Abastecimento',
+      'DESPESA_ALIMENTACAO': 'Alimentação',
+      'DESPESA_PEDAGIO': 'Pedágio',
+      'DESPESA_HOSPEDAGEM': 'Hospedagem',
+      'DESPESA_MANUTENCAO': 'Manutenção',
+      'DESPESA_OUTRAS': 'Outras Despesas',
+      'RECEBIMENTO': 'Recebimento',
+      'ADIANTAMENTO': 'Adiantamento',
+      'DESCONHECIDO': 'Desconhecido',
+    };
+    return labels[tipo] || tipo;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmado': return 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20';
+      case 'processando': return 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20';
+      case 'erro': return 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20';
+      case 'rejeitado': return 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const getConfiancaColor = (confianca: string | null) => {
+    switch (confianca) {
+      case 'alta': return 'text-green-600 dark:text-green-400';
+      case 'media': return 'text-yellow-600 dark:text-yellow-400';
+      case 'baixa': return 'text-red-600 dark:text-red-400';
+      default: return 'text-muted-foreground';
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -532,75 +572,169 @@ export function ViagemDetailsDialog({ open, onOpenChange, viagem }: ViagemDetail
               </div>
             </TabsContent>
 
-            <TabsContent value="comprovantes" className="space-y-4 pt-4">
-              <div className="space-y-4">
-                <div className="grid gap-3">
-                  <Label htmlFor="tipo-comprovante">Tipo de Comprovante</Label>
-                  <Select value={tipoComprovante} onValueChange={(value: any) => setTipoComprovante(value)}>
-                    <SelectTrigger id="tipo-comprovante">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="adiantamento">Adiantamento</SelectItem>
-                      <SelectItem value="recebimento_frete">Recebimento de Frete</SelectItem>
-                      <SelectItem value="despesa">Despesa</SelectItem>
-                      <SelectItem value="outros">Outros</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-end">
-                  <label htmlFor="file-upload-viagem">
-                    <Button
-                      type="button"
-                      disabled={uploading}
-                      onClick={() => document.getElementById('file-upload-viagem')?.click()}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      {uploading ? 'Enviando...' : 'Upload Comprovante'}
-                    </Button>
-                  </label>
-                  <input
-                    id="file-upload-viagem"
-                    type="file"
-                    className="hidden"
-                    accept="image/*,.pdf"
-                    onChange={handleFileUpload}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                {comprovantes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Nenhum comprovante enviado
+            <TabsContent value="comprovantes" className="space-y-6 pt-4">
+              {/* SEÇÃO 1: Comprovantes WhatsApp */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Comprovantes via WhatsApp
+                  <Badge variant="secondary">{comprovantesWhatsApp?.length || 0}</Badge>
+                </h3>
+                
+                {isLoadingWhatsApp ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Carregando...</p>
+                ) : !comprovantesWhatsApp || comprovantesWhatsApp.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum comprovante recebido via WhatsApp
                   </p>
                 ) : (
-                  comprovantes.map((doc) => (
-                    <Card key={doc.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-primary" />
-                            <div>
-                              <p className="font-medium text-sm">{doc.nome}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatDateBR(doc.created_at)}
-                              </p>
+                  <div className="space-y-2">
+                    {comprovantesWhatsApp.map((comp) => (
+                      <Card key={comp.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-4">
+                            {/* Miniatura da imagem */}
+                            <div className="relative w-20 h-20 rounded-md overflow-hidden bg-muted flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
+                              <img 
+                                src={comp.imagem_url} 
+                                alt="Comprovante"
+                                className="w-full h-full object-cover"
+                                onClick={() => window.open(comp.imagem_url, '_blank')}
+                              />
                             </div>
+                            
+                            {/* Informações */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between mb-2 gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm">
+                                    {getTipoLabel(comp.tipo_identificado)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {format(new Date(comp.created_at), "dd/MM/yyyy 'às' HH:mm")}
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className={getStatusColor(comp.status)}>
+                                  {comp.status}
+                                </Badge>
+                              </div>
+                              
+                              {/* Valor extraído */}
+                              {comp.dados_extraidos?.valor && (
+                                <p className="text-lg font-bold text-primary mb-1">
+                                  R$ {Number(comp.dados_extraidos.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              )}
+                              
+                              {/* Confiança da extração */}
+                              {comp.confianca && (
+                                <Badge variant="outline" className={`text-xs ${getConfiancaColor(comp.confianca)}`}>
+                                  Confiança: {comp.confianca}
+                                </Badge>
+                              )}
+                              
+                              {/* Mensagem de erro */}
+                              {comp.erro_mensagem && (
+                                <p className="text-xs text-destructive mt-2">{comp.erro_mensagem}</p>
+                              )}
+                            </div>
+                            
+                            {/* Botão para ver imagem completa */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(comp.imagem_url, '_blank')}
+                            >
+                              <ImageIcon className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(doc.url, '_blank')}
-                          >
-                            Abrir
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 )}
+              </div>
+
+              <Separator />
+
+              {/* SEÇÃO 2: Comprovantes Manuais */}
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Comprovantes Manuais
+                  <Badge variant="secondary">{comprovantes.length}</Badge>
+                </h3>
+
+                <div className="space-y-4 mb-4">
+                  <div className="grid gap-3">
+                    <Label htmlFor="tipo-comprovante">Tipo de Comprovante</Label>
+                    <Select value={tipoComprovante} onValueChange={(value: any) => setTipoComprovante(value)}>
+                      <SelectTrigger id="tipo-comprovante">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="adiantamento">Adiantamento</SelectItem>
+                        <SelectItem value="recebimento_frete">Recebimento de Frete</SelectItem>
+                        <SelectItem value="despesa">Despesa</SelectItem>
+                        <SelectItem value="outros">Outros</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <label htmlFor="file-upload-viagem">
+                      <Button
+                        type="button"
+                        disabled={uploading}
+                        onClick={() => document.getElementById('file-upload-viagem')?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {uploading ? 'Enviando...' : 'Upload Comprovante'}
+                      </Button>
+                    </label>
+                    <input
+                      id="file-upload-viagem"
+                      type="file"
+                      className="hidden"
+                      accept="image/*,.pdf"
+                      onChange={handleFileUpload}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {comprovantes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Nenhum comprovante enviado manualmente
+                    </p>
+                  ) : (
+                    comprovantes.map((doc) => (
+                      <Card key={doc.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-5 w-5 text-primary" />
+                              <div>
+                                <p className="font-medium">{doc.nome}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {formatDateBR(doc.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(doc.url, '_blank')}
+                            >
+                              Abrir
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
               </div>
             </TabsContent>
 
