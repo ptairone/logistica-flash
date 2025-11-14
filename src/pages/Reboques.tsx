@@ -7,12 +7,15 @@ import { useReboques } from '@/hooks/useReboques';
 import { ReboqueDialog } from '@/components/reboques/ReboqueDialog';
 import { ReboqueCard } from '@/components/reboques/ReboqueCard';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Reboque = Tables<'reboques'>;
 
 export default function Reboques() {
   const { reboques, isLoading, createReboque, updateReboque, deleteReboque } = useReboques();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedReboque, setSelectedReboque] = useState<any>(null);
+  const [selectedReboque, setSelectedReboque] = useState<Reboque | null>(null);
   const [reboqueToDelete, setReboqueToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -21,7 +24,7 @@ export default function Reboques() {
     setDialogOpen(true);
   };
 
-  const handleEdit = (reboque: any) => {
+  const handleEdit = (reboque: Reboque) => {
     setSelectedReboque(reboque);
     setDialogOpen(true);
   };
