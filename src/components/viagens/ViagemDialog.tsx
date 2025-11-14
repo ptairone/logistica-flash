@@ -161,6 +161,12 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
     clearPersistedData();
   };
 
+  const handleFormError = (errs: any) => {
+    const primeiraChave = Object.keys(errs)[0];
+    const primeiraMsg = primeiraChave ? errs[primeiraChave]?.message : 'Verifique os campos destacados.';
+    toast.error(typeof primeiraMsg === 'string' ? primeiraMsg : 'Corrija os campos obrigatórios');
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -168,7 +174,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
           <DialogTitle>{viagem ? 'Editar Viagem' : 'Nova Viagem'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit, handleFormError)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="codigo">Código</Label>
@@ -365,7 +371,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                   id="km_estimado"
                   type="number"
                   step="any"
-                  {...register('km_estimado', { valueAsNumber: true })}
+                  {...register('km_estimado', { setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)) })}
                   placeholder="450"
                   disabled={calculandoDistancia}
                   className="flex-1"
@@ -417,10 +423,13 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                     id="km_inicial"
                     type="number"
                     step="0.01"
-                    {...register('km_inicial', { valueAsNumber: true })}
+                    {...register('km_inicial', { setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)) })}
                     placeholder="10000"
                     disabled={status === 'em_andamento'}
                   />
+                  {errors.km_inicial && (
+                    <p className="text-sm text-destructive">{errors.km_inicial.message}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Registrado na partida
                   </p>
@@ -434,7 +443,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
                         id="km_final"
                         type="number"
                         step="0.01"
-                        {...register('km_final', { valueAsNumber: true })}
+                        {...register('km_final', { setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)) })}
                         placeholder="10450"
                       />
                       {errors.km_final && (
