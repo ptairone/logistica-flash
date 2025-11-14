@@ -188,7 +188,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
             <div className="space-y-2">
               <Label htmlFor="status">Status *</Label>
               <Select
-                value={status}
+                value={status || 'planejada'}
                 onValueChange={(value) => setValue('status', value as any)}
               >
                 <SelectTrigger>
@@ -211,7 +211,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
             <div className="space-y-2">
               <Label htmlFor="veiculo_id">Veículo *</Label>
               <Select
-                value={veiculoId}
+                value={veiculoId || ''}
                 onValueChange={(value) => setValue('veiculo_id', value)}
               >
                 <SelectTrigger>
@@ -233,7 +233,7 @@ export function ViagemDialog({ open, onOpenChange, onSubmit, viagem, isLoading }
             <div className="space-y-2">
               <Label htmlFor="motorista_id">Motorista *</Label>
               <Select
-                value={motoristaId}
+                value={motoristaId || ''}
                 onValueChange={(value) => setValue('motorista_id', value)}
               >
                 <SelectTrigger>
