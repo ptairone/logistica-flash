@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Fuel } from 'lucide-react';
@@ -9,10 +9,12 @@ import { EtapaAndamento } from '@/components/motorista/EtapaAndamento';
 import { EtapaChegada } from '@/components/motorista/EtapaChegada';
 import { Card } from '@/components/ui/card';
 import { AbastecimentoDialog } from '@/components/abastecimentos/AbastecimentoDialog';
+import { toast } from 'sonner';
 
 export default function ViagemMotorista() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [mostrarEncerramento, setMostrarEncerramento] = useState(false);
   const [showAbastecimentoDialog, setShowAbastecimentoDialog] = useState(false);
 
@@ -34,6 +36,55 @@ export default function ViagemMotorista() {
     },
     enabled: !!id,
   });
+
+  // Realtime para esta viagem específica
+  useEffect(() => {
+    if (!id) return;
+
+    console.log('🔄 Iniciando listener realtime para viagem:', id);
+
+    const channel = supabase
+      .channel(`viagem-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'viagens',
+          filter: `id=eq.${id}`
+        },
+        (payload) => {
+          console.log('📡 Viagem atualizada:', payload);
+          
+          // Invalidar e recarregar dados
+          queryClient.invalidateQueries({ queryKey: ['viagem-motorista', id] });
+          
+          // Notificar sobre mudanças importantes
+          const statusChanged = payload.old?.status !== payload.new?.status;
+          if (statusChanged) {
+            const statusLabels: Record<string, string> = {
+              planejada: 'Planejada',
+              em_andamento: 'Em Andamento',
+              concluida: 'Concluída',
+              cancelada: 'Cancelada'
+            };
+
+            toast.info('Status atualizado', {
+              description: `A viagem está agora: ${statusLabels[payload.new.status] || payload.new.status}`,
+              duration: 5000,
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📊 Status da conexão realtime viagem:', status);
+      });
+
+    return () => {
+      console.log('🔌 Desconectando listener realtime da viagem');
+      supabase.removeChannel(channel);
+    };
+  }, [id, queryClient]);
 
   if (isLoading) {
     return (
