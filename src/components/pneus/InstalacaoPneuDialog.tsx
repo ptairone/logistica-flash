@@ -76,7 +76,9 @@ export function InstalacaoPneuDialog({ open, onOpenChange, pneu, veiculoIdProp, 
   // Gerar posições dinamicamente baseado no veículo selecionado
   const posicoesDisponiveis = useMemo(() => {
     if (!veiculo) return posicoesPneu;
-    return gerarPosicoesPneu(veiculo.numero_eixos || 3);
+    // Para reboques (carreta), todos os eixos são duplos
+    const tipo = veiculo.tipo === 'carreta' ? 'reboque' : 'cavalo';
+    return gerarPosicoesPneu(veiculo.numero_eixos || 3, tipo);
   }, [veiculo]);
 
   const onSubmit = (data: any) => {

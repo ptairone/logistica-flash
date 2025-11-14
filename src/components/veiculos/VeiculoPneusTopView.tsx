@@ -24,8 +24,8 @@ export function VeiculoPneusTopView({ veiculoId, numeroEixos, tipo, placa }: Vei
   const svgWidth = 420;
   
   // Gerar posições de pneus
-  const posicoes = gerarPosicoesPneu(numeroEixos);
-  const totalPosicoes = calcularTotalPneus(numeroEixos);
+  const posicoes = gerarPosicoesPneu(numeroEixos, tipo);
+  const totalPosicoes = calcularTotalPneus(numeroEixos, tipo);
   
   // Mapear pneus instalados por posição
   const pneusMap = new Map(
