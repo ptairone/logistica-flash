@@ -2019,6 +2019,80 @@ export type Database = {
         }
         Relationships: []
       }
+      reboques: {
+        Row: {
+          ano: number | null
+          capacidade_kg: number | null
+          capacidade_m3: number | null
+          chassi: string | null
+          codigo_interno: string
+          created_at: string
+          empresa_id: string | null
+          id: string
+          marca: string
+          modelo: string
+          numero_eixos: number
+          observacoes: string | null
+          placa: string
+          renavam: string | null
+          status: string | null
+          tipo: string
+          updated_at: string
+          vencimento_licenciamento: string | null
+          vencimento_seguro: string | null
+        }
+        Insert: {
+          ano?: number | null
+          capacidade_kg?: number | null
+          capacidade_m3?: number | null
+          chassi?: string | null
+          codigo_interno: string
+          created_at?: string
+          empresa_id?: string | null
+          id?: string
+          marca: string
+          modelo: string
+          numero_eixos: number
+          observacoes?: string | null
+          placa: string
+          renavam?: string | null
+          status?: string | null
+          tipo: string
+          updated_at?: string
+          vencimento_licenciamento?: string | null
+          vencimento_seguro?: string | null
+        }
+        Update: {
+          ano?: number | null
+          capacidade_kg?: number | null
+          capacidade_m3?: number | null
+          chassi?: string | null
+          codigo_interno?: string
+          created_at?: string
+          empresa_id?: string | null
+          id?: string
+          marca?: string
+          modelo?: string
+          numero_eixos?: number
+          observacoes?: string | null
+          placa?: string
+          renavam?: string | null
+          status?: string | null
+          tipo?: string
+          updated_at?: string
+          vencimento_licenciamento?: string | null
+          vencimento_seguro?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reboques_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transacoes_viagem: {
         Row: {
           created_at: string
@@ -2115,6 +2189,7 @@ export type Database = {
           marca: string
           media_consumo_geral: number | null
           modelo: string
+          numero_eixos: number | null
           observacoes: string | null
           placa: string
           proxima_manutencao_data: string | null
@@ -2145,6 +2220,7 @@ export type Database = {
           marca: string
           media_consumo_geral?: number | null
           modelo: string
+          numero_eixos?: number | null
           observacoes?: string | null
           placa: string
           proxima_manutencao_data?: string | null
@@ -2175,6 +2251,7 @@ export type Database = {
           marca?: string
           media_consumo_geral?: number | null
           modelo?: string
+          numero_eixos?: number | null
           observacoes?: string | null
           placa?: string
           proxima_manutencao_data?: string | null
@@ -2198,6 +2275,54 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      veiculos_composicao: {
+        Row: {
+          ativo: boolean | null
+          created_at: string
+          data_acoplamento: string
+          data_desacoplamento: string | null
+          id: string
+          ordem: number
+          reboque_id: string
+          veiculo_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string
+          data_acoplamento?: string
+          data_desacoplamento?: string | null
+          id?: string
+          ordem?: number
+          reboque_id: string
+          veiculo_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string
+          data_acoplamento?: string
+          data_desacoplamento?: string | null
+          id?: string
+          ordem?: number
+          reboque_id?: string
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_composicao_reboque_id_fkey"
+            columns: ["reboque_id"]
+            isOneToOne: false
+            referencedRelation: "reboques"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "veiculos_composicao_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
             referencedColumns: ["id"]
           },
         ]
