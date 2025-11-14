@@ -18,8 +18,8 @@ export const reboqueSchema = z.object({
   numero_eixos: z.coerce.number().int().min(1).max(3, 'Máximo de 3 eixos'),
   capacidade_kg: z.coerce.number().positive().optional(),
   capacidade_m3: z.coerce.number().positive().optional(),
-  vencimento_licenciamento: z.string().optional(),
-  vencimento_seguro: z.string().optional(),
+  vencimento_licenciamento: z.string().transform(val => val === '' ? undefined : val).optional(),
+  vencimento_seguro: z.string().transform(val => val === '' ? undefined : val).optional(),
   status: z.enum(['disponivel', 'acoplado', 'manutencao', 'inativo']).default('disponivel'),
   observacoes: z.string().optional(),
 });
