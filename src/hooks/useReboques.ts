@@ -1,16 +1,35 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { Tables } from '@/integrations/supabase/types';
 
-type Reboque = Tables<'reboques'>;
+export type Reboque = {
+  id: string;
+  empresa_id: string;
+  codigo_interno: string;
+  placa: string;
+  chassi: string | null;
+  renavam: string | null;
+  tipo: string;
+  marca: string;
+  modelo: string;
+  ano: number | null;
+  numero_eixos: number;
+  capacidade_kg: number | null;
+  capacidade_m3: number | null;
+  vencimento_licenciamento: string | null;
+  vencimento_seguro: string | null;
+  status: string;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export function useReboques() {
   const queryClient = useQueryClient();
 
-  const reboques = useQuery<Reboque[]>({
-    queryKey: ['reboques'],
-    queryFn: async () => {
+  const reboques = useQuery({
+    queryKey: ['reboques'] as const,
+    queryFn: async (): Promise<Reboque[]> => {
       const { data: userRole } = await supabase
         .from('user_roles')
         .select('empresa_id')

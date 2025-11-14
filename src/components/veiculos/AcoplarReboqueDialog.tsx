@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useReboques } from '@/hooks/useReboques';
+import { useReboques, type Reboque } from '@/hooks/useReboques';
 import { useVeiculoComposicao } from '@/hooks/useVeiculoComposicao';
 import { getTipoReboqueLabel } from '@/lib/validations-reboque';
 
@@ -25,7 +25,9 @@ export function AcoplarReboqueDialog({
   const { acoplarReboque } = useVeiculoComposicao(veiculoId);
 
   // Filtrar apenas reboques disponíveis
-  const reboquesDisponiveis = reboques.filter((r) => r.status === 'disponivel');
+  const reboquesDisponiveis: Reboque[] = Array.isArray(reboques) 
+    ? reboques.filter((r) => r.status === 'disponivel')
+    : [];
 
   const handleAcoplar = () => {
     if (!veiculoId || !reboqueId) return;
