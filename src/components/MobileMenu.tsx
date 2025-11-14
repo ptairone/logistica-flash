@@ -15,6 +15,7 @@ import {
   Circle,
   Fuel,
   BarChart3,
+  Combine,
 } from 'lucide-react';
 import {
   Drawer,
@@ -43,6 +44,12 @@ export function MobileMenu() {
       title: 'Veículos', 
       url: '/veiculos', 
       icon: Truck,
+      roles: ['admin', 'operacional']
+    },
+    { 
+      title: 'Reboques', 
+      url: '/reboques', 
+      icon: Combine,
       roles: ['admin', 'operacional']
     },
     { 
