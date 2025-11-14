@@ -5,6 +5,9 @@ import { usePneusPorVeiculo } from '@/hooks/usePneusPorVeiculo';
 import { gerarPosicoesPneu, calcularTotalPneus } from '@/lib/validations-pneu';
 import { PneuCirculo } from './PneuCirculo';
 import { PneuPosicaoDialog } from './PneuPosicaoDialog';
+import { InstalacaoPneuDialog } from '@/components/pneus/InstalacaoPneuDialog';
+import { MedicaoDialog } from '@/components/pneus/MedicaoDialog';
+import { PneuDetailsDialog } from '@/components/pneus/PneuDetailsDialog';
 import { Loader2 } from 'lucide-react';
 
 interface VeiculoPneusTopViewProps {
@@ -16,7 +19,8 @@ interface VeiculoPneusTopViewProps {
 
 export function VeiculoPneusTopView({ veiculoId, numeroEixos, tipo, placa }: VeiculoPneusTopViewProps) {
   const { data: pneus, isLoading } = usePneusPorVeiculo(veiculoId);
-  const [posicaoSelecionada, setPosicaoSelecionada] = useState<string | null>(null);
+  const [dialogAberto, setDialogAberto] = useState<'posicao' | 'instalar' | 'medicao' | 'detalhes' | null>(null);
+  const [posicaoSelecionada, setPosicaoSelecionada] = useState<string>('');
   const [pneuSelecionado, setPneuSelecionado] = useState<any>(null);
   
   // Calcular dimensões do SVG baseado no número de eixos
@@ -35,6 +39,7 @@ export function VeiculoPneusTopView({ veiculoId, numeroEixos, tipo, placa }: Vei
   const handlePneuClick = (posicao: string, pneu?: any) => {
     setPosicaoSelecionada(posicao);
     setPneuSelecionado(pneu || null);
+    setDialogAberto('posicao');
   };
   
   const pneusInstalados = pneus?.length || 0;
@@ -228,17 +233,41 @@ export function VeiculoPneusTopView({ veiculoId, numeroEixos, tipo, placa }: Vei
         </CardContent>
       </Card>
       
-      {posicaoSelecionada && (
-        <PneuPosicaoDialog
-          open={!!posicaoSelecionada}
-          onOpenChange={(open) => {
-            if (!open) {
-              setPosicaoSelecionada(null);
-              setPneuSelecionado(null);
-            }
-          }}
-          veiculoId={veiculoId}
-          posicao={posicaoSelecionada}
+      {/* Dialog de Posição */}
+      <PneuPosicaoDialog
+        open={dialogAberto === 'posicao'}
+        onOpenChange={(open) => !open && setDialogAberto(null)}
+        veiculoId={veiculoId}
+        posicao={posicaoSelecionada}
+        pneu={pneuSelecionado}
+        onInstalarClick={() => setDialogAberto('instalar')}
+        onMedicaoClick={() => setDialogAberto('medicao')}
+        onDetalhesClick={() => setDialogAberto('detalhes')}
+      />
+
+      {/* Dialog de Instalação */}
+      <InstalacaoPneuDialog
+        open={dialogAberto === 'instalar'}
+        onOpenChange={(open) => !open && setDialogAberto(null)}
+        pneu={null}
+        veiculoIdProp={veiculoId}
+        posicaoProp={posicaoSelecionada}
+      />
+
+      {/* Dialog de Medição */}
+      {pneuSelecionado && (
+        <MedicaoDialog
+          open={dialogAberto === 'medicao'}
+          onOpenChange={(open) => !open && setDialogAberto(null)}
+          pneu={pneuSelecionado}
+        />
+      )}
+
+      {/* Dialog de Detalhes */}
+      {pneuSelecionado && (
+        <PneuDetailsDialog
+          open={dialogAberto === 'detalhes'}
+          onOpenChange={(open) => !open && setDialogAberto(null)}
           pneu={pneuSelecionado}
         />
       )}
