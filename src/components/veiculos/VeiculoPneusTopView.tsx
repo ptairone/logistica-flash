@@ -8,6 +8,16 @@ import { PneuPosicaoDialog } from './PneuPosicaoDialog';
 import { InstalacaoPneuDialog } from '@/components/pneus/InstalacaoPneuDialog';
 import { MedicaoDialog } from '@/components/pneus/MedicaoDialog';
 import { PneuDetailsDialog } from '@/components/pneus/PneuDetailsDialog';
+import { Loader2, TruckIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePneusPorVeiculo } from '@/hooks/usePneusPorVeiculo';
+import { gerarPosicoesPneu, calcularTotalPneus } from '@/lib/validations-pneu';
+import { PneuCirculo } from './PneuCirculo';
+import { PneuPosicaoDialog } from './PneuPosicaoDialog';
+import { InstalacaoPneuDialog } from '@/components/pneus/InstalacaoPneuDialog';
+import { MedicaoDialog } from '@/components/pneus/MedicaoDialog';
+import { PneuDetailsDialog } from '@/components/pneus/PneuDetailsDialog';
 import { Loader2 } from 'lucide-react';
 
 interface VeiculoPneusTopViewProps {
