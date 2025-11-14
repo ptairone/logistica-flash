@@ -1,12 +1,8 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, FileText, Gauge, Trash2, Calendar } from 'lucide-react';
-import { useState } from 'react';
-import { InstalacaoPneuDialog } from '@/components/pneus/InstalacaoPneuDialog';
-import { MedicaoDialog } from '@/components/pneus/MedicaoDialog';
-import { PneuDetailsDialog } from '@/components/pneus/PneuDetailsDialog';
 import { usePneus } from '@/hooks/usePneus';
 import { getPosicaoLabel } from '@/lib/validations-pneu';
 import { formatDateBR } from '@/lib/validations';
@@ -73,6 +69,9 @@ export function PneuPosicaoDialog({
             <DialogTitle className="flex items-center gap-2">
               Posição: {getPosicaoLabel(posicao)}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detalhes do pneu na posição {getPosicaoLabel(posicao)}
+            </DialogDescription>
           </DialogHeader>
           
           {pneu ? (
@@ -140,8 +139,8 @@ export function PneuPosicaoDialog({
                 <Button
                   variant="outline"
                   onClick={() => {
-                    onDetalhesClick?.();
                     onOpenChange(false);
+                    onDetalhesClick?.();
                   }}
                 >
                   <FileText className="h-4 w-4 mr-2" />
@@ -150,8 +149,8 @@ export function PneuPosicaoDialog({
                 <Button
                   variant="outline"
                   onClick={() => {
-                    onMedicaoClick?.();
                     onOpenChange(false);
+                    onMedicaoClick?.();
                   }}
                 >
                   <Gauge className="h-4 w-4 mr-2" />
@@ -177,9 +176,8 @@ export function PneuPosicaoDialog({
                 </p>
                 <Button
                   onClick={() => {
-                    console.log('Botão Instalar clicado', { onInstalarClick, posicao });
-                    onInstalarClick?.();
                     onOpenChange(false);
+                    onInstalarClick?.();
                   }}
                 >
                   Instalar Pneu
