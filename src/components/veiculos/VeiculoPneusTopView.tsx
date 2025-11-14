@@ -126,7 +126,7 @@ export function VeiculoPneusTopView({ veiculoId, numeroEixos, tipo, placa }: Vei
                     </text>
                     
                     {/* Pneus deste eixo */}
-                    {eixoNum === 1 ? (
+                    {tipo === 'cavalo' && eixoNum === 1 ? (
                       // Eixo dianteiro: 2 pneus
                       <>
                         <PneuCirculo 
