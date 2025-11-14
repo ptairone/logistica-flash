@@ -6,12 +6,14 @@ import { toast } from 'sonner';
 interface UseViagensRealtimeProps {
   motoristaId?: string;
   onViagemUpdate?: (viagem: any) => void;
+  onStatusChange?: (viagemId: string, oldStatus: string, newStatus: string) => void;
   showNotifications?: boolean;
 }
 
 export function useViagensRealtime({ 
   motoristaId, 
   onViagemUpdate,
+  onStatusChange,
   showNotifications = true 
 }: UseViagensRealtimeProps = {}) {
   const queryClient = useQueryClient();
@@ -53,6 +55,11 @@ export function useViagensRealtime({
             } else if (payload.eventType === 'UPDATE') {
               const statusChanged = payload.old?.status !== payload.new?.status;
               
+              // Chamar callback de mudança de status
+              if (statusChanged && onStatusChange) {
+                onStatusChange(payload.new.id, payload.old.status, payload.new.status);
+              }
+              
               if (statusChanged) {
                 const statusLabels: Record<string, string> = {
                   planejada: 'Planejada',
@@ -88,5 +95,5 @@ export function useViagensRealtime({
       console.log('🔌 Desconectando listener realtime');
       supabase.removeChannel(channel);
     };
-  }, [motoristaId, queryClient, onViagemUpdate, showNotifications]);
+  }, [motoristaId, queryClient, onViagemUpdate, onStatusChange, showNotifications]);
 }
