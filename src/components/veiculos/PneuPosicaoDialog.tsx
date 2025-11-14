@@ -177,6 +177,7 @@ export function PneuPosicaoDialog({
                 </p>
                 <Button
                   onClick={() => {
+                    console.log('Botão Instalar clicado', { onInstalarClick, posicao });
                     onInstalarClick?.();
                     onOpenChange(false);
                   }}
