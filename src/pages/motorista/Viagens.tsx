@@ -18,6 +18,7 @@ export default function Viagens() {
   const [motoristaId, setMotoristaId] = useState<string>();
   const navigate = useNavigate();
   const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('em_andamento');
 
   // Buscar motorista_id do usuário logado
   useEffect(() => {
@@ -38,10 +39,24 @@ export default function Viagens() {
     fetchMotoristaId();
   }, [user?.id]);
 
+  // Lógica de mudança automática de aba
+  const handleStatusChange = (viagemId: string, oldStatus: string, newStatus: string) => {
+    const viagensAtivas = [...viagensEmAndamento, ...viagensPlanejadas];
+    
+    // Regra 1: Se for INSERT (nova viagem) ou houver apenas 1 viagem ativa, muda automaticamente
+    // Regra 2: Se o motorista estiver na aba onde a viagem estava, muda automaticamente
+    const shouldAutoSwitch = viagensAtivas.length <= 1 || activeTab === oldStatus;
+    
+    if (shouldAutoSwitch) {
+      setActiveTab(newStatus);
+    }
+  };
+
   // Habilitar realtime para viagens do motorista
   useViagensRealtime({
     motoristaId,
     showNotifications: true,
+    onStatusChange: handleStatusChange,
   });
 
   const viagensEmAndamento = viagens?.filter(v => v.status === 'em_andamento') || [];
@@ -91,7 +106,7 @@ export default function Viagens() {
 
       {/* Conteúdo principal */}
       <main className="flex-1 p-4 pb-6">
-        <Tabs defaultValue="em_andamento" className="w-full max-w-4xl mx-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-4xl mx-auto">
           <TabsList className="grid w-full grid-cols-3 h-auto mb-6">
             <TabsTrigger value="em_andamento" className="flex flex-col gap-1 py-3">
               <Truck className="h-5 w-5" />
