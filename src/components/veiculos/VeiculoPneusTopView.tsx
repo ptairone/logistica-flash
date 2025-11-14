@@ -8,7 +8,7 @@ import { PneuPosicaoDialog } from './PneuPosicaoDialog';
 import { InstalacaoPneuDialog } from '@/components/pneus/InstalacaoPneuDialog';
 import { MedicaoDialog } from '@/components/pneus/MedicaoDialog';
 import { PneuDetailsDialog } from '@/components/pneus/PneuDetailsDialog';
-import { Loader2, TruckIcon, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface VeiculoPneusTopViewProps {
   veiculoId: string;
@@ -78,199 +78,197 @@ export function VeiculoPneusTopView({ veiculoId, numeroEixos, tipo, placa }: Vei
           </div>
         </CardHeader>
         <CardContent>
-          {/* SVG Top-Down */}
+          {/* SVG Top-Down - Vista Superior Limpa */}
           <div className="flex justify-center">
             <svg 
               width={svgWidth} 
               height={svgHeight} 
-              className="border rounded-lg bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800"
+              className="border rounded-lg bg-gray-50 dark:bg-gray-900"
             >
-              {/* Retângulo do veículo */}
-              <rect 
-                x="110" y="30" 
-                width="200" height={svgHeight - 60} 
-                fill="none" 
-                stroke="hsl(var(--border))" 
-                strokeWidth="2"
-                strokeDasharray="5,5"
+              {/* Placa do veículo em destaque no topo */}
+              <rect
+                x={svgWidth/2 - 50}
+                y={15}
+                width={100}
+                height={30}
+                rx={4}
+                fill="white"
+                stroke="hsl(var(--border))"
+                strokeWidth={2}
               />
-              
-              {/* Texto indicativo */}
-              <text 
-                x="210" 
-                y="20" 
-                textAnchor="middle" 
-                className="text-xs fill-muted-foreground"
+              <text
+                x={svgWidth/2}
+                y={35}
+                textAnchor="middle"
+                fontSize="16"
+                fontWeight="700"
+                fill="hsl(var(--foreground))"
               >
-                FRENTE
+                {placa}
               </text>
               
+              {/* Corpo do veículo - Retângulo cinza claro */}
+              <rect 
+                x="140" 
+                y="60" 
+                width="140" 
+                height={svgHeight - 120} 
+                rx={4}
+                fill="hsl(0, 0%, 95%)"
+                stroke="hsl(var(--border))" 
+                strokeWidth={2}
+              />
+              
               {/* Renderizar eixos */}
-              {Array.from({ length: numeroEixos }, (_, i) => {
-                const eixoNum = i + 1;
-                const y = 70 + (i * 80);
+              {posicoes.map((pos, idx) => {
+                const yPos = 100 + (idx * 80);
                 
                 return (
-                  <g key={`eixo-${eixoNum}`}>
-                    {/* Linha do eixo */}
+                  <g key={pos.eixo}>
+                    {/* Linha horizontal do eixo */}
                     <line 
-                      x1="80" y1={y} 
-                      x2="340" y2={y} 
-                      stroke="hsl(var(--muted-foreground))" 
-                      strokeWidth="3"
-                      opacity="0.5"
+                      x1="60" 
+                      y1={yPos} 
+                      x2="360" 
+                      y2={yPos} 
+                      stroke="hsl(var(--border))" 
+                      strokeWidth="2"
                     />
+                    
+                    {/* Losango/círculo central do eixo */}
+                    {pos.eixo === 1 ? (
+                      // Eixo direcional (frontal) - Círculo
+                      <circle
+                        cx={210}
+                        cy={yPos}
+                        r={10}
+                        fill="white"
+                        stroke="hsl(var(--border))"
+                        strokeWidth={2}
+                      />
+                    ) : (
+                      // Eixos traseiros - Losango
+                      <path
+                        d={`M 210,${yPos - 12} L 222,${yPos} L 210,${yPos + 12} L 198,${yPos} Z`}
+                        fill="hsl(0, 0%, 70%)"
+                        stroke="hsl(var(--border))"
+                        strokeWidth={1.5}
+                      />
+                    )}
                     
                     {/* Label do eixo */}
                     <text 
-                      x="360" 
-                      y={y + 5} 
-                      className="text-xs fill-muted-foreground"
+                      x="30" 
+                      y={yPos + 5} 
+                      textAnchor="middle" 
+                      fontSize="11"
+                      fontWeight="600"
+                      fill="hsl(var(--muted-foreground))"
                     >
-                      Eixo {eixoNum}
+                      E{pos.eixo}
                     </text>
                     
-                    {/* Pneus deste eixo */}
-                    {tipo === 'cavalo' && eixoNum === 1 ? (
-                      // Eixo dianteiro: 2 pneus
-                      <>
-                        <PneuCirculo 
-                          x={90} y={y} 
-                          posicao={`eixo_${eixoNum}_esquerda`}
-                          pneu={pneusMap.get(`eixo_${eixoNum}_esquerda`)}
-                          onClick={() => handlePneuClick(`eixo_${eixoNum}_esquerda`, pneusMap.get(`eixo_${eixoNum}_esquerda`))}
+                    {/* Renderizar pneus do eixo */}
+                    {pos.pneus.map(posicao => {
+                      const pneu = pneusMap.get(posicao);
+                      
+                      // Calcular posição X baseado na posição do pneu
+                      let xPos = 210; // centro (raro, apenas direcional simples)
+                      if (posicao.includes('EE')) xPos = 80;  // esquerda externa
+                      if (posicao.includes('EI')) xPos = 130; // esquerda interna
+                      if (posicao.includes('DI')) xPos = 290; // direita interna
+                      if (posicao.includes('DE')) xPos = 340; // direita externa
+                      
+                      return (
+                        <PneuCirculo
+                          key={posicao}
+                          x={xPos}
+                          y={yPos}
+                          pneu={pneu}
+                          onClick={() => handlePneuClick(posicao, pneu)}
                         />
-                        <PneuCirculo 
-                          x={330} y={y} 
-                          posicao={`eixo_${eixoNum}_direita`}
-                          pneu={pneusMap.get(`eixo_${eixoNum}_direita`)}
-                          onClick={() => handlePneuClick(`eixo_${eixoNum}_direita`, pneusMap.get(`eixo_${eixoNum}_direita`))}
-                        />
-                        
-                        {/* Labels E/D */}
-                        <text x="75" y={y + 5} className="text-xs fill-muted-foreground">E</text>
-                        <text x="345" y={y + 5} className="text-xs fill-muted-foreground">D</text>
-                      </>
-                    ) : (
-                      // Eixo traseiro: 4 pneus (duplo)
-                      <>
-                        {/* Esquerda Externa/Interna */}
-                        <PneuCirculo 
-                          x={75} y={y} 
-                          posicao={`eixo_${eixoNum}_esquerda_externa`} 
-                          pneu={pneusMap.get(`eixo_${eixoNum}_esquerda_externa`)}
-                          onClick={() => handlePneuClick(`eixo_${eixoNum}_esquerda_externa`, pneusMap.get(`eixo_${eixoNum}_esquerda_externa`))}
-                        />
-                        <PneuCirculo 
-                          x={105} y={y} 
-                          posicao={`eixo_${eixoNum}_esquerda_interna`} 
-                          pneu={pneusMap.get(`eixo_${eixoNum}_esquerda_interna`)}
-                          onClick={() => handlePneuClick(`eixo_${eixoNum}_esquerda_interna`, pneusMap.get(`eixo_${eixoNum}_esquerda_interna`))}
-                        />
-                        
-                        {/* Direita Interna/Externa */}
-                        <PneuCirculo 
-                          x={315} y={y} 
-                          posicao={`eixo_${eixoNum}_direita_interna`} 
-                          pneu={pneusMap.get(`eixo_${eixoNum}_direita_interna`)}
-                          onClick={() => handlePneuClick(`eixo_${eixoNum}_direita_interna`, pneusMap.get(`eixo_${eixoNum}_direita_interna`))}
-                        />
-                        <PneuCirculo 
-                          x={345} y={y} 
-                          posicao={`eixo_${eixoNum}_direita_externa`} 
-                          pneu={pneusMap.get(`eixo_${eixoNum}_direita_externa`)}
-                          onClick={() => handlePneuClick(`eixo_${eixoNum}_direita_externa`, pneusMap.get(`eixo_${eixoNum}_direita_externa`))}
-                        />
-                        
-                        {/* Labels EE/EI e DI/DE */}
-                        <text x="55" y={y + 5} className="text-[10px] fill-muted-foreground">EE</text>
-                        <text x="95" y={y - 18} className="text-[10px] fill-muted-foreground">EI</text>
-                        <text x="305" y={y - 18} className="text-[10px] fill-muted-foreground">DI</text>
-                        <text x="350" y={y + 5} className="text-[10px] fill-muted-foreground">DE</text>
-                      </>
-                    )}
+                      );
+                    })}
                   </g>
                 );
               })}
               
-              {/* Estepe (embaixo) */}
-              <PneuCirculo 
-                x={210} y={svgHeight - 35} 
-                posicao="estepe"
-                pneu={pneusMap.get('estepe')}
-                onClick={() => handlePneuClick('estepe', pneusMap.get('estepe'))}
-              />
-              <text 
-                x="210" 
-                y={svgHeight - 15} 
-                textAnchor="middle"
-                className="text-xs fill-muted-foreground"
-              >
-                Estepe
-              </text>
+              {/* Pneu estepe (se for cavalo mecânico) */}
+              {tipo === 'cavalo' && (
+                <>
+                  <text 
+                    x={svgWidth - 50} 
+                    y={svgHeight - 50} 
+                    fontSize="12"
+                    fontWeight="600"
+                    textAnchor="middle" 
+                    fill="hsl(var(--muted-foreground))"
+                  >
+                    Estepe
+                  </text>
+                  <PneuCirculo
+                    x={svgWidth - 50}
+                    y={svgHeight - 30}
+                    pneu={pneusMap.get('ESTEPE')}
+                    onClick={() => handlePneuClick('ESTEPE', pneusMap.get('ESTEPE'))}
+                  />
+                </>
+              )}
             </svg>
           </div>
           
-          {/* Legenda */}
-          <div className="mt-6 flex flex-wrap items-center gap-4 text-xs justify-center">
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-green-500" />
+          {/* Legenda Simplificada */}
+          <div className="mt-6 flex gap-6 justify-center text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-600" />
               <span>OK</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-yellow-500" />
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
               <span>Atenção</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-red-500" />
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-600" />
               <span>Crítico</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-gray-300 border-2 border-dashed border-gray-400" />
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full border-2 border-muted-foreground bg-transparent" />
               <span>Vazio</span>
             </div>
           </div>
         </CardContent>
       </Card>
-      
-      {/* Dialog de Posição */}
+
+      {/* Dialogs */}
       <PneuPosicaoDialog
         open={dialogAberto === 'posicao'}
-        onOpenChange={(open) => !open && setDialogAberto(null)}
-        veiculoId={veiculoId}
+        onOpenChange={(open) => setDialogAberto(open ? 'posicao' : null)}
         posicao={posicaoSelecionada}
         pneu={pneuSelecionado}
-        onInstalarClick={() => setDialogAberto('instalar')}
-        onMedicaoClick={() => setDialogAberto('medicao')}
-        onDetalhesClick={() => setDialogAberto('detalhes')}
+        veiculoId={veiculoId}
+        onInstalar={() => setDialogAberto('instalar')}
+        onMedir={() => setDialogAberto('medicao')}
+        onDetalhes={() => setDialogAberto('detalhes')}
       />
 
-      {/* Dialog de Instalação */}
       <InstalacaoPneuDialog
         open={dialogAberto === 'instalar'}
-        onOpenChange={(open) => !open && setDialogAberto(null)}
-        pneu={null}
-        veiculoIdProp={veiculoId}
-        posicaoProp={posicaoSelecionada}
+        onOpenChange={(open) => setDialogAberto(open ? 'instalar' : null)}
+        veiculoId={veiculoId}
+        posicao={posicaoSelecionada}
       />
 
-      {/* Dialog de Medição */}
-      {pneuSelecionado && (
-        <MedicaoDialog
-          open={dialogAberto === 'medicao'}
-          onOpenChange={(open) => !open && setDialogAberto(null)}
-          pneu={pneuSelecionado}
-        />
-      )}
+      <MedicaoDialog
+        open={dialogAberto === 'medicao'}
+        onOpenChange={(open) => setDialogAberto(open ? 'medicao' : null)}
+        pneu={pneuSelecionado}
+      />
 
-      {/* Dialog de Detalhes */}
-      {pneuSelecionado && (
-        <PneuDetailsDialog
-          open={dialogAberto === 'detalhes'}
-          onOpenChange={(open) => !open && setDialogAberto(null)}
-          pneu={pneuSelecionado}
-        />
-      )}
+      <PneuDetailsDialog
+        open={dialogAberto === 'detalhes'}
+        onOpenChange={(open) => setDialogAberto(open ? 'detalhes' : null)}
+        pneu={pneuSelecionado}
+      />
     </>
   );
 }
