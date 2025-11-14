@@ -16,6 +16,7 @@ export const veiculoSchema = z.object({
   modelo: z.string().min(1, 'Modelo é obrigatório').max(100),
   ano: z.number().min(1900).max(new Date().getFullYear() + 1).optional(),
   tipo: z.enum(['caminhao', 'carreta', 'utilitario', 'van', 'outros']),
+  numero_eixos: z.number().min(2, 'Mínimo de 2 eixos').max(9, 'Máximo de 9 eixos').optional(),
   capacidade_kg: z.number().min(0).optional(),
   capacidade_m3: z.number().min(0).optional(),
   km_atual: z.number().min(0).optional(),
