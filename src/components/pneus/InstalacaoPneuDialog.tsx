@@ -5,18 +5,20 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { instalacaoPneuSchema, InstalacaoPneuFormData, posicoesPneu } from '@/lib/validations-pneu';
+import { instalacaoPneuSchema, InstalacaoPneuFormData, posicoesPneu, gerarPosicoesPneu } from '@/lib/validations-pneu';
 import { usePneus } from '@/hooks/usePneus';
 import { useVeiculos } from '@/hooks/useVeiculos';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 interface InstalacaoPneuDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pneu: any;
+  veiculoIdProp?: string;
+  posicaoProp?: string;
 }
 
-export function InstalacaoPneuDialog({ open, onOpenChange, pneu }: InstalacaoPneuDialogProps) {
+export function InstalacaoPneuDialog({ open, onOpenChange, pneu, veiculoIdProp, posicaoProp }: InstalacaoPneuDialogProps) {
   const { instalarPneu } = usePneus();
   const { veiculos } = useVeiculos();
   const {
@@ -30,17 +32,26 @@ export function InstalacaoPneuDialog({ open, onOpenChange, pneu }: InstalacaoPne
     resolver: zodResolver(instalacaoPneuSchema),
   });
 
+  const veiculoSelecionado = watch('veiculo_id');
+  const veiculo = veiculos.find(v => v.id === veiculoSelecionado);
+
   useEffect(() => {
     if (pneu) {
       reset({
         pneu_id: pneu.id,
-        veiculo_id: '',
-        posicao_veiculo: '',
+        veiculo_id: veiculoIdProp || '',
+        posicao_veiculo: posicaoProp || '',
         km_atual: 0,
         profundidade_sulco_mm: pneu.profundidade_sulco_mm || undefined,
       });
     }
-  }, [pneu, reset]);
+  }, [pneu, veiculoIdProp, posicaoProp, reset]);
+
+  // Gerar posições dinamicamente baseado no veículo selecionado
+  const posicoesDisponiveis = useMemo(() => {
+    if (!veiculo) return posicoesPneu;
+    return gerarPosicoesPneu(veiculo.numero_eixos || 3);
+  }, [veiculo]);
 
   const onSubmit = (data: any) => {
     instalarPneu.mutate({
@@ -107,7 +118,7 @@ export function InstalacaoPneuDialog({ open, onOpenChange, pneu }: InstalacaoPne
                 <SelectValue placeholder="Selecione a posição" />
               </SelectTrigger>
               <SelectContent>
-                {posicoesPneu.map((posicao) => (
+                {posicoesDisponiveis.map((posicao) => (
                   <SelectItem key={posicao.value} value={posicao.value}>
                     {posicao.label}
                   </SelectItem>
