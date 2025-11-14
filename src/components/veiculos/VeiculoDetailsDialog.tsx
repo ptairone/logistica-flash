@@ -9,7 +9,7 @@ import { formatDateBR } from '@/lib/validations';
 import { useManutencoes, useDocumentosVeiculo } from '@/hooks/useVeiculos';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VeiculoComposicaoTab } from './VeiculoComposicaoTab';
-import { VeiculoComposicaoVisual } from './VeiculoComposicaoVisual';
+import { VeiculoComposicaoInterativa } from './VeiculoComposicaoInterativa';
 
 interface VeiculoDetailsDialogProps {
   open: boolean;
@@ -119,7 +119,7 @@ export function VeiculoDetailsDialog({ open, onOpenChange, veiculo }: VeiculoDet
           </TabsContent>
 
           <TabsContent value="composicao-visual" className="space-y-4 pt-4">
-            <VeiculoComposicaoVisual veiculo={veiculo} />
+            <VeiculoComposicaoInterativa veiculo={veiculo} onVerDetalhes={() => {}} />
           </TabsContent>
 
           <TabsContent value="reboques" className="space-y-4 pt-4">
