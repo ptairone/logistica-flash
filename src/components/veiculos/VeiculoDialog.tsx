@@ -36,11 +36,15 @@ export function VeiculoDialog({ open, onOpenChange, onSubmit, veiculo, isLoading
     },
   });
 
+  const tipo = watch('tipo');
+  const status = watch('status');
+
   useEffect(() => {
     if (veiculo) {
       reset({
         ...veiculo,
         ano: veiculo.ano || undefined,
+        numero_eixos: veiculo.numero_eixos || undefined,
         capacidade_kg: veiculo.capacidade_kg || undefined,
         capacidade_m3: veiculo.capacidade_m3 || undefined,
         km_atual: veiculo.km_atual || undefined,
@@ -53,14 +57,27 @@ export function VeiculoDialog({ open, onOpenChange, onSubmit, veiculo, isLoading
       });
     }
   }, [veiculo, reset]);
+  
+  // Sugerir número de eixos baseado no tipo (apenas em novo cadastro)
+  useEffect(() => {
+    if (!veiculo) {
+      const sugestoes: Record<string, number> = {
+        'caminhao': 3,
+        'carreta': 5,
+        'utilitario': 2,
+        'van': 2,
+        'outros': 2
+      };
+      if (tipo && sugestoes[tipo]) {
+        setValue('numero_eixos', sugestoes[tipo]);
+      }
+    }
+  }, [tipo, setValue, veiculo]);
 
   const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPlacaMercosul(e.target.value);
     setValue('placa', formatted);
   };
-
-  const tipo = watch('tipo');
-  const status = watch('status');
 
   // Persistência e avisos
   const { clearPersistedData } = useFormPersistence('veiculo-form', {
@@ -183,7 +200,7 @@ export function VeiculoDialog({ open, onOpenChange, onSubmit, veiculo, isLoading
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="capacidade_kg">Capacidade (kg)</Label>
               <Input
@@ -204,6 +221,23 @@ export function VeiculoDialog({ open, onOpenChange, onSubmit, veiculo, isLoading
                 {...register('capacidade_m3', { valueAsNumber: true })}
                 placeholder="50"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="numero_eixos">Número de Eixos</Label>
+              <Input
+                id="numero_eixos"
+                type="number"
+                {...register('numero_eixos', { valueAsNumber: true })}
+                placeholder="3"
+                min="2"
+                max="9"
+              />
+              {errors.numero_eixos && (
+                <p className="text-sm text-destructive">{errors.numero_eixos.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
